@@ -69,9 +69,33 @@ export function Step4Assignment() {
     fetchAssignment();
   }, [formData, aiAssignment, setAIAssignment]);
 
-  const handleComplete = () => {
-    setComplete(true);
-    router.push('/dashboard');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleComplete = async () => {
+    setIsSaving(true);
+    try {
+      // Save to database
+      const response = await fetch('/api/registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          formData,
+          aiAssignment: aiAssignment!,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save registration to database');
+        // Continue anyway - localStorage backup is available
+      }
+    } catch (err) {
+      console.error('Error saving registration:', err);
+      // Continue anyway - localStorage backup is available
+    } finally {
+      setIsSaving(false);
+      setComplete(true);
+      router.push('/dashboard');
+    }
   };
 
   if (isLoading) {
@@ -206,8 +230,8 @@ export function Step4Assignment() {
         </CardContent>
 
         <CardFooter className="flex justify-center pt-6">
-          <Button size="lg" onClick={handleComplete}>
-            Naar Mijn Dashboard
+          <Button size="lg" onClick={handleComplete} isLoading={isSaving}>
+            {isSaving ? 'Opslaan...' : 'Naar Mijn Dashboard'}
           </Button>
         </CardFooter>
       </Card>

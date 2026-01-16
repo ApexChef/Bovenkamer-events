@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePredictionsStore, useRegistrationStore } from '@/lib/store';
@@ -9,8 +9,8 @@ import { Slider } from '@/components/ui/Slider';
 import { RadioGroup } from '@/components/ui/RadioGroup';
 import { motion } from 'framer-motion';
 
-// Mock participants for selection (in real app, fetch from database)
-const PARTICIPANTS = [
+// Fallback participants
+const FALLBACK_PARTICIPANTS = [
   { value: 'alwin', label: 'Alwin' },
   { value: 'boy', label: 'Boy Boom' },
   { value: 'peter', label: 'Peter' },
@@ -33,13 +33,39 @@ const TIME_OPTIONS = Array.from({ length: 15 }, (_, i) => {
 
 export default function PredictionsPage() {
   const router = useRouter();
-  const { isComplete } = useRegistrationStore();
+  const { formData, isComplete } = useRegistrationStore();
   const { predictions, setPrediction, isSubmitted, setSubmitted } = usePredictionsStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [participants, setParticipants] = useState(FALLBACK_PARTICIPANTS);
+
+  // Fetch participants from database
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const response = await fetch('/api/participants');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            setParticipants(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching participants:', error);
+        // Keep fallback participants
+      }
+    };
+
+    fetchParticipants();
+  }, []);
 
   // Redirect if not registered
-  if (typeof window !== 'undefined' && !isComplete) {
-    router.push('/register');
+  useEffect(() => {
+    if (!isComplete) {
+      router.push('/register');
+    }
+  }, [isComplete, router]);
+
+  if (!isComplete) {
     return null;
   }
 
@@ -48,8 +74,26 @@ export default function PredictionsPage() {
     setIsLoading(true);
 
     try {
-      // In real app, save to database
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Save to database
+      const response = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          predictions,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save predictions to database');
+        // Continue anyway - localStorage backup is available
+      }
+
+      setSubmitted(true);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error saving predictions:', error);
+      // Continue anyway
       setSubmitted(true);
       router.push('/dashboard');
     } finally {
@@ -150,7 +194,7 @@ export default function PredictionsPage() {
               <CardContent className="space-y-6">
                 <Select
                   label="Wie valt als eerste in slaap?"
-                  options={PARTICIPANTS}
+                  options={participants}
                   placeholder="Selecteer een deelnemer"
                   value={predictions.firstSleeper ?? ''}
                   onChange={(e) => setPrediction('firstSleeper', e.target.value)}
@@ -158,7 +202,7 @@ export default function PredictionsPage() {
 
                 <Select
                   label="Wie begint spontaan te zingen?"
-                  options={PARTICIPANTS}
+                  options={participants}
                   placeholder="Selecteer een deelnemer"
                   value={predictions.spontaneousSinger ?? ''}
                   onChange={(e) => setPrediction('spontaneousSinger', e.target.value)}
@@ -166,7 +210,7 @@ export default function PredictionsPage() {
 
                 <Select
                   label="Wie gaat als laatste naar huis?"
-                  options={PARTICIPANTS}
+                  options={participants}
                   placeholder="Selecteer een deelnemer"
                   value={predictions.lastToLeave ?? ''}
                   onChange={(e) => setPrediction('lastToLeave', e.target.value)}
@@ -174,7 +218,7 @@ export default function PredictionsPage() {
 
                 <Select
                   label="Wie is de luidste lacher?"
-                  options={PARTICIPANTS}
+                  options={participants}
                   placeholder="Selecteer een deelnemer"
                   value={predictions.loudestLaugher ?? ''}
                   onChange={(e) => setPrediction('loudestLaugher', e.target.value)}
@@ -182,7 +226,7 @@ export default function PredictionsPage() {
 
                 <Select
                   label="Wie vertelt het langste verhaal?"
-                  options={PARTICIPANTS}
+                  options={participants}
                   placeholder="Selecteer een deelnemer"
                   value={predictions.longestStoryTeller ?? ''}
                   onChange={(e) => setPrediction('longestStoryTeller', e.target.value)}
