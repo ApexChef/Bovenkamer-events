@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -50,29 +52,30 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Coming soon notice */}
-        <div className="bg-dark-wood/50 border border-gold/20 rounded-lg p-6 mb-8">
-          <p className="text-gold font-semibold mb-2 uppercase tracking-wider text-sm">
-            Binnenkort beschikbaar
-          </p>
-          <p className="text-cream/60 text-sm">
-            Het registratieportaal opent spoedig.
-            <br />
-            U ontvangt tijdig bericht van de commissie.
+        {/* Registration CTA */}
+        <div className="mb-8">
+          <Link
+            href="/register"
+            className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
+          >
+            Registreer Nu
+          </Link>
+          <p className="text-cream/50 text-sm mt-3">
+            Meld u aan voor het festijn en ontvang uw toewijzing
           </p>
         </div>
 
         {/* Features preview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="p-4 border border-gold/20 rounded">
+          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
             <p className="text-gold mb-1">Registratie</p>
             <p className="text-cream/50">Meld u aan voor het festijn</p>
           </div>
-          <div className="p-4 border border-gold/20 rounded">
+          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
             <p className="text-gold mb-1">Voorspellingen</p>
             <p className="text-cream/50">Waag uw gok</p>
           </div>
-          <div className="p-4 border border-gold/20 rounded">
+          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
             <p className="text-gold mb-1">Live Quiz</p>
             <p className="text-cream/50">Bewijs uw kennis</p>
           </div>
