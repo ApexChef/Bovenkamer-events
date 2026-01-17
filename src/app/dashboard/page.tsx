@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRegistrationStore, usePredictionsStore } from '@/lib/store';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { PaymentCard } from '@/components/PaymentCard';
 import { motion } from 'framer-motion';
 
 const WARNING_COLORS = {
@@ -167,6 +168,15 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+
+          {/* Payment Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <PaymentCard userId={formData.email} />
           </motion.div>
 
           {/* Event Info Card */}

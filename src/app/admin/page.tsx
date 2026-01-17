@@ -237,7 +237,15 @@ export default function AdminPage() {
         </Card>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Link href="/admin/payments">
+            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
+              <CardContent className="py-6 text-center">
+                <p className="text-gold font-semibold mb-1">Betalingen</p>
+                <p className="text-cream/50 text-sm">Tikkie overzicht en instellingen</p>
+              </CardContent>
+            </Card>
+          </Link>
           <Link href="/admin/quiz">
             <Card className="hover:border-gold/50 transition-colors cursor-pointer">
               <CardContent className="py-6 text-center">
