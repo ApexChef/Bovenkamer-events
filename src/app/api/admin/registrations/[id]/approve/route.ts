@@ -131,6 +131,36 @@ export async function POST(
       });
     }
 
+    // Create payment request for approved registration
+    const { data: registration } = await supabase
+      .from('registrations')
+      .select('id, has_partner')
+      .eq('user_id', userId)
+      .single();
+
+    if (registration) {
+      // Check if payment request already exists
+      const { data: existingPayment } = await supabase
+        .from('payment_requests')
+        .select('id')
+        .eq('registration_id', registration.id)
+        .single();
+
+      if (!existingPayment) {
+        // Calculate amount: €50 per person (5000 cents)
+        const AMOUNT_PER_PERSON = 5000;
+        const amountCents = registration.has_partner ? AMOUNT_PER_PERSON * 2 : AMOUNT_PER_PERSON;
+
+        await supabase.from('payment_requests').insert({
+          user_id: userId,
+          registration_id: registration.id,
+          amount_cents: amountCents,
+          status: 'pending',
+          description: 'Deelname Bovenkamer Winterproef 2026',
+        });
+      }
+    }
+
     // Send approval email
     let emailSent = false;
     if (sendEmail) {

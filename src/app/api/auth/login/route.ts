@@ -280,6 +280,13 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', user.id);
 
+    // Fetch registration data including ai_assignment
+    const { data: registration } = await supabase
+      .from('registrations')
+      .select('ai_assignment, birth_year, has_partner, partner_name, dietary_requirements, primary_skill, additional_skills, music_decade, music_genre, quiz_answers')
+      .eq('user_id', user.id)
+      .single();
+
     // Reset rate limits for successful login
     await resetRateLimit(clientIP, 'ip', '/api/auth/login');
     await resetRateLimit(normalizedEmail, 'email', '/api/auth/login');
@@ -309,6 +316,18 @@ export async function POST(request: NextRequest) {
           emailVerified: user.email_verified,
           blockedFeatures: user.blocked_features || [],
         },
+        registration: registration ? {
+          aiAssignment: registration.ai_assignment,
+          birthYear: registration.birth_year,
+          hasPartner: registration.has_partner,
+          partnerName: registration.partner_name,
+          dietaryRequirements: registration.dietary_requirements,
+          primarySkill: registration.primary_skill,
+          additionalSkills: registration.additional_skills,
+          musicDecade: registration.music_decade,
+          musicGenre: registration.music_genre,
+          quizAnswers: registration.quiz_answers,
+        } : null,
         token,
         message: `Welkom terug, ${user.name}!`,
       },

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
@@ -10,10 +10,12 @@ import { Card } from '@/components/ui/Card';
 import { PINInput, PINInputRef } from '@/components/ui/PINInput';
 import { useAuthStore, useRegistrationStore } from '@/lib/store';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const { login } = useAuthStore();
-  const { setComplete, setFormData } = useRegistrationStore();
+  const { setComplete, setFormData, setAIAssignment } = useRegistrationStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
   const [email, setEmail] = useState('');
@@ -85,15 +87,35 @@ export default function LoginPage() {
       // Store in auth store
       await login(data.user, data.token, pinHash);
 
-      // Set registration store as complete (for dashboard access)
-      setFormData({ email: data.user.email, name: data.user.name });
+      // Restore registration data including AI assignment (for dashboard access)
+      if (data.registration) {
+        setFormData({
+          email: data.user.email,
+          name: data.user.name,
+          birthYear: data.registration.birthYear,
+          hasPartner: data.registration.hasPartner,
+          partnerName: data.registration.partnerName || '',
+          dietaryRequirements: data.registration.dietaryRequirements || '',
+          primarySkill: data.registration.primarySkill || '',
+          additionalSkills: data.registration.additionalSkills || '',
+          musicDecade: data.registration.musicDecade || '',
+          musicGenre: data.registration.musicGenre || '',
+          quizAnswers: data.registration.quizAnswers || {},
+        });
+        if (data.registration.aiAssignment) {
+          setAIAssignment(data.registration.aiAssignment);
+        }
+      } else {
+        setFormData({ email: data.user.email, name: data.user.name });
+      }
       setComplete(true);
 
-      // Redirect based on registration status
+      // Redirect to intended destination or default based on status
       if (data.user.registrationStatus === 'pending') {
         router.push('/wachten-op-goedkeuring');
       } else if (data.user.registrationStatus === 'approved') {
-        router.push('/dashboard');
+        // Use redirect URL if provided, otherwise go to dashboard
+        router.push(redirectUrl || '/dashboard');
       } else {
         router.push('/');
       }
@@ -197,5 +219,17 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-deep-green flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

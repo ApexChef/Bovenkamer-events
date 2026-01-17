@@ -16,6 +16,9 @@ interface RegistrationState {
   userId: string | null;
   authCode: string | null;
 
+  // Hydration status
+  _hasHydrated: boolean;
+
   // Actions
   setFormData: (data: Partial<RegistrationFormData>) => void;
   setQuizAnswer: (key: keyof QuizAnswers, value: string) => void;
@@ -26,6 +29,7 @@ interface RegistrationState {
   setComplete: (isComplete: boolean) => void;
   setAIAssignment: (assignment: AIAssignment) => void;
   setUser: (userId: string, authCode: string) => void;
+  setHasHydrated: (state: boolean) => void;
   reset: () => void;
 }
 
@@ -54,6 +58,7 @@ export const useRegistrationStore = create<RegistrationState>()(
       aiAssignment: null,
       userId: null,
       authCode: null,
+      _hasHydrated: false,
 
       setFormData: (data) =>
         set((state) => ({
@@ -84,6 +89,8 @@ export const useRegistrationStore = create<RegistrationState>()(
 
       setUser: (userId, authCode) => set({ userId, authCode }),
 
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+
       reset: () =>
         set({
           formData: initialFormData,
@@ -103,6 +110,9 @@ export const useRegistrationStore = create<RegistrationState>()(
         userId: state.userId,
         authCode: state.authCode,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
@@ -246,39 +256,13 @@ export const useAuthStore = create<AuthState>()(
             return false;
           }
 
-          // Validate cache with backend
-          const response = await fetch('/api/auth/check-cache', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: cache.user.id,
-              pinHash: cache.pinHash,
-              cachedAt: cache.cachedAt,
-            }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.valid) {
-              set({
-                currentUser: data.user,
-                isAuthenticated: true,
-                authToken: data.token,
-                isCheckingAuth: false,
-              });
-              return true;
-            }
-          }
-
-          // Cache invalid, clear everything
-          localStorage.removeItem(CACHE_KEY);
+          // Cache is valid - trust it and restore session
           set({
-            isAuthenticated: false,
-            currentUser: null,
-            authToken: null,
-            isCheckingAuth: false
+            currentUser: cache.user,
+            isAuthenticated: true,
+            isCheckingAuth: false,
           });
-          return false;
+          return true;
         } catch (error) {
           console.error('Session check failed:', error);
           set({ isCheckingAuth: false });

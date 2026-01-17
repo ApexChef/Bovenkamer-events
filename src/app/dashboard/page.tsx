@@ -31,17 +31,17 @@ const WARNING_COLORS = {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, _hasHydrated } = useRegistrationStore();
   const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect if not registered
+  // Redirect if not registered (only after hydration)
   useEffect(() => {
-    if (!isComplete) {
+    if (_hasHydrated && !isComplete) {
       router.push('/register');
     }
-  }, [isComplete, router]);
+  }, [_hasHydrated, isComplete, router]);
 
   // Fetch leaderboard data
   useEffect(() => {
@@ -56,8 +56,13 @@ export default function DashboardPage() {
     }
   }, [isComplete, formData.email]);
 
-  if (!isComplete) {
-    return null;
+  // Show loading while hydrating or if not complete
+  if (!_hasHydrated || !isComplete) {
+    return (
+      <div className="min-h-screen bg-deep-green flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const userPoints = leaderboardData?.currentUser?.points ?? 0;
@@ -223,7 +228,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <PaymentCard userId={formData.email} />
+            <PaymentCard userId={formData.email} hasPartner={formData.hasPartner} partnerName={formData.partnerName} />
           </motion.div>
 
           {/* Event Info Card */}
