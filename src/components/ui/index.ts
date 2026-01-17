@@ -7,3 +7,5 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { ProgressSteps } from './ProgressSteps';
 export { Slider } from './Slider';
 export { RadioGroup } from './RadioGroup';
+export { PINInput } from './PINInput';
+export type { PINInputRef } from './PINInput';

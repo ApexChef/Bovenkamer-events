@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "mcp__MCP_DOCKER__browser_navigate",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(rm:*)",
+      "mcp__MCP_DOCKER__browser_type",
+      "mcp__MCP_DOCKER__browser_snapshot",
+      "mcp__MCP_DOCKER__browser_fill_form",
+      "mcp__MCP_DOCKER__browser_click",
+      "mcp__MCP_DOCKER__browser_select_option",
+      "mcp__MCP_DOCKER__browser_wait_for",
+      "mcp__MCP_DOCKER__browser_take_screenshot",
+      "mcp__MCP_DOCKER__browser_press_key",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(openssl rand:*)",
+      "mcp__MCP_DOCKER__browser_evaluate",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

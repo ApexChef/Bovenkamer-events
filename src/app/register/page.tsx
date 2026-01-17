@@ -2,11 +2,12 @@
 
 import { useRegistrationStore } from '@/lib/store';
 import { ProgressSteps } from '@/components/ui';
-import { Step1Personal, Step2Skills, Step3Quiz, Step4Assignment } from '@/components/forms';
+import { Step0Auth, Step1Personal, Step2Skills, Step3Quiz, Step4Assignment } from '@/components/forms';
 import { AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 const STEPS = [
+  { number: 0, title: 'PIN' },
   { number: 1, title: 'Gegevens' },
   { number: 2, title: 'Capaciteiten' },
   { number: 3, title: 'Quiz' },
@@ -41,6 +42,7 @@ export default function RegisterPage() {
         {/* Form Steps */}
         <div className="mt-12">
           <AnimatePresence mode="wait">
+            {currentStep === 0 && <Step0Auth key="step0" />}
             {currentStep === 1 && <Step1Personal key="step1" />}
             {currentStep === 2 && <Step2Skills key="step2" />}
             {currentStep === 3 && <Step3Quiz key="step3" />}

@@ -6,6 +6,13 @@ export interface User {
   name: string;
   role: 'participant' | 'admin' | 'quizmaster';
   auth_code?: string;
+  email_verified: boolean;
+  registration_status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  rejection_reason?: string;
+  approved_at?: string;
+  approved_by?: string;
+  blocked_features: string[];
+  last_login_at?: string;
   total_points: number;
   registration_points: number;
   prediction_points: number;
@@ -13,6 +20,30 @@ export interface User {
   game_points: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'participant' | 'admin' | 'quizmaster';
+  emailVerified: boolean;
+  registrationStatus: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  blockedFeatures: string[];
+}
+
+export interface AuthCache {
+  user: AuthUser;
+  pinHash: string;
+  cachedAt: number;
+  expiresAt: number;
+}
+
+export interface ExpectedParticipant {
+  id: string;
+  name: string;
+  email_hint?: string;
+  is_registered: boolean;
 }
 
 export interface QuizAnswers {
@@ -155,6 +186,9 @@ export interface Rating {
 
 // Form state types
 export interface RegistrationFormData {
+  // Step 0 (Auth)
+  pin?: string;
+
   // Step 1
   name: string;
   email: string;

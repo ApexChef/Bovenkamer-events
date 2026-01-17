@@ -7,9 +7,10 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   animate?: boolean;
+  onClick?: () => void;
 }
 
-export function Card({ children, className = '', animate = false }: CardProps) {
+export function Card({ children, className = '', animate = false, onClick }: CardProps) {
   const Component = animate ? motion.div : 'div';
   const animationProps = animate
     ? {
@@ -22,6 +23,7 @@ export function Card({ children, className = '', animate = false }: CardProps) {
   return (
     <Component
       className={`bg-dark-wood/80 border border-gold/20 rounded-lg p-6 shadow-lg ${className}`}
+      onClick={onClick}
       {...animationProps}
     >
       {children}

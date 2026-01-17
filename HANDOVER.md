@@ -40,8 +40,11 @@ Ga naar **Netlify** → **Site configuration** → **Environment variables**
 | Variable | Waar te vinden |
 |----------|----------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → anon public |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Settings → API → Publishable key (`sb_publishable_...`) |
+| `SUPABASE_SECRET_KEY` | Supabase → Settings → API → Secret key (`sb_secret_...`) |
 | `ANTHROPIC_API_KEY` | console.anthropic.com (optioneel) |
+
+> **Let op**: Supabase heeft nieuwe API keys (publishable/secret) die de legacy anon/service_role keys vervangen. De app ondersteunt beide voor backwards compatibility.
 
 ### Stap 2: Database Tabellen
 

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Note: Removed 'output: export' to enable API routes for authentication
+  // Netlify supports Next.js API routes natively
   images: {
     unoptimized: true,
   },
