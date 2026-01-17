@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store';
 
 export default function Home() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
       {/* Background decorations */}
@@ -54,15 +59,31 @@ export default function Home() {
 
         {/* Registration CTA */}
         <div className="mb-8">
-          <Link
-            href="/register"
-            className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
-          >
-            Registreer Nu
-          </Link>
-          <p className="text-cream/50 text-sm mt-3">
-            Meld u aan voor het festijn en ontvang uw toewijzing
-          </p>
+          {isAuthenticated ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
+              >
+                Naar Dashboard
+              </Link>
+              <p className="text-cream/50 text-sm mt-3">
+                Bekijk uw toewijzing en status
+              </p>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
+              >
+                Registreer Nu
+              </Link>
+              <p className="text-cream/50 text-sm mt-3">
+                Meld u aan voor het festijn en ontvang uw toewijzing
+              </p>
+            </>
+          )}
         </div>
 
         {/* Features preview */}
