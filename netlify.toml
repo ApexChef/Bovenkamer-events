@@ -1,14 +1,11 @@
 [build]
   command = "npm run build"
-  publish = "out"
+  # publish directory managed by @netlify/plugin-nextjs
 
 [build.environment]
   NODE_VERSION = "20"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Removed SPA redirect - Next.js handles routing
 
 [[headers]]
   for = "/*"
