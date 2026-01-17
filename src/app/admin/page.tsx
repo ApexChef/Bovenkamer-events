@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { motion } from 'framer-motion';
+import { AuthGuard } from '@/components/AuthGuard';
 
 interface Registration {
   id: string;
@@ -51,6 +52,14 @@ const WARNING_COLORS: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  return (
+    <AuthGuard requireAdmin requireApproved>
+      <AdminPageContent />
+    </AuthGuard>
+  );
+}
+
+function AdminPageContent() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

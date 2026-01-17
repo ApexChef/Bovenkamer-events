@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PINInput, PINInputRef } from '@/components/ui/PINInput';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, useRegistrationStore } from '@/lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
+  const { setComplete, setFormData } = useRegistrationStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
   const [email, setEmail] = useState('');
@@ -83,6 +84,10 @@ export default function LoginPage() {
 
       // Store in auth store
       await login(data.user, data.token, pinHash);
+
+      // Set registration store as complete (for dashboard access)
+      setFormData({ email: data.user.email, name: data.user.name });
+      setComplete(true);
 
       // Redirect based on registration status
       if (data.user.registrationStatus === 'pending') {

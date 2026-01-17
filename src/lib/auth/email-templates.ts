@@ -136,7 +136,7 @@ export function registrationVerificationEmail(name: string, verificationToken: s
  * @returns HTML email content
  */
 export function pinResetEmail(name: string, resetToken: string): string {
-  const resetLink = `${BASE_URL}/reset-pin?token=${resetToken}`;
+  const resetLink = `${BASE_URL}/reset-pin/${resetToken}`;
 
   return `
 <!DOCTYPE html>
