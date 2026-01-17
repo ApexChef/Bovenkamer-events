@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { motion } from 'framer-motion';
+import { AuthGuard } from '@/components/AuthGuard';
 
 interface PaymentSettings {
   id?: string;
@@ -58,6 +59,14 @@ function formatCentsToEuros(cents: number): string {
 }
 
 export default function AdminPaymentsPage() {
+  return (
+    <AuthGuard requireAdmin requireApproved>
+      <AdminPaymentsContent />
+    </AuthGuard>
+  );
+}
+
+function AdminPaymentsContent() {
   const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
   const [settings, setSettings] = useState<PaymentSettings>({
     amount_cents: 5000,
