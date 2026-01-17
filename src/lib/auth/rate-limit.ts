@@ -70,6 +70,15 @@ export async function checkRateLimit(
   identifierType: 'ip' | 'email',
   endpoint: string
 ): Promise<RateLimitResult> {
+  // Bypass rate limiting in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    return {
+      allowed: true,
+      remainingAttempts: 999,
+      resetAt: new Date(Date.now() + 3600000),
+    };
+  }
+
   const config = RATE_LIMITS[endpoint];
 
   if (!config) {

@@ -52,9 +52,9 @@ async function sendEmail(
   html: string,
   text?: string
 ): Promise<EmailResult> {
-  // Development mode - log to console
-  if (!IS_PRODUCTION || !RESEND_API_KEY) {
-    console.log('📧 Email (Development Mode)');
+  // Development mode - log to console (only if no API key)
+  if (!RESEND_API_KEY) {
+    console.log('📧 Email (Development Mode - No RESEND_API_KEY)');
     console.log('─────────────────────────────');
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
