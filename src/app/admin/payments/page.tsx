@@ -20,7 +20,7 @@ interface PaymentRequest {
   id: string;
   user_id: string;
   amount_cents: number;
-  status: 'pending' | 'paid' | 'expired' | 'cancelled';
+  status: 'pending' | 'processing' | 'paid' | 'expired' | 'cancelled';
   tikkie_url: string | null;
   paid_at: string | null;
   created_at: string;
@@ -44,11 +44,12 @@ interface PaymentStats {
   totalReceived: number;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Openstaand', color: 'text-yellow-500' },
-  paid: { label: 'Betaald', color: 'text-success-green' },
-  expired: { label: 'Verlopen', color: 'text-warm-red' },
-  cancelled: { label: 'Geannuleerd', color: 'text-cream/50' },
+const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
+  pending: { label: 'Openstaand', color: 'text-yellow-500', icon: '○' },
+  processing: { label: 'In behandeling', color: 'text-blue-400', icon: '◐' },
+  paid: { label: 'Betaald', color: 'text-success-green', icon: '✓' },
+  expired: { label: 'Verlopen', color: 'text-warm-red', icon: '✗' },
+  cancelled: { label: 'Geannuleerd', color: 'text-cream/50', icon: '—' },
 };
 
 function formatCentsToEuros(cents: number): string {
@@ -81,6 +82,7 @@ function AdminPaymentsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Fetch settings and payments
@@ -170,6 +172,43 @@ function AdminPaymentsContent() {
       setMessage({ type: 'error', text: 'Kon herinnering niet versturen' });
     } finally {
       setSendingReminder(null);
+    }
+  };
+
+  // Update payment status
+  const handleUpdateStatus = async (paymentId: string, newStatus: PaymentRequest['status']) => {
+    setUpdatingStatus(paymentId);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/api/payments/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Kon status niet wijzigen');
+
+      setMessage({ type: 'success', text: data.message });
+
+      // Update local state
+      setPayments(payments.map(p =>
+        p.id === paymentId ? { ...p, status: newStatus, paid_at: newStatus === 'paid' ? new Date().toISOString() : null } : p
+      ));
+
+      // Refresh stats
+      const paymentsRes = await fetch('/api/payments');
+      if (paymentsRes.ok) {
+        const paymentsData = await paymentsRes.json();
+        setStats(paymentsData.stats || null);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      setMessage({ type: 'error', text: 'Kon status niet wijzigen' });
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -321,61 +360,98 @@ function AdminPaymentsContent() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.03 }}
-                        className="flex items-center justify-between p-4 bg-dark-wood/30 rounded-lg border border-gold/20"
+                        className="p-4 bg-dark-wood/30 rounded-lg border border-gold/20"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className={STATUS_LABELS[payment.status]?.color || 'text-cream'}>
-                              {payment.status === 'paid' ? '✓' : payment.status === 'expired' ? '✗' : '○'}
-                            </span>
-                            <span className="text-gold font-semibold">
-                              {payment.users?.name || 'Onbekend'}
-                            </span>
-                            <span className="text-cream/60 text-sm">
-                              {formatCentsToEuros(payment.amount_cents)}
-                            </span>
-                            {payment.registrations?.has_partner && (
-                              <span className="text-xs bg-gold/20 text-gold px-2 py-0.5 rounded">
-                                +partner
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className={STATUS_LABELS[payment.status]?.color || 'text-cream'}>
+                                {STATUS_LABELS[payment.status]?.icon || '○'}
                               </span>
-                            )}
+                              <span className="text-gold font-semibold">
+                                {payment.users?.name || 'Onbekend'}
+                              </span>
+                              <span className="text-cream/60 text-sm">
+                                {formatCentsToEuros(payment.amount_cents)}
+                              </span>
+                              {payment.registrations?.has_partner && (
+                                <span className="text-xs bg-gold/20 text-gold px-2 py-0.5 rounded">
+                                  +partner
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-cream/50">
+                              <span className={STATUS_LABELS[payment.status]?.color}>
+                                {STATUS_LABELS[payment.status]?.label}
+                              </span>
+                              {payment.paid_at && (
+                                <span>
+                                  Betaald: {new Date(payment.paid_at).toLocaleDateString('nl-NL')}
+                                </span>
+                              )}
+                              {payment.reminder_count > 0 && (
+                                <span className="text-yellow-500">
+                                  {payment.reminder_count}x herinnerd
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-cream/50">
-                            <span className={STATUS_LABELS[payment.status]?.color}>
-                              {STATUS_LABELS[payment.status]?.label}
-                            </span>
-                            {payment.paid_at && (
-                              <span>
-                                {new Date(payment.paid_at).toLocaleDateString('nl-NL')}
-                              </span>
+                          <div className="flex items-center gap-2">
+                            {payment.tikkie_url && (
+                              <a
+                                href={payment.tikkie_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gold hover:text-gold/80 text-sm"
+                              >
+                                Tikkie
+                              </a>
                             )}
-                            {payment.reminder_count > 0 && (
-                              <span className="text-yellow-500">
-                                {payment.reminder_count}x herinnerd
-                              </span>
+                            {payment.status === 'pending' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSendReminder(payment.id)}
+                                disabled={sendingReminder === payment.id}
+                              >
+                                {sendingReminder === payment.id ? '...' : 'Herinner'}
+                              </Button>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {payment.tikkie_url && (
-                            <a
-                              href={payment.tikkie_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gold hover:text-gold/80 text-sm"
+
+                        {/* Status change buttons */}
+                        <div className="mt-3 pt-3 border-t border-gold/10 flex items-center gap-2">
+                          <span className="text-cream/50 text-xs mr-2">Status wijzigen:</span>
+                          {payment.status !== 'pending' && (
+                            <button
+                              onClick={() => handleUpdateStatus(payment.id, 'pending')}
+                              disabled={updatingStatus === payment.id}
+                              className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 disabled:opacity-50 transition-colors"
                             >
-                              Tikkie
-                            </a>
+                              Openstaand
+                            </button>
                           )}
-                          {payment.status === 'pending' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSendReminder(payment.id)}
-                              disabled={sendingReminder === payment.id}
+                          {payment.status !== 'processing' && (
+                            <button
+                              onClick={() => handleUpdateStatus(payment.id, 'processing')}
+                              disabled={updatingStatus === payment.id}
+                              className="px-2 py-1 text-xs rounded bg-blue-400/20 text-blue-400 hover:bg-blue-400/30 disabled:opacity-50 transition-colors"
                             >
-                              {sendingReminder === payment.id ? '...' : 'Herinner'}
-                            </Button>
+                              In behandeling
+                            </button>
+                          )}
+                          {payment.status !== 'paid' && (
+                            <button
+                              onClick={() => handleUpdateStatus(payment.id, 'paid')}
+                              disabled={updatingStatus === payment.id}
+                              className="px-2 py-1 text-xs rounded bg-success-green/20 text-success-green hover:bg-success-green/30 disabled:opacity-50 transition-colors"
+                            >
+                              Betaald
+                            </button>
+                          )}
+                          {updatingStatus === payment.id && (
+                            <span className="text-cream/50 text-xs">Bezig...</span>
                           )}
                         </div>
                       </motion.div>

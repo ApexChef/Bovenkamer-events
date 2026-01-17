@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { motion } from 'framer-motion';
 
@@ -23,32 +23,24 @@ export function AuthGuard({
   fallback,
 }: AuthGuardProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, currentUser, isCheckingAuth, checkSession } = useAuthStore();
   const [isReady, setIsReady] = useState(false);
+  const hasChecked = useRef(false);
 
   useEffect(() => {
+    // Only run once
+    if (hasChecked.current) return;
+    hasChecked.current = true;
+
     const verifyAuth = async () => {
-      // Check localStorage cache and validate with backend
+      // Check localStorage cache
       const isValid = await checkSession();
 
       if (!isValid) {
-        router.push(redirectTo);
-        return;
-      }
-
-      // Additional role/status checks
-      if (requireAdmin && currentUser?.role !== 'admin') {
-        router.push('/dashboard');
-        return;
-      }
-
-      if (requireApproved && currentUser?.registrationStatus !== 'approved') {
-        router.push('/wachten-op-goedkeuring');
-        return;
-      }
-
-      if (requireVerified && !currentUser?.emailVerified) {
-        router.push('/email-verificatie-vereist');
+        // Pass current path as redirect parameter so user returns here after login
+        const loginUrl = `${redirectTo}?redirect=${encodeURIComponent(pathname)}`;
+        router.push(loginUrl);
         return;
       }
 
@@ -56,7 +48,27 @@ export function AuthGuard({
     };
 
     verifyAuth();
-  }, [checkSession, currentUser, requireAdmin, requireApproved, requireVerified, redirectTo, router]);
+  }, []); // Empty dependency array - run once on mount
+
+  // Additional role/status checks after session is validated
+  useEffect(() => {
+    if (!isReady || !currentUser) return;
+
+    if (requireAdmin && currentUser.role !== 'admin') {
+      router.push('/dashboard');
+      return;
+    }
+
+    if (requireApproved && currentUser.registrationStatus !== 'approved') {
+      router.push('/wachten-op-goedkeuring');
+      return;
+    }
+
+    if (requireVerified && !currentUser.emailVerified) {
+      router.push('/email-verificatie-vereist');
+      return;
+    }
+  }, [isReady, currentUser, requireAdmin, requireApproved, requireVerified, router]);
 
   // Show loading state while checking auth
   if (isCheckingAuth || !isReady) {

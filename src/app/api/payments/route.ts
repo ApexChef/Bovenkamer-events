@@ -31,12 +31,27 @@ export async function GET(request: NextRequest) {
 
     // If filtering by user, look up user by email or id
     if (userFilter) {
-      // First find the user
-      const { data: user } = await supabase
+      // First try to find user by email, then by id
+      let user = null;
+
+      // Try email first
+      const { data: userByEmail } = await supabase
         .from('users')
         .select('id')
-        .or(`email.eq.${userFilter},id.eq.${userFilter}`)
+        .eq('email', userFilter)
         .single();
+
+      if (userByEmail) {
+        user = userByEmail;
+      } else {
+        // Try by id
+        const { data: userById } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', userFilter)
+          .single();
+        user = userById;
+      }
 
       if (user) {
         query = query.eq('user_id', user.id);
