@@ -151,7 +151,7 @@ Hoi ${name},
 We hebben een aanvraag ontvangen om je PIN te resetten.
 
 Gebruik deze link om een nieuwe PIN in te stellen:
-${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-pin?token=${resetToken}
+${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-pin/${resetToken}
 
 Als je deze aanvraag niet hebt gedaan, negeer deze email dan.
 
