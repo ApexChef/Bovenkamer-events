@@ -50,12 +50,24 @@ const WARNING_COLORS = {
   ROOD: 'bg-warm-red',
 };
 
+const DECLINE_REASONS = [
+  { id: 'washing', label: 'Ik moet mijn haar wassen', emoji: '🧴' },
+  { id: 'cat', label: 'Mijn kat heeft me nodig', emoji: '🐱' },
+  { id: 'netflix', label: 'Netflix kijkt zichzelf niet', emoji: '📺' },
+  { id: 'aliens', label: 'Buitenaardse ontvoering gepland', emoji: '👽' },
+  { id: 'grandma', label: 'Oma belde, ze heeft wifi problemen', emoji: '👵' },
+  { id: 'plants', label: 'Mijn planten hebben een feestje', emoji: '🌱' },
+  { id: 'serious', label: 'Ik heb echt een goede reden...', emoji: '😢' },
+];
+
 export function HomeTab({
   formData,
   aiAssignment,
   profileCompletion,
 }: HomeTabProps) {
   const [attendanceConfirmed, setAttendanceConfirmed] = useState<boolean | null>(null);
+  const [declineReason, setDeclineReason] = useState<string | null>(null);
+  const [customReason, setCustomReason] = useState('');
   const isProfileComplete = profileCompletion.percentage === 100;
 
   return (
@@ -176,7 +188,7 @@ export function HomeTab({
               </motion.div>
             )}
 
-            {/* Cost reminder */}
+            {/* Cost reminder - only when attending */}
             {attendanceConfirmed === true && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -189,6 +201,65 @@ export function HomeTab({
                     <span className="text-cream/50"> (€100 totaal)</span>
                   )}
                 </p>
+                <p className="text-xs text-cream/50 mt-1">
+                  Betaalinstructies volgen per e-mail
+                </p>
+              </motion.div>
+            )}
+
+            {/* Decline reasons - sarcastic options */}
+            {attendanceConfirmed === false && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="pt-3 border-t border-gold/20"
+              >
+                <p className="text-sm text-cream mb-3 font-medium">
+                  Jammer! Wat is je (smoes) reden?
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {DECLINE_REASONS.map((reason) => (
+                    <button
+                      key={reason.id}
+                      onClick={() => setDeclineReason(reason.id)}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border transition-all text-left ${
+                        declineReason === reason.id
+                          ? 'border-warm-red bg-warm-red/10 text-cream'
+                          : 'border-cream/10 text-cream/60 hover:border-cream/30'
+                      }`}
+                    >
+                      <span className="text-lg">{reason.emoji}</span>
+                      <span className="text-sm">{reason.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom reason input for "serious" option */}
+                {declineReason === 'serious' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3"
+                  >
+                    <input
+                      type="text"
+                      value={customReason}
+                      onChange={(e) => setCustomReason(e.target.value)}
+                      placeholder="Vertel ons je echte reden..."
+                      className="w-full px-4 py-2 bg-dark-wood/50 border border-cream/20 rounded-lg text-cream placeholder:text-cream/30 text-sm focus:outline-none focus:border-gold/50"
+                    />
+                  </motion.div>
+                )}
+
+                {declineReason && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center text-cream/50 text-xs mt-3 italic"
+                  >
+                    We missen je! Mocht je van gedachten veranderen, je bent altijd welkom.
+                  </motion.p>
+                )}
               </motion.div>
             )}
           </CardContent>
