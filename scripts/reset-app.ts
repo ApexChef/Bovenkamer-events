@@ -81,31 +81,43 @@ async function getTableCounts(): Promise<TableCount[]> {
   return counts;
 }
 
-async function clearTable(tableName: string, whereClause?: string): Promise<number> {
-  if (options.dryRun) {
-    const { count } = await supabase
+async function clearTable(tableName: string): Promise<number> {
+  try {
+    // First count what we have
+    const { count: beforeCount, error: countError } = await supabase
       .from(tableName)
       .select('*', { count: 'exact', head: true });
-    return count || 0;
-  }
 
-  // First count what we're going to delete
-  const { count: beforeCount } = await supabase
-    .from(tableName)
-    .select('*', { count: 'exact', head: true });
+    if (countError) {
+      // Table might not exist
+      return 0;
+    }
 
-  // Delete all - need a filter that matches everything
-  const { error } = await supabase
-    .from(tableName)
-    .delete()
-    .gte('created_at', '1970-01-01');
+    if (options.dryRun) {
+      return beforeCount || 0;
+    }
 
-  if (error) {
-    console.error(`  Error clearing ${tableName}:`, error.message);
+    if (!beforeCount || beforeCount === 0) {
+      return 0;
+    }
+
+    // Try different delete strategies based on table
+    // Strategy 1: Delete with 'id' not null (works for all tables with id)
+    const { error } = await supabase
+      .from(tableName)
+      .delete()
+      .not('id', 'is', null);
+
+    if (error) {
+      console.error(`  Error clearing ${tableName}:`, error.message);
+      return 0;
+    }
+
+    return beforeCount || 0;
+  } catch (e) {
+    // Table might not exist in schema
     return 0;
   }
-
-  return beforeCount || 0;
 }
 
 async function resetExpectedParticipants(): Promise<number> {
@@ -238,7 +250,8 @@ async function main() {
       const { error } = await supabase
         .from('users')
         .delete()
-        .neq('role', 'admin');
+        .neq('role', 'admin')
+        .not('id', 'is', null);
 
       if (error) {
         console.log(` ✗ (${error.message})`);
