@@ -89,7 +89,7 @@ export function Step2Skills() {
                           key={option.value}
                           type="button"
                           onClick={() => handleSkillChange(categoryKey, option.value)}
-                          className={`px-3 py-2 text-sm rounded-lg border transition-all text-center ${
+                          className={`px-3 py-3 min-h-[52px] text-sm rounded-lg border transition-all text-center flex items-center justify-center ${
                             skills[categoryKey] === option.value
                               ? 'border-gold bg-gold/20 text-gold font-medium'
                               : 'border-cream/20 text-cream/70 hover:border-cream/40 hover:text-cream'
