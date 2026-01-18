@@ -65,7 +65,23 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
           const data = await response.json();
           // Get the user's payment from the list
           const userPayment = data.payments?.[0] || null;
-          setPayment(userPayment);
+
+          if (userPayment) {
+            setPayment(userPayment);
+          } else {
+            // Check localStorage for local payment status
+            const localStatus = localStorage.getItem(`payment-status-${userId}`);
+            if (localStatus === 'processing') {
+              setPayment({
+                id: `local-${userId}`,
+                amount_cents: totalAmountCents,
+                status: 'processing',
+                tikkie_url: null,
+                deadline: null,
+                paid_at: null,
+              });
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching payment:', err);
@@ -76,14 +92,14 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
     };
 
     fetchPayment();
-  }, [userId]);
+  }, [userId, totalAmountCents]);
 
   // Handle payment confirmed - set status to processing
   const handlePaymentConfirmed = async () => {
-    // Only update if current status is pending and we have a payment ID
-    if (payment?.id && payment.status === 'pending') {
-      setIsUpdatingStatus(true);
-      try {
+    setIsUpdatingStatus(true);
+    try {
+      if (payment?.id) {
+        // Update existing payment record
         const response = await fetch(`/api/payments/${payment.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -93,13 +109,28 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
         if (response.ok) {
           setPayment({ ...payment, status: 'processing' });
         }
-      } catch (err) {
-        console.error('Error updating payment status:', err);
-      } finally {
-        setIsUpdatingStatus(false);
-        setShowModal(false);
+      } else {
+        // No payment record exists - create a local "processing" state
+        // and store in localStorage to persist the status
+        const localPayment: PaymentStatus = {
+          id: `local-${userId}`,
+          amount_cents: totalAmountCents,
+          status: 'processing',
+          tikkie_url: null,
+          deadline: null,
+          paid_at: null,
+        };
+        setPayment(localPayment);
+
+        // Store in localStorage to persist across page reloads
+        if (userId) {
+          localStorage.setItem(`payment-status-${userId}`, 'processing');
+        }
       }
-    } else {
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+    } finally {
+      setIsUpdatingStatus(false);
       setShowModal(false);
     }
   };
