@@ -114,6 +114,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid score' }, { status: 400 });
     }
 
+    // Verify user exists in database
+    const { data: existingUser, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.userId)
+      .single();
+
+    if (userError || !existingUser) {
+      console.error('User not found in database:', user.userId);
+      return NextResponse.json({
+        success: false,
+        saved: false,
+        message: 'Gebruiker niet gevonden - log opnieuw in',
+      }, { status: 200 });
+    }
+
     // Insert new score
     const { data, error } = await supabase
       .from('game_scores')
