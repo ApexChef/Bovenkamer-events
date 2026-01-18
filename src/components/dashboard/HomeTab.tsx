@@ -106,15 +106,20 @@ export function HomeTab({
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Quick event details */}
-            <div className="flex gap-4 text-sm">
+            <div className="flex flex-col gap-2 text-sm">
               <div className="flex items-center gap-1.5 text-cream/70">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 flex-shrink-0" />
                 <span>Vanaf 14:00</span>
               </div>
-              <div className="flex items-center gap-1.5 text-cream/70">
-                <MapPin className="w-4 h-4" />
-                <span>Adres volgt</span>
-              </div>
+              <a
+                href="https://maps.google.com/?q=Merseloseweg+158+Venray"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-1.5 text-cream/70 hover:text-gold transition-colors"
+              >
+                <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>Merseloseweg 158, Venray</span>
+              </a>
             </div>
 
             {/* Attendance question */}
