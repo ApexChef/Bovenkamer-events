@@ -110,7 +110,7 @@ export function GameOverModal() {
             </Button>
 
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setShowLeaderboard(true)}
               className="w-full"
             >

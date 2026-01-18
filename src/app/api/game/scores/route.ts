@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const formattedLeaderboard = (leaderboard || []).map((entry, index) => ({
       rank: index + 1,
       user_id: entry.user_id,
-      user_name: (entry.users as { name: string })?.name || 'Onbekend',
+      user_name: Array.isArray(entry.users) ? (entry.users as { name: string }[])[0]?.name ?? 'Onbekend' : (entry.users as { name?: string })?.name ?? 'Onbekend',
       score: entry.score,
       layers: entry.layers,
       created_at: entry.created_at,
