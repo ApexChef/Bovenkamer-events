@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Get top scores with user names
-    const { data: leaderboard, error: leaderboardError } = await supabase
+    // Get top scores with user names (fetch more to filter unique users)
+    const { data: allScores, error: leaderboardError } = await supabase
       .from('game_scores')
       .select(`
         id,
@@ -50,15 +50,29 @@ export async function GET(request: NextRequest) {
       `)
       .eq('game_type', 'burger_stack')
       .order('score', { ascending: false })
-      .limit(limit);
+      .limit(100); // Fetch more to ensure we get enough unique users
 
     if (leaderboardError) {
       console.error('Leaderboard error:', leaderboardError);
       return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 });
     }
 
+    // Filter to only show best score per user
+    const bestScoresByUser = new Map<string, typeof allScores[0]>();
+    for (const entry of allScores || []) {
+      const existing = bestScoresByUser.get(entry.user_id);
+      if (!existing || entry.score > existing.score) {
+        bestScoresByUser.set(entry.user_id, entry);
+      }
+    }
+
+    // Convert to array, sort by score, and limit
+    const uniqueLeaderboard = Array.from(bestScoresByUser.values())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
     // Format leaderboard with ranks
-    const formattedLeaderboard = (leaderboard || []).map((entry, index) => ({
+    const formattedLeaderboard = uniqueLeaderboard.map((entry, index) => ({
       rank: index + 1,
       user_id: entry.user_id,
       user_name: Array.isArray(entry.users) ? (entry.users as { name: string }[])[0]?.name ?? 'Onbekend' : (entry.users as { name?: string })?.name ?? 'Onbekend',
