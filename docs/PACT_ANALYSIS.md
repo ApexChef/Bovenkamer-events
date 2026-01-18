@@ -8,11 +8,125 @@
 
 ## Inhoudsopgave
 
-1. [US-001: Skill Categorieën](#us-001-skill-categorieën)
-2. [US-002: Uitgebreide Profielvelden](#us-002-uitgebreide-profielvelden)
-3. [US-003: Sarcastisch Dashboard](#us-003-sarcastisch-dashboard)
-4. [US-005: Burger Stack Mini-Game](#us-005-burger-stack-mini-game)
-5. [US-006: Einde-Avond Awards](#us-006-einde-avond-awards)
+1. [US-007: Progressieve Registratie](#us-007-progressieve-registratie) ⭐ NIEUW - Hoogste prioriteit
+2. [US-001: Skill Categorieën](#us-001-skill-categorieën)
+3. [US-002: Uitgebreide Profielvelden](#us-002-uitgebreide-profielvelden)
+4. [US-003: Sarcastisch Dashboard](#us-003-sarcastisch-dashboard)
+5. [US-005: Burger Stack Mini-Game](#us-005-burger-stack-mini-game)
+6. [US-006: Einde-Avond Awards](#us-006-einde-avond-awards)
+
+---
+
+## US-007: Progressieve Registratie
+
+### PREPARE
+
+#### Requirements Samenvatting
+| Aspect | Beschrijving |
+|--------|--------------|
+| **Doel** | Lage drempel registratie met puntenbeloning voor complete profielen |
+| **Scope** | Registratie flow, punten systeem, herinneringen |
+| **Prioriteit** | Hoogste (#1) |
+| **Complexiteit** | Medium-Hoog |
+
+#### Functionele Requirements
+1. **FR-007.1**: Minimale registratie met alleen naam, e-mail, PIN
+2. **FR-007.2**: 6 profiel secties, elk apart invulbaar
+3. **FR-007.3**: Punten toekenning per voltooide sectie (totaal 250)
+4. **FR-007.4**: Dashboard prompt met compleetheid percentage
+5. **FR-007.5**: Gepersonaliseerde "passeer X" berekening
+6. **FR-007.6**: In-app notificaties bij incomplete profiel
+7. **FR-007.7**: E-mail herinneringen (automatisch + handmatig)
+8. **FR-007.8**: Admin dashboard voor reminder beheer
+9. **FR-007.9**: Leaderboard integratie met profiel-punten
+
+#### Profiel Secties & Punten
+| Sectie | Velden | Punten | Prioriteit |
+|--------|--------|--------|------------|
+| Persoonlijk | Geboortedatum, geslacht, partner | 50 | Hoog |
+| JKV Historie | JKV/Bovenkamer jaren | 30 | Medium |
+| Skills | 8 skill categorieën | 40 | Hoog |
+| Muziek | Decennium, genre | 20 | Laag |
+| Borrel Stats | 2025 geweest, 2026 planning | 30 | Medium |
+| Fun Quiz | 15 grappige vragen | 80 | Hoog |
+| **Totaal** | | **250** | |
+
+#### Scope Afbakening
+| In Scope | Buiten Scope |
+|----------|--------------|
+| Minimale registratie flow | Social login (Google, etc.) |
+| Sectie-gebaseerde punten | Punten voor andere acties |
+| In-app + e-mail reminders | Push notificaties |
+| Leaderboard impact berekening | Real-time leaderboard updates |
+| Admin reminder beheer | AI-gegenereerde reminder teksten |
+
+#### Afhankelijkheden
+| Dependency | Type | Status |
+|------------|------|--------|
+| Bestaande auth flow (JWT, PIN) | Intern | Beschikbaar |
+| Resend API (e-mail) | Extern | Geconfigureerd |
+| Users tabel (punten velden) | Database | Aan te passen |
+| Registrations tabel | Database | Aan te passen |
+| Zustand stores | State | Aan te passen |
+
+#### Impact op Andere US
+| User Story | Impact |
+|------------|--------|
+| US-001 (Skills) | Wordt onderdeel van profiel secties |
+| US-002 (Profielvelden) | Wordt onderdeel van profiel secties |
+| US-003 (Dashboard) | Moet wachten op profiel data |
+| US-005 (Game) | Grill Guru heeft minder data bij incomplete profielen |
+| US-006 (Awards) | Rapporten minder persoonlijk bij incomplete profielen |
+
+#### Risico's & Mitigatie
+| Risico | Impact | Kans | Mitigatie |
+|--------|--------|------|-----------|
+| Te veel e-mail = spam klachten | Hoog | Medium | Max 6 e-mails, opt-out per type |
+| Niemand vult profiel aan | Hoog | Laag | Gamification, sociale druk (leaderboard) |
+| Complexe state management | Medium | Medium | Clear sectie boundaries, unit tests |
+| Database migratie issues | Medium | Laag | JSONB voor flexibiliteit |
+
+#### Aannames
+1. Gebruikers zijn gemotiveerd door punten/competitie
+2. 250 punten is significant genoeg vs. game/quiz punten
+3. E-mail herinneringen worden gelezen
+4. Leaderboard is publiek zichtbaar
+
+#### User Flows
+
+**Flow 1: Snelle Registratie**
+```
+Landing → Naam/Email/PIN → Verificatie Email → Dashboard (32%)
+```
+
+**Flow 2: Direct Compleet**
+```
+Landing → Naam/Email/PIN → [Optional: Vul alles in] → Dashboard (100%)
+```
+
+**Flow 3: Geleidelijk Aanvullen**
+```
+Dashboard (32%) → Reminder zien → Skills invullen → Dashboard (48%)
+                                 ↓
+                     E-mail reminder → Fun Quiz invullen → Dashboard (80%)
+```
+
+#### E-mail Strategie
+| Trigger | Timing | Personalisatie |
+|---------|--------|----------------|
+| 24h na registratie | Automatisch | Basis (welkom + status) |
+| Wekelijks (ma 10:00) | Automatisch | Leaderboard positie, "passeer X" |
+| Handmatig (admin) | On-demand | Grill Guru toon |
+| Laatste kans | 48h voor event | Urgentie, alle missende secties |
+| 100% compleet | Automatisch | Felicitatie + waarschuwing (Grill Guru) |
+
+#### Success Metrics
+| Metric | Target | Meting |
+|--------|--------|--------|
+| Conversie naar 100% compleet | >80% | `profile_percentage = 100` count |
+| Gemiddelde tijd tot compleet | <7 dagen | `last_section_completed_at - created_at` |
+| E-mail open rate | >50% | `opened_at / sent_at` ratio |
+| Click-through rate | >25% | `clicked_at / opened_at` ratio |
 
 ---
 
@@ -463,15 +577,19 @@ interface ReportInputs {
 
 | Component | Gebruikt door | Status |
 |-----------|---------------|--------|
-| LLM Service | US-003, US-005, US-006 | Te maken |
-| Grill Guru Persona | US-005, US-006 | Te maken |
-| Admin Config Panel | US-005, US-006 | Te maken |
+| E-mail Service | US-007, US-006 | Bestaand (Resend) |
+| LLM Service | US-003, US-005, US-006, US-007 | Te maken |
+| Grill Guru Persona | US-005, US-006, US-007 | Te maken |
+| Admin Config Panel | US-005, US-006, US-007 | Te maken |
 | Real-time Updates | US-005 (challenges), US-006 (dashboard) | Te maken |
+| Punten Systeem | US-007, US-005, US-006 | Bestaand (uitbreiden) |
+| Leaderboard Component | US-007, US-005 | Te maken |
 
 ### Database Migraties
 
 | User Story | Nieuwe Tabellen | Wijzigingen Bestaand |
 |------------|-----------------|----------------------|
+| US-007 | `profile_reminders` | `registrations` + sections_completed, profile_points, profile_percentage |
 | US-001 | - | `registrations.skills` (JSONB) |
 | US-002 | - | `registrations` + 8 kolommen |
 | US-003 | `dashboard_cache` | - |
@@ -482,6 +600,12 @@ interface ReportInputs {
 
 | Endpoint | Method | User Story | Auth |
 |----------|--------|------------|------|
+| `/api/registration/quick` | POST | US-007 | Public |
+| `/api/registration/section/[section]` | POST | US-007 | User |
+| `/api/profile/completeness` | GET | US-007 | User |
+| `/api/profile/next-reward` | GET | US-007 | User |
+| `/api/admin/reminders/send` | POST | US-007 | Admin |
+| `/api/admin/reminders/stats` | GET | US-007 | Admin |
 | `/api/registration` | POST | US-001, US-002 | User |
 | `/api/dashboard/analytics` | GET | US-003 | User |
 | `/api/dashboard/refresh` | POST | US-003 | Admin |
@@ -506,15 +630,23 @@ interface ReportInputs {
 │                    IMPLEMENTATIE ROADMAP                     │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  FASE 1: Fundament                                          │
-│  ├── US-001: Skill Categorieën                              │
-│  └── US-002: Uitgebreide Profielvelden                      │
+│  FASE 0: Registratie Refactor (NIEUW - HOOGSTE PRIORITEIT)  │
+│  └── US-007: Progressieve Registratie                       │
+│      ├── Minimale registratie flow (naam, email, PIN)       │
+│      ├── Sectie-gebaseerde profiel invulling                │
+│      ├── Punten systeem per sectie                          │
+│      ├── Dashboard compleetheid indicator                   │
+│      └── E-mail reminder systeem                            │
+│                                                              │
+│  FASE 1: Profiel Secties                                    │
+│  ├── US-001: Skill Categorieën (als profiel sectie)         │
+│  └── US-002: Uitgebreide Profielvelden (als profiel secties)│
 │                                                              │
 │  FASE 2: Game                                                │
 │  └── US-005 MVP: Burger Stack Basis                         │
 │      ├── Game engine setup                                  │
 │      ├── Scoring systeem                                    │
-│      └── Leaderboard                                        │
+│      └── Leaderboard (hergebruik van US-007)                │
 │                                                              │
 │  FASE 3: Analytics                                          │
 │  └── US-003: Sarcastisch Dashboard                          │
@@ -537,12 +669,29 @@ interface ReportInputs {
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Dependency Graph
+
+```
+US-007 (Progressieve Registratie)
+   │
+   ├──► US-001 (Skills) ──────────┐
+   │                              │
+   ├──► US-002 (Profielvelden) ───┼──► US-003 (Dashboard)
+   │                              │         │
+   │                              │         ▼
+   └──► Leaderboard ──────────────┼──► US-005 (Game)
+                                  │         │
+                                  │         ▼
+                                  └──► US-006 (Awards)
+```
+
 ---
 
 ## Open Vragen (Alle US)
 
 | US | Vraag | Status |
 |----|-------|--------|
+| US-007 | Opt-out per reminder type of globaal? | Open |
 | US-003 | Minimum aantal registraties voor analyses? | Open |
 | US-003 | Hoe vaak LLM analyses refreshen? | Open |
 | US-005 | Canvas API of Phaser.js? | Open |
@@ -553,4 +702,4 @@ interface ReportInputs {
 ---
 
 *Document gegenereerd: 2026-01-18*
-*Status: PREPARE fase compleet*
+*Status: PREPARE fase compleet (inclusief US-007)*

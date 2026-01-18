@@ -1351,6 +1351,301 @@ Deelnemers die nog moeten invullen zien:
 
 ---
 
+## US-007: Progressieve Registratie met Punten
+
+### User Story
+> Als deelnemer wil ik snel kunnen registreren met alleen mijn naam en e-mail, en later mijn profiel verder aanvullen voor extra punten, zodat de drempel laag is maar ik toch gemotiveerd word om alles in te vullen.
+
+### Achtergrond
+De huidige registratie vereist alle stappen in één keer. Dit kan een barrière zijn. Door gefaseerde registratie met puntenbeloning wordt de drempel verlaagd én wordt engagement verhoogd.
+
+### Registratie Fases
+
+#### Fase 0: Minimale Registratie (Verplicht)
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📝 AANMELDEN BOVENKAMER WINTERPROEF                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Naam: [_______________________]                            │
+│                                                              │
+│  E-mail: [_______________________]                          │
+│                                                              │
+│  PIN (4 cijfers): [____]                                    │
+│                                                              │
+│  [✓ Aanmelden]                                              │
+│                                                              │
+│  💡 Je kunt later je profiel verder invullen voor           │
+│     extra punten en een persoonlijkere ervaring!            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Na aanmelding:**
+- Account aangemaakt
+- Verificatie e-mail verzonden
+- Direct toegang tot basis functies
+- Dashboard toont "Profiel aanvullen" prompt
+
+#### Fase 1-4: Profiel Aanvullen (Optioneel, voor punten)
+
+| Fase | Sectie | Velden | Punten |
+|------|--------|--------|--------|
+| 1 | Persoonlijk | Geboortedatum, geslacht, partner | 50 |
+| 2 | JKV Historie | JKV/Bovenkamer jaren | 30 |
+| 3 | Skills | 8 skill categorieën | 40 |
+| 4 | Muziek | Decennium, genre | 20 |
+| 5 | Borrel Stats | 2025 geweest, 2026 planning | 30 |
+| 6 | Fun Quiz | 15 grappige vragen | 80 |
+| **Totaal** | | | **250** |
+
+### Punten Systeem
+
+#### Profiel Compleetheid Score
+```typescript
+interface ProfileCompleteness {
+  sections: {
+    personal: { complete: boolean; points: 50 };
+    jkvHistory: { complete: boolean; points: 30 };
+    skills: { complete: boolean; points: 40 };
+    music: { complete: boolean; points: 20 };
+    borrelStats: { complete: boolean; points: 30 };
+    funQuiz: { complete: boolean; points: 80 };
+  };
+  totalPoints: number;        // 0-250
+  completionPercentage: number; // 0-100%
+}
+```
+
+#### Leaderboard Integratie
+Profiel-punten tellen mee voor het totale leaderboard:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏆 LEADERBOARD                                              │
+├─────────────────────────────────────────────────────────────┤
+│  #  │ Naam    │ Profiel │ Game  │ Quiz │ Totaal            │
+│ ────┼─────────┼─────────┼───────┼──────┼────────           │
+│  1  │ Klaas   │ 250 ✓   │ 1.200 │ 340  │ 1.790             │
+│  2  │ Marie   │ 250 ✓   │ 980   │ 420  │ 1.650             │
+│  3  │ Piet    │ 170     │ 1.100 │ 280  │ 1.550             │
+│  4  │ Jij     │ 80      │ 450   │ 0    │ 530               │
+│     │         │ ⚠️ +170  │       │      │                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Dashboard Prompt
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ⚠️ PROFIEL NIET COMPLEET (32%)                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Je mist nog 170 punten!                                    │
+│                                                              │
+│  📊 Voortgang:                                               │
+│  ████████░░░░░░░░░░░░░░░░░░░░ 32%                          │
+│                                                              │
+│  Volgende stap: Skills invullen (+40 punten)                │
+│  → Dan passeer je Henk (#5) op het leaderboard!            │
+│                                                              │
+│  [📝 Nu Invullen]                [Later]                    │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Herinneringen
+
+#### In-App Notificatie
+Verschijnt bij elke login als profiel niet compleet:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🔔 HERINNERING                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Hey [NAAM]! Je profiel is nog niet compleet.               │
+│                                                              │
+│  🎯 Als je de Skills sectie invult:                         │
+│     • Verdien je 40 extra punten                            │
+│     • Stijg je naar plek #4 op het leaderboard              │
+│     • Passeer je Henk (die heeft maar 520 punten 😏)        │
+│                                                              │
+│  De Grill Guru heeft al 12 persoonlijke roasts klaar.       │
+│  Zonder complete profiel... krijg je een generieke. Saai.   │
+│                                                              │
+│  [📝 Invullen]  [🔕 Herinner me morgen]  [❌ Niet meer]     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### E-mail Herinneringen
+
+**Trigger Momenten:**
+| Trigger | Timing | Max |
+|---------|--------|-----|
+| Na registratie | 24 uur na aanmelding | 1x |
+| Wekelijks | Elke maandag om 10:00 | 4x |
+| Laatste kans | 48 uur voor event | 1x |
+
+**E-mail Template:**
+```
+Onderwerp: [NAAM], je mist nog 170 punten! 🎯
+
+Hey [NAAM],
+
+Je hebt je aangemeld voor de Bovenkamer Winterproef - top!
+Maar je profiel is pas [X]% compleet.
+
+📊 JOUW STATUS:
+━━━━━━━━━━━━━━━
+✅ Naam & e-mail
+✅ Persoonlijke info
+❌ Skills (40 punten)
+❌ Fun Quiz (80 punten)
+❌ Borrel stats (30 punten)
+
+🏆 LEADERBOARD UPDATE:
+Je staat nu op plek #[X] met [Y] punten.
+Als je alles invult, spring je naar plek #[Z]!
+Dan passeer je: [PERSOON_1], [PERSOON_2], [PERSOON_3]
+
+De Grill Guru zegt:
+"[NAAM], met [JKV_JAREN] jaar JKV ervaring zou je beter
+moeten weten. Invullen. Nu."
+
+[KNOP: Profiel Aanvullen →]
+
+Groeten,
+De Bovenkamer App
+
+P.S. Zonder compleet profiel krijg je generieke roasts.
+En dat wil niemand.
+```
+
+**Gepersonaliseerde Varianten:**
+
+*Voor mensen met veel punten maar niet compleet:*
+```
+"Je hebt al [X] punten bij elkaar gespeeld in Burger Stack!
+Maar je profiel is pas 60% compleet. Zonde - vul de Fun Quiz
+in en de Grill Guru kan je ECHT roasten."
+```
+
+*Voor mensen die anderen bijna inhalen:*
+```
+"🔥 [NAAM], je staat nog maar 30 punten achter [CONCURRENT]!
+Vul je Skills in (+40 punten) en je gaat voorbij!"
+```
+
+*Voor mensen die al compleet zijn (bedank-mail):*
+```
+"Perfect! Je profiel is 100% compleet. De Grill Guru heeft
+nu alle munitie die hij nodig heeft. Succes op de BBQ. 😈"
+```
+
+### Admin Controle
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📧 PROFIEL HERINNERINGEN (Admin)                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Profiel Status:                                            │
+│  ✅ 100% compleet: 8 personen                               │
+│  🟡 50-99%: 4 personen                                      │
+│  🔴 <50%: 3 personen                                        │
+│                                                              │
+│  Volgende automatische reminder: maandag 10:00              │
+│                                                              │
+│  [📧 Stuur Nu Reminder aan Incompleten]                     │
+│  [⚙️ Reminder Instellingen]                                 │
+│                                                              │
+│  Individueel:                                                │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Henk (32%) - 2 reminders verstuurd                     │ │
+│  │ [📧 Stuur Persoonlijke Reminder]                       │ │
+│  ├────────────────────────────────────────────────────────┤ │
+│  │ Ingrid (60%) - 1 reminder verstuurd                    │ │
+│  │ [📧 Stuur Persoonlijke Reminder]                       │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Database Schema Uitbreiding
+
+```sql
+-- Profiel sectie tracking
+ALTER TABLE registrations ADD COLUMN sections_completed JSONB DEFAULT '{
+  "personal": false,
+  "jkvHistory": false,
+  "skills": false,
+  "music": false,
+  "borrelStats": false,
+  "funQuiz": false
+}';
+
+ALTER TABLE registrations ADD COLUMN profile_points INTEGER DEFAULT 0;
+ALTER TABLE registrations ADD COLUMN profile_percentage INTEGER DEFAULT 0;
+ALTER TABLE registrations ADD COLUMN last_section_completed_at TIMESTAMP;
+
+-- Reminder tracking
+CREATE TABLE profile_reminders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  reminder_type VARCHAR(50),    -- 'in_app', 'email_24h', 'email_weekly', 'email_final'
+  sent_at TIMESTAMP DEFAULT NOW(),
+  opened_at TIMESTAMP,
+  clicked_at TIMESTAMP,
+  dismissed_at TIMESTAMP,
+  personalization_data JSONB    -- Snapshot van leaderboard positie etc.
+);
+
+-- Index voor snelle leaderboard queries
+CREATE INDEX idx_registrations_profile_points ON registrations(profile_points DESC);
+```
+
+### API Endpoints
+
+| Endpoint | Method | Beschrijving |
+|----------|--------|--------------|
+| `/api/registration/quick` | POST | Minimale registratie (naam, email, PIN) |
+| `/api/registration/section/[section]` | POST | Specifieke sectie opslaan |
+| `/api/profile/completeness` | GET | Compleetheid status + punten |
+| `/api/profile/next-reward` | GET | Volgende sectie + punten + leaderboard impact |
+| `/api/admin/reminders/send` | POST | Verstuur herinneringen |
+| `/api/admin/reminders/stats` | GET | Reminder statistieken |
+
+### Acceptatiecriteria
+
+#### MVP
+- [ ] Minimale registratie met alleen naam, e-mail, PIN
+- [ ] Dashboard toont profiel compleetheid percentage
+- [ ] Secties kunnen los ingevuld worden
+- [ ] Punten worden toegekend per voltooide sectie
+- [ ] Leaderboard toont profiel-punten
+
+#### Uitbreiding
+- [ ] In-app notificatie bij incomplete profiel
+- [ ] Gepersonaliseerde "passeer X" berekening
+- [ ] E-mail herinneringen (automatisch + handmatig)
+- [ ] Admin dashboard voor reminder beheer
+
+#### Polish
+- [ ] Animatie bij punten verdienen
+- [ ] Confetti bij 100% compleet
+- [ ] Grill Guru commentaar bij elke sectie
+
+### Beslissingen US-007
+
+| Vraag | Beslissing |
+|-------|------------|
+| Minimale velden | Naam, e-mail, PIN (4 cijfers) |
+| Totaal profiel-punten | 250 punten |
+| Max e-mail reminders | 6 (1 + 4 wekelijks + 1 laatste kans) |
+| Opt-out mogelijk | Ja, per reminder type |
+
+---
+
 ## Beslissingen
 
 | Vraag | Beslissing |
@@ -1360,14 +1655,16 @@ Deelnemers die nog moeten invullen zien:
 | December borrels | Vervallen (zowel 2025 als 2026) |
 | Privacy | Geen issue - individuele awards met namen zijn toegestaan |
 | Geboortejaar → Geboortedatum | Volledige geboortedatum met soft validatie (40+ bij inschrijving) |
+| Registratie flow | Gefaseerd - minimaal naam/email, rest voor punten |
 
 ---
 
 ## Prioriteit & Volgorde
 
-1. **US-001** - Skill categorieën (registratieformulier aanpassen)
-2. **US-002** - Extra profielvelden (formulier uitbreiden)
-3. **US-005** - Burger Stack mini-game (MVP)
-4. **US-003** - Sarcastisch dashboard (nieuwe module)
-5. **US-006** - Einde-avond awards & persoonlijke samenvattingen
-6. ~~US-004~~ - Taaktoewijzing (later)
+1. **US-007** - Progressieve registratie (minimale drempel)
+2. **US-001** - Skill categorieën (registratieformulier aanpassen)
+3. **US-002** - Extra profielvelden (formulier uitbreiden)
+4. **US-005** - Burger Stack mini-game (MVP)
+5. **US-003** - Sarcastisch dashboard (nieuwe module)
+6. **US-006** - Einde-avond awards & persoonlijke samenvattingen
+7. ~~US-004~~ - Taaktoewijzing (later)
