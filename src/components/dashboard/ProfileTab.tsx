@@ -17,8 +17,12 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ formData }: ProfileTabProps) {
-  const { getProfileCompletion } = useRegistrationStore();
+  const { getProfileCompletion, attendance } = useRegistrationStore();
   const { percentage, points } = getProfileCompletion();
+
+  // Use attendance data for payment calculation (who is actually coming)
+  const isComingWithPlusOne = attendance.bringingPlusOne === true;
+  const plusOneName = attendance.plusOneName || formData.partnerName;
 
   return (
     <div className="space-y-4">
@@ -116,8 +120,8 @@ export function ProfileTab({ formData }: ProfileTabProps) {
       >
         <PaymentCard
           userId={formData.email}
-          hasPartner={formData.hasPartner}
-          partnerName={formData.partnerName}
+          hasPartner={isComingWithPlusOne}
+          partnerName={plusOneName}
         />
       </motion.div>
 
