@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
-import { SKILL_OPTIONS, MUSIC_DECADES, MUSIC_GENRES, BIRTH_YEARS } from '@/types';
+import { SKILL_CATEGORIES, SkillSelections, SkillCategoryKey, MUSIC_DECADES, MUSIC_GENRES, BIRTH_YEARS } from '@/types';
 
 type SectionId = 'personal' | 'skills' | 'music' | 'quiz';
 
@@ -90,7 +90,7 @@ export default function ProfilePage() {
   );
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
 
-  const [primarySkill, setPrimarySkill] = useState(formData.primarySkill);
+  const [skills, setSkills] = useState<SkillSelections>(formData.skills);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
 
   const [musicDecade, setMusicDecade] = useState(formData.musicDecade);
@@ -98,11 +98,27 @@ export default function ProfilePage() {
 
   const [quizAnswers, setQuizAnswers] = useState(formData.quizAnswers);
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
       router.push('/login');
     }
   }, [_hasHydrated, isAuthenticated, router]);
+
+  // Sync local state with store after hydration
+  useEffect(() => {
+    if (_hasHydrated) {
+      setBirthYear(formData.birthYear);
+      setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
+      setPartnerName(formData.partnerName || attendance.plusOneName || '');
+      setDietaryRequirements(formData.dietaryRequirements);
+      setSkills(formData.skills);
+      setAdditionalSkills(formData.additionalSkills);
+      setMusicDecade(formData.musicDecade);
+      setMusicGenre(formData.musicGenre);
+      setQuizAnswers(formData.quizAnswers);
+    }
+  }, [_hasHydrated, formData, attendance]);
 
   if (!_hasHydrated) {
     return (
@@ -142,7 +158,7 @@ export default function ProfilePage() {
     setIsLoading(true);
     try {
       setFormData({
-        primarySkill,
+        skills,
         additionalSkills,
       });
       markSectionComplete('skills');
@@ -180,7 +196,9 @@ export default function ProfilePage() {
   };
 
   const isPersonalValid = birthYear !== null;
-  const isSkillsValid = primarySkill !== '';
+  // All 8 skill categories must be selected
+  const isSkillsValid = Object.values(skills).every(skill => skill !== '');
+  const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
   const isMusicValid = musicDecade !== '' && musicGenre !== '';
   const isQuizValid = Object.keys(quizAnswers).length >= 5; // At least 5 answers
 
@@ -293,27 +311,46 @@ export default function ProfilePage() {
       case 'skills':
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Primaire vaardigheid
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {SKILL_OPTIONS.map((skill) => (
-                  <button
-                    key={skill.value}
-                    type="button"
-                    onClick={() => setPrimarySkill(skill.value)}
-                    className={`px-3 py-2 rounded-lg border text-left transition-all ${
-                      primarySkill === skill.value
-                        ? 'border-gold bg-gold/20 text-gold'
-                        : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                    }`}
+            <p className="text-sm text-cream/70">
+              Selecteer per categorie wat je het beste kunt. "Niks" is ook een valide keuze!
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(Object.entries(SKILL_CATEGORIES) as [SkillCategoryKey, typeof SKILL_CATEGORIES[SkillCategoryKey]][]).map(([categoryKey, category]) => (
+                <div
+                  key={categoryKey}
+                  className={`p-3 rounded-lg border transition-all ${
+                    skills[categoryKey]
+                      ? 'border-gold/40 bg-gold/10'
+                      : 'border-cream/20 bg-dark-wood/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{category.icon}</span>
+                    <span className="text-sm font-medium text-cream">{category.label}</span>
+                    {skills[categoryKey] && (
+                      <Check className="w-4 h-4 text-success-green ml-auto" />
+                    )}
+                  </div>
+                  <select
+                    value={skills[categoryKey]}
+                    onChange={(e) => setSkills({ ...skills, [categoryKey]: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-dark-wood border border-cream/20 rounded-lg text-cream focus:border-gold focus:outline-none"
                   >
-                    <span className="text-sm font-medium">{skill.label}</span>
-                  </button>
-                ))}
-              </div>
+                    <option value="">Selecteer...</option>
+                    {category.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
+
+            <p className="text-xs text-cream/50 text-center">
+              {filledSkillsCount} van 8 categorieën ingevuld
+            </p>
 
             <Input
               label="Extra vaardigheden (optioneel)"
@@ -538,8 +575,7 @@ export default function ProfilePage() {
                 : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
               }>
                 <button
-                  onClick={() => !isCompleted && toggleSection(section.id)}
-                  disabled={isCompleted}
+                  onClick={() => toggleSection(section.id)}
                   className="w-full text-left"
                 >
                   <CardContent className="py-4">
@@ -566,12 +602,10 @@ export default function ProfilePage() {
                           </p>
                           <p className="text-xs text-cream/50">punten</p>
                         </div>
-                        {!isCompleted && (
-                          isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-cream/40" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-cream/40" />
-                          )
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-cream/40" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-cream/40" />
                         )}
                       </div>
                     </div>
@@ -579,7 +613,7 @@ export default function ProfilePage() {
                 </button>
 
                 <AnimatePresence>
-                  {isExpanded && !isCompleted && (
+                  {isExpanded && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}

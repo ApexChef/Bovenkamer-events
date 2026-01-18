@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       has_partner: formData.hasPartner,
       partner_name: formData.partnerName || null,
       dietary_requirements: formData.dietaryRequirements || null,
-      primary_skill: formData.primarySkill,
+      skills: formData.skills,
       additional_skills: formData.additionalSkills || null,
       music_decade: formData.musicDecade,
       music_genre: formData.musicGenre,

@@ -2,8 +2,9 @@
 
 import { useRegistrationStore } from '@/lib/store';
 import { Select, TextArea, Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
-import { SKILL_OPTIONS, MUSIC_DECADES, MUSIC_GENRES } from '@/types';
+import { SKILL_CATEGORIES, SkillCategoryKey, MUSIC_DECADES, MUSIC_GENRES } from '@/types';
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 
 export function Step2Skills() {
   const { formData, setFormData, nextStep, prevStep } = useRegistrationStore();
@@ -13,8 +14,17 @@ export function Step2Skills() {
     nextStep();
   };
 
+  const handleSkillChange = (category: SkillCategoryKey, value: string) => {
+    setFormData({
+      skills: { ...formData.skills, [category]: value },
+    });
+  };
+
+  // All 8 skill categories must be selected, plus music
+  const filledSkillsCount = Object.values(formData.skills).filter(skill => skill !== '').length;
+  const allSkillsFilled = filledSkillsCount === 8;
   const isValid =
-    formData.primarySkill !== '' &&
+    allSkillsFilled &&
     formData.musicDecade !== '' &&
     formData.musicGenre !== '';
 
@@ -37,27 +47,46 @@ export function Step2Skills() {
           <CardContent className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gold mb-3 uppercase tracking-wider">
-                Waar bent u goed in?
+                Waar bent u goed in? (per categorie)
               </label>
+              <p className="text-sm text-cream/60 mb-4">
+                Selecteer per categorie wat je het beste kunt. "Niks" is ook valide!
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {SKILL_OPTIONS.map((skill) => (
-                  <motion.button
-                    key={skill.value}
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setFormData({ primarySkill: skill.value })}
-                    className={`p-4 rounded-lg border text-left transition-all duration-200 ${
-                      formData.primarySkill === skill.value
-                        ? 'bg-gold/20 border-gold text-gold'
-                        : 'bg-dark-wood/30 border-gold/20 text-cream hover:border-gold/50'
+                {(Object.entries(SKILL_CATEGORIES) as [SkillCategoryKey, typeof SKILL_CATEGORIES[SkillCategoryKey]][]).map(([categoryKey, category]) => (
+                  <div
+                    key={categoryKey}
+                    className={`p-3 rounded-lg border transition-all ${
+                      formData.skills[categoryKey]
+                        ? 'border-gold/40 bg-gold/10'
+                        : 'border-cream/20 bg-dark-wood/30'
                     }`}
                   >
-                    <span className="font-semibold block">{skill.label}</span>
-                    <span className="text-sm opacity-70">{skill.description}</span>
-                  </motion.button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{category.icon}</span>
+                      <span className="text-sm font-medium text-cream">{category.label}</span>
+                      {formData.skills[categoryKey] && (
+                        <Check className="w-4 h-4 text-success-green ml-auto" />
+                      )}
+                    </div>
+                    <select
+                      value={formData.skills[categoryKey]}
+                      onChange={(e) => handleSkillChange(categoryKey, e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-dark-wood border border-cream/20 rounded-lg text-cream focus:border-gold focus:outline-none"
+                    >
+                      <option value="">Selecteer...</option>
+                      {category.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ))}
               </div>
+              <p className="text-xs text-cream/50 text-center mt-3">
+                {filledSkillsCount} van 8 categorieën ingevuld
+              </p>
             </div>
 
             <TextArea

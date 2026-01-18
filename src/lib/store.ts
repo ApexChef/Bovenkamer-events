@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache } from '@/types';
+import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache, SkillSelections, SkillCategoryKey } from '@/types';
 
 // Profile sections for progressive registration
 export interface ProfileSections {
@@ -57,6 +57,7 @@ interface RegistrationState {
   // Actions
   setFormData: (data: Partial<RegistrationFormData>) => void;
   setQuizAnswer: (key: keyof QuizAnswers, value: string) => void;
+  setSkill: (category: SkillCategoryKey, value: string) => void;
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -71,6 +72,17 @@ interface RegistrationState {
   reset: () => void;
 }
 
+const initialSkills: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
+
 const initialFormData: RegistrationFormData = {
   pin: '',
   name: '',
@@ -79,7 +91,7 @@ const initialFormData: RegistrationFormData = {
   hasPartner: false,
   partnerName: '',
   dietaryRequirements: '',
-  primarySkill: '',
+  skills: initialSkills,
   additionalSkills: '',
   musicDecade: '',
   musicGenre: '',
@@ -126,6 +138,14 @@ export const useRegistrationStore = create<RegistrationState>()(
           formData: {
             ...state.formData,
             quizAnswers: { ...state.formData.quizAnswers, [key]: value },
+          },
+        })),
+
+      setSkill: (category, value) =>
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            skills: { ...state.formData.skills, [category]: value },
           },
         })),
 

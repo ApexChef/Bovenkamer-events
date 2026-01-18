@@ -34,7 +34,7 @@ export function Step4Assignment() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: formData.name,
-            skill: formData.primarySkill,
+            skills: formData.skills,
             additionalSkills: formData.additionalSkills,
             musicDecade: formData.musicDecade,
             musicGenre: formData.musicGenre,
@@ -52,10 +52,11 @@ export function Step4Assignment() {
       } catch (err) {
         console.error('Assignment error:', err);
         // Use fallback assignment
+        const skillsList = Object.values(formData.skills).filter(s => s && s !== 'nothing').join(', ') || 'geen specifieke vaardigheden';
         const fallback: AIAssignment = {
           officialTitle: 'Algemeen Medewerker',
           task: 'U wordt ingezet waar nodig',
-          reasoning: `De commissie heeft uw aanmelding ontvangen, ${formData.name}. Uw claim "${formData.primarySkill}" goed te zijn is genoteerd en wordt met gepaste scepsis behandeld.`,
+          reasoning: `De commissie heeft uw aanmelding ontvangen, ${formData.name}. Uw claims op het gebied van "${skillsList}" zijn genoteerd en worden met gepaste scepsis behandeld.`,
           warningLevel: 'GEEL',
           specialPrivilege: 'Mag als eerste het bierblikje openen',
         };
