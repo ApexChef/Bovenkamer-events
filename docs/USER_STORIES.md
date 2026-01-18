@@ -808,6 +808,408 @@ Projectie battle tijdens het evenement:
 
 ---
 
+## US-006: Einde-Avond Awards & Persoonlijke Samenvattingen
+
+### User Story
+> Als Bovenkamer-lid wil ik aan het einde van de avond een persoonlijke samenvatting ontvangen op mijn telefoon, gebaseerd op al mijn data, zodat ik kan lachen om mezelf en zelf kan kiezen of ik dit met de groep deel.
+
+### Achtergrond
+Geïnspireerd op JKV traditie waar aan het einde van het jaar awards werden uitgereikt (zoals "De Bezem" voor wie het laatst naar huis ging). Nu een digitale versie met LLM-gegenereerde persoonlijke samenvattingen die ALLE beschikbare data combineren.
+
+### Concept
+
+#### Flow
+```
+┌─────────────────────────────────────────────────────────┐
+│  EINDE VAN DE AVOND (±23:00)                            │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  1. Admin activeert "Awards Modus"                      │
+│                                                         │
+│  2. Iedereen krijgt notificatie:                        │
+│     "🏆 Je persoonlijke Bovenkamer-rapport is klaar!"   │
+│                                                         │
+│  3. Elk persoon opent rapport op eigen telefoon         │
+│                                                         │
+│  4. Keuze: [🔒 Alleen voor mij] of [📢 Delen met groep] │
+│                                                         │
+│  5. Gedeelde rapporten verschijnen op Live Dashboard    │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Persoonlijk Rapport
+
+Elke deelnemer ontvangt een uniek, LLM-gegenereerd rapport:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🎭 JOUW BOVENKAMER RAPPORT 2026                        │
+│  Voor: [NAAM]                                           │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  🏆 JOUW AWARDS                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ 🧹 DE BEZEM                                      │   │
+│  │ "Weer de laatste die wegging. Sommige dingen    │   │
+│  │  veranderen nooit. Net als je guilty pleasure:  │   │
+│  │  [SONG]."                                        │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  📊 JOUW AVOND IN CIJFERS                               │
+│  • Burger Stack gespeeld: 12x (hoogste: 8.450)         │
+│  • Quiz positie: #4 van 15                              │
+│  • Voorspellingen correct: 3/8                          │
+│  • Tijd bij de BBQ: 45 min (claimde: "expert")         │
+│                                                         │
+│  💬 DE GRILL GURU OVER JOU                              │
+│  "Na 18 jaar JKV zou je denken dat [NAAM] wist         │
+│   wanneer het tijd is om te gaan. Maar nee. Met       │
+│   een zelfvertrouwen van 8/10 en 0 afwas-skills       │
+│   stond je tot 3:00 te discussiëren over [TOPIC].     │
+│   Je partner [PARTNER] is een heilige."               │
+│                                                         │
+│  🔮 VOORSPELLING VOOR VOLGEND JAAR                      │
+│  "Je zegt 8/10 borrels te komen. We zetten in op 3."   │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  [🔒 Alleen voor mij]  [📢 Delen met groep]     │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Award Categorieën
+
+#### Klassieke JKV Awards (gemoderniseerd)
+| Award | Criteria | Data |
+|-------|----------|------|
+| 🧹 De Bezem | Laatste die wegging | Event check-out tijd |
+| 🌅 De Vroege Vogel | Eerste die wegging | Event check-out tijd |
+| 🎤 De Karaoke Koning | Meeste "spontane" optredens | Live tracking/voting |
+| 🍖 De Grill Sergeant | Langste tijd bij BBQ | Self-report of tracking |
+| 🍷 De Sommelier | Meeste wijn gedronken (self-report) | Fun survey |
+
+#### Data-Gedreven Awards
+| Award | Criteria | Data |
+|-------|----------|------|
+| 🎮 De Burger Baas | Hoogste Burger Stack score | game_scores |
+| 🔮 De Waarzegger | Meeste voorspellingen correct | predictions |
+| 🧠 De Quizmaster | Hoogste quiz score | quiz_answers |
+| 📱 De Verslaafde | Meeste app-gebruik | activity_logs |
+| 🎯 De Overschatter | Grootste verschil claim vs realiteit | skills vs performance |
+| 💬 De Netwerker | Kent iedereen het langst | longestKnownMember |
+| 👴 De Veteraan | Langste JKV-carrière | jkvJoinYear |
+| 🌟 De Rookie | Nieuwste Bovenkamer-lid | bovenkamerJoinYear |
+
+#### Borrel-Gerelateerde Awards
+| Award | Criteria | Data |
+|-------|----------|------|
+| 📅 De Trouwe | Hoogste borrel-opkomst 2025 | borrelAttendance2025 |
+| 🤥 De Optimist | Meeste beloofd, minste gekomen | planned vs attended |
+| 👻 De Geest | Minste borrels bezocht | borrelAttendance2025 |
+
+#### Combinatie Awards (LLM bepaalt)
+| Award | Beschrijving |
+|-------|--------------|
+| 🎭 De Dubbelganger | "Je claimt X maar doet Y" |
+| 🏆 De Allrounder | Goed in alles, uitblinker in niks |
+| 🎪 De Entertainer | Combinatie van alle sociale data |
+| 🤔 De Mysterie | Minste data ingevuld, meeste vragen |
+
+### Live Sharing Dashboard
+
+Wanneer iemand kiest voor "Delen met groep":
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  📺 BOVENKAMER AWARDS LIVE                    [12/15 gedeeld] │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ 🆕 NIEUW RAPPORT GEDEELD!                       │   │
+│  │                                                  │   │
+│  │ KLAAS krijgt: 🧹 DE BEZEM                       │   │
+│  │                                                  │   │
+│  │ "Weer de laatste. Na 18 jaar JKV weet hij      │   │
+│  │  nog steeds niet wanneer het feest voorbij     │   │
+│  │  is. Zijn guilty pleasure 'Dancing Queen'      │   │
+│  │  verklaart veel."                               │   │
+│  │                                                  │   │
+│  │                              [👍 23] [😂 45]    │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐               │
+│  │ Marie    │ │ Piet     │ │ Jan      │  ... +9       │
+│  │ 🎮       │ │ 🔮       │ │ 🧹       │               │
+│  │ Gedeeld  │ │ Gedeeld  │ │ Wacht... │               │
+│  └──────────┘ └──────────┘ └──────────┘               │
+│                                                         │
+│  [📊 Alle Awards]  [🏆 Leaderboard]  [⏭️ Volgende]    │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Dashboard Features
+- **Real-time updates** wanneer iemand deelt
+- **Reacties**: 👍 😂 🔥 emoji reactions
+- **Queue systeem**: Rapporten worden één voor één getoond
+- **Skip optie**: Admin kan doorgaan naar volgende
+- **Projectie-modus**: Optimaal voor groot scherm
+
+### Data Combinatie voor Rapport
+
+Het rapport combineert ALLE beschikbare data:
+
+```typescript
+interface PersonalReportData {
+  // Profiel
+  profile: {
+    name: string;
+    birthDate: Date;
+    gender: string;
+    jkvJoinYear: number;
+    jkvExitYear: number;
+    bovenkamerJoinYear: number;
+    selfConfidence: number;
+    partner?: string;
+  };
+
+  // Skills & Registratie
+  skills: SkillSelection[];        // 8 categorieën
+  registrationAnswers: {
+    guiltyPleasureSong: string;
+    bestConcert: string;
+    hiddenTalent: string;
+    childhoodDream: string;
+    // ... alle quiz antwoorden
+  };
+
+  // Borrel Geschiedenis
+  borrelStats: {
+    attended2025: string[];        // Welke borrels
+    planned2026: string[];         // Welke gepland
+    attendanceRatio: number;       // % gekomen vs gepland
+  };
+
+  // Game Performance
+  gameStats?: {
+    burgerStackPlayed: number;
+    burgerStackHighscore: number;
+    totalGamePoints: number;
+    favoriteIngredient: string;
+  };
+
+  // Quiz & Predictions
+  quizStats?: {
+    totalScore: number;
+    rank: number;
+    bestCategory: string;
+  };
+  predictionStats?: {
+    correct: number;
+    total: number;
+    bestPrediction: string;
+  };
+
+  // Event-Specifiek (live tracking)
+  eventStats?: {
+    checkInTime: Date;
+    checkOutTime?: Date;
+    bbqTime: number;              // Minuten bij de grill
+    activitiesJoined: string[];
+  };
+
+  // Vergelijking met groep
+  groupComparison: {
+    ageRank: number;              // Oudste/jongste
+    jkvVeteranRank: number;       // Ervaring
+    gameRank: number;
+    socialRank: number;           // Borrel opkomst
+  };
+}
+```
+
+### LLM Rapport Generator
+
+```typescript
+interface ReportGeneratorConfig {
+  // Input
+  participantData: PersonalReportData;
+  allParticipants: PersonalReportData[];  // Voor vergelijkingen
+  guruConfig: GrillGuruConfig;
+
+  // Output instructies
+  sections: {
+    awards: boolean;              // Welke awards verdient deze persoon
+    statsOverview: boolean;       // Cijfers samenvatting
+    guruRoast: boolean;           // Persoonlijke roast
+    prediction: boolean;          // Voorspelling volgend jaar
+    insideJokes: boolean;         // Referenties naar registratie-antwoorden
+  };
+
+  // Constraints
+  maxLength: number;              // Max karakters
+  roastIntensity: 1 | 2 | 3;
+  excludeTopics: string[];
+}
+```
+
+**Voorbeeld LLM Prompt:**
+```
+Je bent De Grill Guru. Genereer een persoonlijk jaarrapport voor [NAAM].
+
+Beschikbare data:
+- 18 jaar JKV (langste van de groep!)
+- Zelfvertrouwen: 8/10, claimt "BBQ expert"
+- Burger Stack: 12 games, hoogste 8.450 (rank #3)
+- Quiz: #4 van 15
+- Voorspellingen: 3/8 correct
+- Borrel 2025: 4/10 geweest (8/10 gepland)
+- Guilty pleasure: "Dancing Queen"
+- Partner: Marie
+- Check-out tijd: 03:15 (laatste!)
+
+Vergelijking met groep:
+- Oudste: nee (#4)
+- Langste JKV: JA (#1!)
+- Beste gamer: #3
+- Trouwste borrelganger: #8
+
+Genereer:
+1. Welke awards verdient hij (kies 2-3 passende)
+2. Een sarcastische samenvatting van zijn avond
+3. Een voorspelling voor volgend jaar
+
+Roast intensiteit: Medium
+Vermijd: [geconfigureerd]
+```
+
+### Admin Controls
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚙️ AWARDS CONFIGURATIE (Admin)                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Status: [🔴 Inactief]  [🟢 Activeer Awards Modus]      │
+│                                                         │
+│  Timing:                                                │
+│  • Auto-activeren om: [23:00] ⏰                        │
+│  • Of: [▶️ Nu Handmatig Starten]                        │
+│                                                         │
+│  Rapporten:                                             │
+│  • [🔄 Genereer Alle Rapporten] (duurt ±2 min)         │
+│  • Status: 15/15 gegenereerd ✅                         │
+│                                                         │
+│  Live Dashboard:                                        │
+│  • [📺 Open Projectie Scherm]                          │
+│  • [⏭️ Forceer Volgende]                               │
+│  • [🔇 Pauzeer Queue]                                  │
+│                                                         │
+│  Pre-generatie:                                        │
+│  ☑️ Genereer rapporten vooraf (aanbevolen)             │
+│  ☐ Genereer live (langzamer, duurder)                  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Privacy & Consent
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🔒 PRIVACY INSTELLINGEN                                │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Je rapport is ALLEEN voor jou zichtbaar totdat je     │
+│  kiest om te delen.                                     │
+│                                                         │
+│  [🔒 Houd privé]                                       │
+│  → Alleen jij ziet je rapport                          │
+│  → Verschijnt NIET op het grote scherm                 │
+│  → Awards tellen wel mee voor statistieken             │
+│                                                         │
+│  [📢 Deel met groep]                                   │
+│  → Verschijnt op het live dashboard                    │
+│  → Anderen kunnen reageren (emoji's)                   │
+│  → Je kunt dit later niet ongedaan maken               │
+│                                                         │
+│  Tip: Je kunt eerst lezen, dan beslissen!              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Database Schema
+
+```sql
+-- Persoonlijke rapporten
+CREATE TABLE personal_reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) UNIQUE,
+  event_year INTEGER NOT NULL,
+  report_data JSONB NOT NULL,           -- Alle input data
+  generated_content TEXT NOT NULL,      -- LLM output
+  awards JSONB NOT NULL,                -- Welke awards
+  is_shared BOOLEAN DEFAULT FALSE,
+  shared_at TIMESTAMP,
+  reactions JSONB DEFAULT '{}',         -- {userId: emoji}
+  generated_at TIMESTAMP DEFAULT NOW(),
+  tokens_used INTEGER
+);
+
+-- Event check-in/out voor live tracking
+CREATE TABLE event_attendance (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  event_date DATE NOT NULL,
+  check_in_time TIMESTAMP,
+  check_out_time TIMESTAMP,
+  activities JSONB DEFAULT '[]',        -- Welke activiteiten
+  self_reported_data JSONB              -- Fun survey antwoorden
+);
+
+-- Reacties op gedeelde rapporten
+CREATE TABLE report_reactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  report_id UUID REFERENCES personal_reports(id),
+  user_id UUID REFERENCES users(id),
+  emoji VARCHAR(10),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(report_id, user_id)            -- 1 reactie per persoon
+);
+```
+
+### Acceptatiecriteria
+
+#### MVP (Fase 1)
+- [ ] Admin kan "Awards Modus" activeren
+- [ ] Rapporten worden gegenereerd voor alle deelnemers
+- [ ] Elk persoon ziet eigen rapport op telefoon
+- [ ] Basis award categorieën (5-8 awards)
+- [ ] Keuze: privé houden of delen
+
+#### Uitbreiding (Fase 2)
+- [ ] Live dashboard met queue systeem
+- [ ] Emoji reactions op gedeelde rapporten
+- [ ] Projectie-modus voor groot scherm
+- [ ] Event check-in/out tracking
+- [ ] Real-time notificaties
+
+#### Polish (Fase 3)
+- [ ] Animaties bij nieuwe shares
+- [ ] Sound effects (optioneel)
+- [ ] Export rapport als afbeelding
+- [ ] Jaarlijkse vergelijking (als er meerdere events zijn)
+
+### Open Vragen US-006
+
+1. **Event tracking**: Hoe tracken we check-in/out tijden? (QR code? Handmatig? Honor system?)
+2. **Fun survey**: Willen we een korte survey tijdens het event? ("Hoeveel wijn heb je gedronken?")
+3. **Reactie types**: Welke emoji's voor reactions? (👍 😂 🔥 😱 ?)
+4. **Timing**: Wanneer precies activeren? (Vaste tijd of admin kiest?)
+
+---
+
 ## Beslissingen
 
 | Vraag | Beslissing |
@@ -826,4 +1228,5 @@ Projectie battle tijdens het evenement:
 2. **US-002** - Extra profielvelden (formulier uitbreiden)
 3. **US-005** - Burger Stack mini-game (MVP)
 4. **US-003** - Sarcastisch dashboard (nieuwe module)
-5. ~~US-004~~ - Taaktoewijzing (later)
+5. **US-006** - Einde-avond awards & persoonlijke samenvattingen
+6. ~~US-004~~ - Taaktoewijzing (later)
