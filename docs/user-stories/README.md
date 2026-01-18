@@ -7,9 +7,9 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 | ID | Naam | Prioriteit | Status | PR | Opmerkingen |
 |----|------|------------|--------|-----|-------------|
 | [US-001](./US-001-skill-categories/) | Skill Categorieën | #2 | ✅ DONE | [#14](https://github.com/ApexChef/Bovenkamer-events/pull/14) | 8 skill categorieën geïmplementeerd |
-| [US-002](./US-002-profile-fields/) | Uitgebreide Profielvelden | #3 | ⚠️ PARTIAL | [#12](https://github.com/ApexChef/Bovenkamer-events/pull/12) | Backend done, UI voor jkvHistorie/borrelStats ontbreekt |
+| [US-002](./US-002-profile-fields/) | Uitgebreide Profielvelden | #3 | ✅ DONE | [#12](https://github.com/ApexChef/Bovenkamer-events/pull/12), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | JKV historie + borrel stats UI compleet |
 | [US-005](./US-005-burger-stack/) | Burger Stack Mini-Game | #4 | ✅ MVP DONE | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4) | Basis game werkt |
-| [US-007](./US-007-progressive-registration/) | Progressieve Registratie | #1 | ⚠️ PARTIAL | [#10](https://github.com/ApexChef/Bovenkamer-events/pull/10) | Punten systeem werkt, profiel secties incomplete |
+| [US-007](./US-007-progressive-registration/) | Progressieve Registratie | #1 | ✅ DONE | [#10](https://github.com/ApexChef/Bovenkamer-events/pull/10), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | Alle 6 profiel secties met punten |
 | [US-003](./US-003-sarcastic-dashboard/) | Sarcastisch Dashboard | #5 | 🔲 TODO | - | Nog niet gestart |
 | [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 TODO | - | Nog niet gestart |
 | [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | #7 | 📝 DRAFT | - | User story draft aangemaakt |
@@ -209,11 +209,9 @@ docs/user-stories/
 
 ### Voltooid ✅
 - **US-001**: 8 skill categorieën in profiel pagina
+- **US-002**: JKV historie + borrel stats secties compleet
 - **US-005 MVP**: Burger Stack game speelbaar
-
-### Gedeeltelijk Klaar ⚠️
-- **US-002**: Types en store klaar, profiel UI mist jkvHistorie en borrelStats secties
-- **US-007**: Punten per sectie systeem werkt, maar profiel pagina toont niet alle secties
+- **US-007**: Alle 6 profiel secties met punten systeem (260 totaal)
 
 ### Nog Te Doen 🔲
 - **US-003**: Sarcastisch Dashboard (LLM analyses)
@@ -221,6 +219,6 @@ docs/user-stories/
 - **US-008**: Voorspellingen Analytics Dashboard
 
 ### Volgende Stappen
-1. US-002/US-007 afronden: UI toevoegen voor jkvHistorie en borrelStats in profiel pagina
-2. US-008 implementeren: Voorspellingen analytics op dashboard
-3. US-003 starten: LLM integratie voor sarcastische analyses
+1. US-008 implementeren: Voorspellingen analytics op dashboard
+2. US-003 starten: LLM integratie voor sarcastische analyses
+3. US-006 voorbereiden: Einde-avond awards systeem
