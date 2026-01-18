@@ -1139,6 +1139,95 @@ Vermijd: [geconfigureerd]
 └─────────────────────────────────────────────────────────┘
 ```
 
+### Scherpte Aanpassen (Regenerate)
+
+Gebruikers kunnen hun rapport laten regenereren met andere scherpte. **Max 3 keer.**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🌶️ SCHERPTE AANPASSEN                                  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Huidige scherpte: ████████░░ (80%)                    │
+│                                                         │
+│  Te scherp? Te mild? Pas aan:                          │
+│                                                         │
+│  😇 ──────●────── 😈                                    │
+│  Mild    Medium    Spicy                                │
+│                                                         │
+│  [🔄 Regenereer Rapport]                                │
+│                                                         │
+│  ⚠️ Nog 2 van 3 aanpassingen over                       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Scherpte Schaal (stappen van 5)
+| Waarde | Label | Beschrijving |
+|--------|-------|--------------|
+| 0-20 | 😇 Fluweelzacht | Bijna alleen complimenten |
+| 25-40 | 🙂 Mild | Lichte humor, geen scherpe kantjes |
+| 45-60 | 😏 Medium | Standaard, vriendelijke roast |
+| 65-80 | 😈 Spicy | Scherpe opmerkingen, confronterend |
+| 85-100 | 🔥 Genadeloos | Volledige roast, geen genade |
+
+#### Zichtbaar op Dashboard
+Als iemand deelt, toont het dashboard hun gekozen scherpte:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🆕 NIEUW RAPPORT GEDEELD!                              │
+│                                                         │
+│  KLAAS krijgt: 🧹 DE BEZEM                              │
+│                                                         │
+│  Scherpte: ██████████ 100% 🔥                          │
+│  (Klaas vroeg om MEER scherpte!)                        │
+│                                                         │
+│  "Weer de laatste. Na 18 jaar JKV weet hij             │
+│   nog steeds niet wanneer het feest voorbij            │
+│   is. Met een guilty pleasure als 'Dancing             │
+│   Queen' is dat misschien maar beter ook."             │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🆕 NIEUW RAPPORT GEDEELD!                              │
+│                                                         │
+│  PIET krijgt: 🎮 BURGER BAAS                           │
+│                                                         │
+│  Scherpte: ████░░░░░░ 40% 😇                           │
+│  (Piet heeft 3x om milder gevraagd... 🐔)              │
+│                                                         │
+│  "Piet heeft veel Burger Stack gespeeld.               │
+│   Heel veel. Echt heel erg veel."                      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Roast Materiaal
+Het aantal regeneraties wordt zelf roast materiaal:
+
+| Regeneraties | Dashboard Tekst | Extra Roast |
+|--------------|-----------------|-------------|
+| 0 | - | Neutraal |
+| 1 (milder) | "Vroeg om milder..." | Grill Guru noemt dit |
+| 2 (milder) | "Twee keer milder gevraagd..." | Extra aandacht |
+| 3 (milder) | "3x om milder gevraagd 🐔" | "Kan er niet tegen" |
+| 1+ (scherper) | "Vroeg om MEER!" | Respect emoji 💪 |
+| Max scherp | "100% - durft alles" | Held status |
+
+#### Database Tracking
+```sql
+-- Toevoegen aan personal_reports tabel
+ALTER TABLE personal_reports ADD COLUMN intensity_chosen INTEGER DEFAULT 60;
+ALTER TABLE personal_reports ADD COLUMN regeneration_count INTEGER DEFAULT 0;
+ALTER TABLE personal_reports ADD COLUMN intensity_history JSONB DEFAULT '[]';
+-- Bijv: [{"intensity": 80, "timestamp": "...", "direction": "initial"},
+--        {"intensity": 40, "timestamp": "...", "direction": "milder"}]
+```
+
 ### Database Schema
 
 ```sql
