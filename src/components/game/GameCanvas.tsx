@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
-import { INGREDIENT_CONFIGS, DEFAULT_GAME_CONFIG } from '@/types/game';
+import { INGREDIENT_CONFIGS, SPECIAL_ITEM_CONFIGS, DEFAULT_GAME_CONFIG } from '@/types/game';
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -85,6 +85,29 @@ export function GameCanvas() {
       }
     }
 
+    // Draw floating special item
+    if (gameState.floatingItem) {
+      const item = gameState.floatingItem;
+      const itemConfig = SPECIAL_ITEM_CONFIGS[item.type];
+
+      // Draw glow effect
+      ctx.shadowColor = itemConfig.color;
+      ctx.shadowBlur = 15;
+
+      // Draw item background
+      ctx.fillStyle = itemConfig.color + '40';
+      ctx.beginPath();
+      ctx.arc(item.x + item.width / 2, item.y + item.height / 2, item.width / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw emoji
+      ctx.shadowBlur = 0;
+      ctx.font = '28px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(itemConfig.emoji, item.x + item.width / 2, item.y + item.height / 2);
+    }
+
     // Draw score overlay
     ctx.fillStyle = '#F5F5DC';
     ctx.font = 'bold 24px "Source Sans Pro", sans-serif';
@@ -96,6 +119,38 @@ export function GameCanvas() {
       ctx.fillStyle = '#D4AF37';
       ctx.font = 'bold 18px "Source Sans Pro", sans-serif';
       ctx.fillText(`${gameState.combo}x Combo!`, 10, 55);
+    }
+
+    // Draw lives
+    ctx.fillStyle = '#FF6B6B';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'left';
+    const hearts = '❤️'.repeat(gameState.lives);
+    ctx.fillText(hearts, 10, 80);
+
+    // Draw active effects
+    const now = Date.now();
+    let effectY = 100;
+    for (const effect of gameState.activeEffects) {
+      if (effect.used) continue;
+      const effectConfig = SPECIAL_ITEM_CONFIGS[effect.type];
+
+      // Calculate remaining time for timed effects
+      let label = effectConfig.emoji;
+      if (effect.expiresAt) {
+        const remaining = Math.ceil((effect.expiresAt - now) / 1000);
+        if (remaining > 0) {
+          label += ` ${remaining}s`;
+        }
+      } else if (effect.type === 'golden_steak') {
+        label += ' 3x!';
+      }
+
+      ctx.fillStyle = effectConfig.color;
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, 10, effectY);
+      effectY += 20;
     }
 
     // Draw layers count

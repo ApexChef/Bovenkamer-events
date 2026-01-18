@@ -69,6 +69,10 @@ export interface GameState {
   level: number;
   gameStartTime: number | null;
   gameEndTime: number | null;
+  // Special items
+  activeEffects: ActiveEffect[];
+  floatingItem: SpecialItem | null;
+  itemsCollected: number;
 }
 
 export interface CurrentIngredient {
@@ -139,4 +143,63 @@ export interface GameChallenge {
   guru_comment?: string;
   created_at: string;
   completed_at?: string;
+}
+
+// Special Items
+export type SpecialItemType = 'golden_steak' | 'slow_mo' | 'extra_life' | 'fire';
+
+export interface SpecialItemConfig {
+  type: SpecialItemType;
+  emoji: string;
+  label: string;
+  description: string;
+  duration?: number; // in milliseconds, undefined = instant
+  color: string;
+}
+
+export const SPECIAL_ITEM_CONFIGS: Record<SpecialItemType, SpecialItemConfig> = {
+  golden_steak: {
+    type: 'golden_steak',
+    emoji: '✨🥩✨',
+    label: 'Gouden Biefstuk',
+    description: '3x punten volgende drop',
+    color: '#FFD700',
+  },
+  slow_mo: {
+    type: 'slow_mo',
+    emoji: '🍯',
+    label: 'Slow-mo Saus',
+    description: 'Vertraagt beweging 5 sec',
+    duration: 5000,
+    color: '#DEB887',
+  },
+  extra_life: {
+    type: 'extra_life',
+    emoji: '❤️',
+    label: 'Extra Leven',
+    description: 'Eén misser toegestaan',
+    color: '#FF6B6B',
+  },
+  fire: {
+    type: 'fire',
+    emoji: '🔥',
+    label: 'Brand!',
+    description: 'Snelheid x2 tijdelijk',
+    duration: 3000,
+    color: '#FF4500',
+  },
+};
+
+export interface ActiveEffect {
+  type: SpecialItemType;
+  expiresAt: number | null; // timestamp, null = single use (like golden_steak)
+  used?: boolean; // for single-use effects
+}
+
+export interface SpecialItem {
+  type: SpecialItemType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
