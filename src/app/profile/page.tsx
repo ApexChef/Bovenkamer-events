@@ -22,6 +22,17 @@ import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINT
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { SKILL_CATEGORIES, SkillSelections, SkillCategoryKey, MUSIC_DECADES, MUSIC_GENRES, BIRTH_YEARS } from '@/types';
 
+const DEFAULT_SKILLS: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
+
 type SectionId = 'personal' | 'skills' | 'music' | 'quiz';
 
 interface Section {
@@ -90,7 +101,7 @@ export default function ProfilePage() {
   );
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
 
-  const [skills, setSkills] = useState<SkillSelections>(formData.skills);
+  const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
 
   const [musicDecade, setMusicDecade] = useState(formData.musicDecade);
@@ -112,7 +123,7 @@ export default function ProfilePage() {
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
       setDietaryRequirements(formData.dietaryRequirements);
-      setSkills(formData.skills);
+      setSkills(formData.skills || DEFAULT_SKILLS);
       setAdditionalSkills(formData.additionalSkills);
       setMusicDecade(formData.musicDecade);
       setMusicGenre(formData.musicGenre);

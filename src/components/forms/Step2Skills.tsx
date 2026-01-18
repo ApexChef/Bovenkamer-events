@@ -2,12 +2,26 @@
 
 import { useRegistrationStore } from '@/lib/store';
 import { Select, TextArea, Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
-import { SKILL_CATEGORIES, SkillCategoryKey, MUSIC_DECADES, MUSIC_GENRES } from '@/types';
+import { SKILL_CATEGORIES, SkillCategoryKey, SkillSelections, MUSIC_DECADES, MUSIC_GENRES } from '@/types';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
+const DEFAULT_SKILLS: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
+
 export function Step2Skills() {
   const { formData, setFormData, nextStep, prevStep } = useRegistrationStore();
+
+  // Ensure skills object exists with fallback to defaults
+  const skills = formData.skills || DEFAULT_SKILLS;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,12 +30,12 @@ export function Step2Skills() {
 
   const handleSkillChange = (category: SkillCategoryKey, value: string) => {
     setFormData({
-      skills: { ...formData.skills, [category]: value },
+      skills: { ...skills, [category]: value },
     });
   };
 
   // All 8 skill categories must be selected, plus music
-  const filledSkillsCount = Object.values(formData.skills).filter(skill => skill !== '').length;
+  const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
   const allSkillsFilled = filledSkillsCount === 8;
   const isValid =
     allSkillsFilled &&
@@ -57,7 +71,7 @@ export function Step2Skills() {
                   <div
                     key={categoryKey}
                     className={`p-3 rounded-lg border transition-all ${
-                      formData.skills[categoryKey]
+                      skills[categoryKey]
                         ? 'border-gold/40 bg-gold/10'
                         : 'border-cream/20 bg-dark-wood/30'
                     }`}
@@ -65,12 +79,12 @@ export function Step2Skills() {
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{category.icon}</span>
                       <span className="text-sm font-medium text-cream">{category.label}</span>
-                      {formData.skills[categoryKey] && (
+                      {skills[categoryKey] && (
                         <Check className="w-4 h-4 text-success-green ml-auto" />
                       )}
                     </div>
                     <select
-                      value={formData.skills[categoryKey]}
+                      value={skills[categoryKey]}
                       onChange={(e) => handleSkillChange(categoryKey, e.target.value)}
                       className="w-full px-3 py-2 text-sm bg-dark-wood border border-cream/20 rounded-lg text-cream focus:border-gold focus:outline-none"
                     >
