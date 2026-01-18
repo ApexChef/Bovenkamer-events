@@ -66,9 +66,13 @@ export function HomeTab({
   profileCompletion,
 }: HomeTabProps) {
   const [attendanceConfirmed, setAttendanceConfirmed] = useState<boolean | null>(null);
+  const [bringingPlusOne, setBringingPlusOne] = useState<boolean | null>(null);
+  const [plusOneName, setPlusOneName] = useState(formData.partnerName || '');
   const [declineReason, setDeclineReason] = useState<string | null>(null);
   const [customReason, setCustomReason] = useState('');
   const isProfileComplete = profileCompletion.percentage === 100;
+
+  const totalCost = bringingPlusOne ? 100 : 50;
 
   return (
     <div className="space-y-4">
@@ -165,49 +169,70 @@ export function HomeTab({
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                      formData.hasPartner === false
+                    onClick={() => setBringingPlusOne(false)}
+                    className={`flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                      bringingPlusOne === false
                         ? 'border-gold bg-gold/20 text-gold'
                         : 'border-cream/20 text-cream/70 hover:border-gold/40'
                     }`}
                   >
-                    <User className="w-4 h-4" />
+                    <User className="w-5 h-5" />
                     <span className="font-medium">Alleen</span>
+                    <span className="text-xs opacity-70">€50</span>
                   </button>
                   <button
-                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                      formData.hasPartner === true
+                    onClick={() => setBringingPlusOne(true)}
+                    className={`flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                      bringingPlusOne === true
                         ? 'border-gold bg-gold/20 text-gold'
                         : 'border-cream/20 text-cream/70 hover:border-gold/40'
                     }`}
                   >
-                    <Users className="w-4 h-4" />
+                    <Users className="w-5 h-5" />
                     <span className="font-medium">Met +1</span>
+                    <span className="text-xs opacity-70">€100</span>
                   </button>
                 </div>
-                {formData.hasPartner && formData.partnerName && (
-                  <p className="text-xs text-cream/50 mt-2 text-center">
-                    Partner: {formData.partnerName}
-                  </p>
+
+                {/* Plus one name input */}
+                {bringingPlusOne === true && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-3"
+                  >
+                    <label className="block text-sm text-cream/70 mb-1.5">
+                      Naam van je +1
+                    </label>
+                    <input
+                      type="text"
+                      value={plusOneName}
+                      onChange={(e) => setPlusOneName(e.target.value)}
+                      placeholder="Wie neem je mee?"
+                      className="w-full px-4 py-2.5 bg-dark-wood/50 border border-cream/20 rounded-lg text-cream placeholder:text-cream/30 text-sm focus:outline-none focus:border-gold/50"
+                    />
+                  </motion.div>
                 )}
               </motion.div>
             )}
 
-            {/* Cost reminder - only when attending */}
-            {attendanceConfirmed === true && (
+            {/* Cost reminder - only when attending and selection made */}
+            {attendanceConfirmed === true && bringingPlusOne !== null && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="bg-dark-wood/50 rounded-lg p-3 text-center"
               >
                 <p className="text-sm text-cream/70">
-                  Kosten: <span className="text-gold font-bold">€50</span> p.p.
-                  {formData.hasPartner && (
-                    <span className="text-cream/50"> (€100 totaal)</span>
+                  Totaal: <span className="text-gold font-bold text-lg">€{totalCost}</span>
+                  {bringingPlusOne && plusOneName && (
+                    <span className="text-cream/50 block text-xs mt-1">
+                      Jij + {plusOneName}
+                    </span>
                   )}
                 </p>
-                <p className="text-xs text-cream/50 mt-1">
-                  Betaalinstructies volgen per e-mail
+                <p className="text-xs text-cream/50 mt-2">
+                  Betalen kan via Tikkie op je dashboard
                 </p>
               </motion.div>
             )}
