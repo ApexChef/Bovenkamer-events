@@ -12,15 +12,22 @@ async function getUserFromToken(request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
 
+  // Debug: log all cookies
+  const allCookies = cookieStore.getAll();
+  console.log('Available cookies:', allCookies.map(c => c.name));
+
   if (!token) {
+    console.log('No auth_token cookie found');
     return null;
   }
 
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
+    console.log('JWT verified for user:', payload.email);
     return payload as { userId: string; email: string; role: string };
-  } catch {
+  } catch (error) {
+    console.log('JWT verification failed:', error);
     return null;
   }
 }
@@ -96,7 +103,13 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromToken(request);
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Return success but indicate score wasn't saved (for anonymous/unauthenticated users)
+      console.log('Game score not saved - user not authenticated');
+      return NextResponse.json({
+        success: false,
+        saved: false,
+        message: 'Score niet opgeslagen - log in om je scores te bewaren',
+      }, { status: 200 }); // Return 200 so frontend doesn't show error
     }
 
     const body = await request.json();
