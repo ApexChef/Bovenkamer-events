@@ -301,6 +301,48 @@ Hosted on Netlify with automatic deploys from `main` branch.
 - **Build command**: `npm run build`
 - **Publish directory**: `.next`
 
+## Git Workflow
+
+We follow a feature branch workflow with `develop` as the integration branch:
+
+```
+main (production)
+  ↑
+  │ PR: Release
+  │
+develop (integration)
+  ↑
+  │ PR: Feature complete
+  │
+feature/US-XXX-description (work branch)
+```
+
+### Rules
+
+1. **Never commit directly to `main` or `develop`**
+2. **Always create a feature branch from `develop`**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/US-XXX-description
+   ```
+3. **PRs are always to `develop`** (not to main)
+4. **Releases**: Create a PR from `develop` to `main` when ready to deploy
+
+### Branch Naming
+
+- Feature branches: `feature/US-XXX-description`
+- Bugfix branches: `fix/description`
+- Hotfix branches: `hotfix/description` (can go directly to main if urgent)
+
+### Typical Flow
+
+1. Create feature branch from `develop`
+2. Make commits with descriptive messages
+3. Push branch and create PR to `develop`
+4. After review/merge, delete feature branch
+5. When ready to release: PR from `develop` → `main`
+
 ## Common Tasks
 
 ### Adding a new page
