@@ -632,6 +632,115 @@ CREATE INDEX idx_game_scores_leaderboard ON game_scores(game_type, score DESC);
 - [ ] Projectie-modus voor groot scherm
 - [ ] Export roasts als afbeeldingen
 
+### Grill Guru Logging
+
+Alle LLM-gegenereerde commentaren worden gelogd voor analyse en hergebruik:
+
+```sql
+-- Logging tabel voor Grill Guru uitspraken
+CREATE TABLE grill_guru_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  context_type VARCHAR(50),        -- 'game_start', 'game_over', 'highscore', 'roast', etc.
+  trigger_data JSONB,              -- Input data die de comment triggerde
+  generated_text TEXT,             -- De gegenereerde uitspraak
+  roast_category VARCHAR(100),     -- Welke award/categorie (indien roast)
+  intensity_used INTEGER,          -- 1-3 schaal
+  tokens_used INTEGER,             -- Voor kosten tracking
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index voor analyse
+CREATE INDEX idx_guru_logs_user ON grill_guru_logs(user_id);
+CREATE INDEX idx_guru_logs_type ON grill_guru_logs(context_type);
+```
+
+**Gebruik van logs:**
+- Admin kan populaire/grappige uitspraken terugvinden
+- Hergebruik beste roasts tijdens event
+- Analyse welke contexts de beste output geven
+- Kosten monitoring (tokens per dag/user)
+
+### Multiplayer: Async Challenge Mode
+
+**Concept:** Spelers kunnen elkaar uitdagen vóór het event. Async (niet real-time).
+
+#### Flow
+```
+┌─────────────────────────────────────────────────────────┐
+│  🎯 UITDAGING                                           │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Jouw score: 8.450 pts (32 lagen)                      │
+│                                                         │
+│  Daag iemand uit:                                       │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐      │
+│  │ Klaas   │ │ Marie   │ │ Piet    │ │ Jan     │      │
+│  │ 🟢 online│ │ ⚪ 2u   │ │ 🟢 online│ │ ⚪ 1d   │      │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘      │
+│                                                         │
+│  [📤 Verstuur Uitdaging]                                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Challenge Notificatie
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚔️ NIEUWE UITDAGING!                                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  [NAAM] daagt je uit!                                   │
+│  Hun score: 8.450 pts                                   │
+│                                                         │
+│  Grill Guru zegt:                                       │
+│  "Laat je dit zomaar gebeuren? Je zelfvertrouwen       │
+│   van 7/10 suggereert van niet."                       │
+│                                                         │
+│  [🎮 Accepteer]  [😴 Later]  [🏳️ Weiger]               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Resultaat
+```
+┌─────────────────────────────────────────────────────────┐
+│  🏆 DUEL RESULTAAT                                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│       [NAAM 1]          vs         [NAAM 2]            │
+│        8.450 pts         ⚔️         9.120 pts          │
+│        32 lagen                     38 lagen           │
+│                                                         │
+│                    🎉 WINNAAR! 🎉                       │
+│                                                         │
+│  Grill Guru zegt:                                       │
+│  "[WINNAAR] wint! [VERLIEZER], met jouw guilty        │
+│   pleasure '[SONG]' had ik beter verwacht. Of juist   │
+│   niet."                                                │
+│                                                         │
+│  [🔄 Rematch]  [📤 Deel]  [🏠 Menu]                     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Database voor Challenges
+```sql
+CREATE TABLE game_challenges (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  challenger_id UUID REFERENCES users(id),
+  challenged_id UUID REFERENCES users(id),
+  challenger_score_id UUID REFERENCES game_scores(id),
+  challenged_score_id UUID REFERENCES game_scores(id),
+  status VARCHAR(20) DEFAULT 'pending',  -- pending, accepted, completed, declined, expired
+  winner_id UUID REFERENCES users(id),
+  guru_comment TEXT,                     -- LLM gegenereerd resultaat commentaar
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP,                  -- Challenge verloopt na X dagen
+  completed_at TIMESTAMP
+);
+```
+
 ### Beslissingen US-005
 
 | Vraag | Beslissing |
@@ -640,13 +749,17 @@ CREATE INDEX idx_game_scores_leaderboard ON game_scores(game_type, score DESC);
 | Alle data gebruiken | Ja, Grill Guru kent alle deelnemers persoonlijk |
 | LLM roasts | Alle roasts volledig LLM gegenereerd |
 | Admin controle | System prompt configureerbaar door admin |
+| Grill Guru audio | Nee, eerst alleen tekst |
+| LLM logging | Ja, alle uitspraken worden gelogd |
+| Highscores per dag | Onbeperkt, meerdere pogingen toegestaan |
+| Timing | Spel is bedoeld voor VÓÓR het event |
+| Multiplayer | Async Challenge mode (niet real-time) |
 
 ### Open Vragen
 
-1. **Grill Guru stem**: Moet er ook audio zijn, of alleen tekst?
-2. **Multiplayer**: Later live head-to-head toevoegen?
-3. **Dagelijkse challenges**: Bijv. "Vandaag: alleen met bacon"?
-4. **Integratie quiz**: Burger Stack ronde tijdens live quiz?
+1. **Dagelijkse challenges**: Bijv. "Vandaag: alleen met bacon"?
+2. **Integratie quiz**: Burger Stack ronde tijdens live quiz?
+3. **Challenge expiratie**: Na hoeveel dagen verloopt een uitdaging? (bijv. 7 dagen)
 
 ---
 
