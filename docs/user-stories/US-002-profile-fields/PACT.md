@@ -171,10 +171,67 @@ PersonalSection                    JKVSection
 
 ## CODE
 
-*Nog niet uitgewerkt - volgt na Architecture review*
+### Geïmplementeerde Bestanden
+
+| Bestand | Wijzigingen |
+|---------|-------------|
+| `src/types/index.ts` | Nieuwe types: GENDER_OPTIONS, JKV_JOIN_YEARS, JKV_EXIT_YEARS, BORRELS_2025, BORRELS_2026 |
+| `src/lib/store.ts` | ProfileSections uitgebreid met jkvHistorie en borrelStats, nieuwe velden in formData |
+| `src/app/profile/page.tsx` | Drie nieuwe secties: Personal (uitgebreid), JKV Historie, Borrel Stats |
+
+### Nieuwe Velden in Store
+```typescript
+// Personal section
+birthDate: string;       // YYYY-MM-DD format
+gender: string;          // man | vrouw | anders | zeg_ik_niet
+selfConfidence: number;  // 1-10
+
+// JKV Historie section
+jkvJoinYear: number | null;
+jkvExitYear: number | string | null;  // number or 'nog_actief'
+bovenkamerJoinYear: number | null;    // Calculated from jkvExitYear
+
+// Borrel Stats section
+borrelAttendance2025: string[];  // Array of date strings
+borrelPlanning2026: string[];    // Array of date strings
+```
+
+### Section Points
+```typescript
+SECTION_POINTS = {
+  basic: 10,
+  personal: 50,
+  skills: 40,
+  music: 20,
+  jkvHistorie: 30,
+  borrelStats: 30,
+  quiz: 80,
+}
+// TOTAL: 260 punten
+```
+
+### Features Geïmplementeerd
+- [x] Geboortedatum met soft validatie (40+ waarschuwing)
+- [x] Geslacht select (4 opties)
+- [x] Zelfvertrouwen slider (1-10 met emoji feedback)
+- [x] JKV lid sinds / gestopt jaren
+- [x] "Nog actief in JKV" optie
+- [x] Automatische Bovenkamer join year berekening
+- [x] Borrel 2025 attendance checkboxes (10 datums)
+- [x] Borrel 2026 planning checkboxes (10 datums met vakantie notities)
 
 ---
 
 ## TEST
 
-*Nog niet uitgewerkt - volgt na Code implementatie*
+### Handmatige Test Checklist
+- [ ] Personal sectie: geboortedatum invullen
+- [ ] Personal sectie: 40+ waarschuwing testen met jonge datum
+- [ ] Personal sectie: geslacht selecteren
+- [ ] Personal sectie: zelfvertrouwen slider + emoji
+- [ ] JKV Historie: join jaar selecteren
+- [ ] JKV Historie: exit jaar > join jaar validatie
+- [ ] JKV Historie: "Nog actief" optie
+- [ ] Borrel Stats: 2025 borrels aanvinken
+- [ ] Borrel Stats: 2026 planning aanvinken
+- [ ] Profile completion percentage correct berekend
