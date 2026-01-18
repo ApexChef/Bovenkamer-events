@@ -16,24 +16,24 @@ import {
   Utensils,
   Briefcase,
   Music,
-  HelpCircle,
-  Award,
-  Beer,
-  AlertTriangle
+  HelpCircle
 } from 'lucide-react';
 import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
-import {
-  SKILL_OPTIONS,
-  MUSIC_DECADES,
-  MUSIC_GENRES,
-  GENDER_OPTIONS,
-  JKV_JOIN_YEARS,
-  JKV_EXIT_YEARS,
-  JKV_STILL_ACTIVE
-} from '@/types';
+import { SKILL_CATEGORIES, SkillSelections, SkillCategoryKey, MUSIC_DECADES, MUSIC_GENRES, BIRTH_YEARS } from '@/types';
 
-type SectionId = 'personal' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
+const DEFAULT_SKILLS: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
+
+type SectionId = 'personal' | 'skills' | 'music' | 'quiz';
 
 interface Section {
   id: SectionId;
@@ -47,7 +47,7 @@ const sections: Section[] = [
   {
     id: 'personal',
     title: 'Persoonlijke Gegevens',
-    description: 'Geboortedatum, geslacht en zelfvertrouwen',
+    description: 'Geboortejaar, partner en dieetwensen',
     points: SECTION_POINTS.personal,
     icon: Calendar
   },
@@ -64,20 +64,6 @@ const sections: Section[] = [
     description: 'Welk decennium en genre?',
     points: SECTION_POINTS.music,
     icon: Music
-  },
-  {
-    id: 'jkvHistorie',
-    title: 'JKV/Bovenkamer Historie',
-    description: 'Wanneer lid geworden en vertrokken?',
-    points: SECTION_POINTS.jkvHistorie,
-    icon: Award
-  },
-  {
-    id: 'borrelStats',
-    title: 'Borrel Statistieken',
-    description: 'Welke borrels heb je bezocht?',
-    points: SECTION_POINTS.borrelStats,
-    icon: Beer
   },
   {
     id: 'quiz',
@@ -105,11 +91,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state for each section
-  // Personal section
-  const [birthDate, setBirthDate] = useState(formData.birthDate || '');
-  const [gender, setGender] = useState(formData.gender || '');
-  const [selfConfidence, setSelfConfidence] = useState(formData.selfConfidence || 5);
   // Pre-fill partner info from attendance if available
+  const [birthYear, setBirthYear] = useState<number | null>(formData.birthYear);
   const [hasPartner, setHasPartner] = useState(
     formData.hasPartner || attendance.bringingPlusOne === true
   );
@@ -118,28 +101,15 @@ export default function ProfilePage() {
   );
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
 
-  // Skills section
-  const [primarySkill, setPrimarySkill] = useState(formData.primarySkill);
+  const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
 
-  // Music section
   const [musicDecade, setMusicDecade] = useState(formData.musicDecade);
   const [musicGenre, setMusicGenre] = useState(formData.musicGenre);
 
-  // JKV Historie section
-  const [jkvJoinYear, setJkvJoinYear] = useState<number | null>(formData.jkvJoinYear);
-  const [jkvExitYear, setJkvExitYear] = useState<number | string | null>(formData.jkvExitYear);
-
-  // Borrel Stats section
-  const [borrelCount2025, setBorrelCount2025] = useState<number>(formData.borrelCount2025 || 0);
-  const [borrelPlanning2026, setBorrelPlanning2026] = useState<number>(formData.borrelPlanning2026 || 0);
-
-  // Quiz section
   const [quizAnswers, setQuizAnswers] = useState(formData.quizAnswers);
 
-  // Validation warnings
-  const [birthDateWarning, setBirthDateWarning] = useState<string | null>(null);
-
+  // Redirect if not authenticated
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
       router.push('/login');
@@ -149,21 +119,15 @@ export default function ProfilePage() {
   // Sync local state with store after hydration
   useEffect(() => {
     if (_hasHydrated) {
-      setBirthDate(formData.birthDate || '');
-      setGender(formData.gender || '');
-      setSelfConfidence(formData.selfConfidence || 5);
+      setBirthYear(formData.birthYear);
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
-      setDietaryRequirements(formData.dietaryRequirements || '');
-      setPrimarySkill(formData.primarySkill || '');
-      setAdditionalSkills(formData.additionalSkills || '');
-      setMusicDecade(formData.musicDecade || '');
-      setMusicGenre(formData.musicGenre || '');
-      setJkvJoinYear(formData.jkvJoinYear);
-      setJkvExitYear(formData.jkvExitYear);
-      setBorrelCount2025(formData.borrelCount2025 || 0);
-      setBorrelPlanning2026(formData.borrelPlanning2026 || 0);
-      setQuizAnswers(formData.quizAnswers || {});
+      setDietaryRequirements(formData.dietaryRequirements);
+      setSkills(formData.skills || DEFAULT_SKILLS);
+      setAdditionalSkills(formData.additionalSkills);
+      setMusicDecade(formData.musicDecade);
+      setMusicGenre(formData.musicGenre);
+      setQuizAnswers(formData.quizAnswers);
     }
   }, [_hasHydrated, formData, attendance]);
 
@@ -189,9 +153,7 @@ export default function ProfilePage() {
     setIsLoading(true);
     try {
       setFormData({
-        birthDate,
-        gender,
-        selfConfidence,
+        birthYear,
         hasPartner,
         partnerName,
         dietaryRequirements,
@@ -207,7 +169,7 @@ export default function ProfilePage() {
     setIsLoading(true);
     try {
       setFormData({
-        primarySkill,
+        skills,
         additionalSkills,
       });
       markSectionComplete('skills');
@@ -244,59 +206,11 @@ export default function ProfilePage() {
     }
   };
 
-  const saveJkvSection = async () => {
-    setIsLoading(true);
-    try {
-      // Calculate bovenkamerJoinYear from jkvExitYear
-      const bovenkamerYear = jkvExitYear === JKV_STILL_ACTIVE ? null : (jkvExitYear as number);
-      setFormData({
-        jkvJoinYear,
-        jkvExitYear,
-        bovenkamerJoinYear: bovenkamerYear,
-      });
-      markSectionComplete('jkvHistorie');
-      setExpandedSection(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveBorrelSection = async () => {
-    setIsLoading(true);
-    try {
-      setFormData({
-        borrelCount2025,
-        borrelPlanning2026,
-      });
-      markSectionComplete('borrelStats');
-      setExpandedSection(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Check birth date for 40+ warning
-  const checkBirthDateWarning = (dateStr: string) => {
-    if (!dateStr) {
-      setBirthDateWarning(null);
-      return;
-    }
-    const birthDate = new Date(dateStr);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    if (age < 40) {
-      setBirthDateWarning(`Je bent ${age} jaar. De Bovenkamer is normaal voor 40+, maar je bent welkom!`);
-    } else {
-      setBirthDateWarning(null);
-    }
-  };
-
-  const isPersonalValid = birthDate !== '' && gender !== '';
-  const isSkillsValid = primarySkill !== '';
+  const isPersonalValid = birthYear !== null;
+  // All 8 skill categories must be selected
+  const isSkillsValid = Object.values(skills).every(skill => skill !== '');
+  const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
   const isMusicValid = musicDecade !== '' && musicGenre !== '';
-  const isJkvValid = jkvJoinYear !== null && jkvExitYear !== null &&
-    (jkvExitYear === JKV_STILL_ACTIVE || (typeof jkvExitYear === 'number' && jkvExitYear >= jkvJoinYear));
-  const isBorrelValid = true; // Always valid, optional
   const isQuizValid = Object.keys(quizAnswers).length >= 5; // At least 5 answers
 
   const renderSectionContent = (sectionId: SectionId) => {
@@ -307,77 +221,13 @@ export default function ProfilePage() {
 
         return (
           <div className="space-y-4">
-            {/* Geboortedatum */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Geboortedatum
-              </label>
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => {
-                  setBirthDate(e.target.value);
-                  checkBirthDateWarning(e.target.value);
-                }}
-                className="w-full px-4 py-3 bg-dark-wood/50 border border-cream/20 rounded-lg text-cream focus:outline-none focus:border-gold/50"
-              />
-              {birthDateWarning && (
-                <div className="flex items-center gap-2 text-yellow-500 text-sm">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{birthDateWarning}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Geslacht */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Geslacht
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {GENDER_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setGender(option.value)}
-                    className={`px-4 py-3 rounded-lg border transition-all ${
-                      gender === option.value
-                        ? 'border-gold bg-gold/20 text-gold'
-                        : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Zelfvertrouwen slider */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-cream">
-                Zelfvertrouwen: {selfConfidence}/10
-              </label>
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-cream/50 w-20">Ik kan niks</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={selfConfidence}
-                  onChange={(e) => setSelfConfidence(parseInt(e.target.value))}
-                  className="flex-1 h-2 bg-dark-wood rounded-lg appearance-none cursor-pointer accent-gold"
-                />
-                <span className="text-xs text-cream/50 w-20 text-right">Ik ben de beste</span>
-              </div>
-              <div className="text-center">
-                <span className="text-2xl">
-                  {selfConfidence <= 2 ? '😅' :
-                   selfConfidence <= 4 ? '🙂' :
-                   selfConfidence <= 6 ? '😊' :
-                   selfConfidence <= 8 ? '😎' : '🏆'}
-                </span>
-              </div>
-            </div>
+            <Select
+              label="Geboortejaar"
+              value={birthYear?.toString() || ''}
+              onChange={(e) => setBirthYear(e.target.value ? parseInt(e.target.value) : null)}
+              options={BIRTH_YEARS.map(year => ({ value: year.toString(), label: year.toString() }))}
+              placeholder="Selecteer je geboortejaar"
+            />
 
             {/* Show pre-filled partner info or ask */}
             {hasPartnerFromAttendance ? (
@@ -392,6 +242,15 @@ export default function ProfilePage() {
                 {partnerName && (
                   <p className="text-gold font-medium">{partnerName}</p>
                 )}
+                <Input
+                  label="Naam partner/+1 aanpassen"
+                  value={partnerName}
+                  onChange={(e) => {
+                    setPartnerName(e.target.value);
+                    setHasPartner(true);
+                  }}
+                  placeholder="Naam van je partner/+1"
+                />
               </div>
             ) : (
               <>
@@ -462,28 +321,51 @@ export default function ProfilePage() {
 
       case 'skills':
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Primaire vaardigheid
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {SKILL_OPTIONS.map((skill) => (
-                  <button
-                    key={skill.value}
-                    type="button"
-                    onClick={() => setPrimarySkill(skill.value)}
-                    className={`px-3 py-2 rounded-lg border text-left transition-all ${
-                      primarySkill === skill.value
-                        ? 'border-gold bg-gold/20 text-gold'
-                        : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{skill.label}</span>
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-6">
+            <p className="text-sm text-cream/70">
+              Selecteer per categorie wat je het beste kunt. &quot;Niks&quot; is ook een valide keuze!
+            </p>
+
+            <div className="space-y-4">
+              {(Object.entries(SKILL_CATEGORIES) as [SkillCategoryKey, typeof SKILL_CATEGORIES[SkillCategoryKey]][]).map(([categoryKey, category]) => (
+                <div
+                  key={categoryKey}
+                  className={`p-4 rounded-lg border transition-all ${
+                    skills[categoryKey]
+                      ? 'border-gold/40 bg-gold/5'
+                      : 'border-cream/20 bg-dark-wood/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">{category.icon}</span>
+                    <span className="text-sm font-semibold text-cream">{category.label}</span>
+                    {skills[categoryKey] && (
+                      <Check className="w-4 h-4 text-success-green ml-auto" />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {category.options.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setSkills({ ...skills, [categoryKey]: option.value })}
+                        className={`px-3 py-3 min-h-[52px] text-sm rounded-lg border transition-all text-center flex items-center justify-center ${
+                          skills[categoryKey] === option.value
+                            ? 'border-gold bg-gold/20 text-gold font-medium'
+                            : 'border-cream/20 text-cream/70 hover:border-cream/40 hover:text-cream'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+
+            <p className="text-xs text-cream/50 text-center">
+              {filledSkillsCount} van 8 categorieën ingevuld
+            </p>
 
             <Input
               label="Extra vaardigheden (optioneel)"
@@ -544,166 +426,6 @@ export default function ProfilePage() {
               className="w-full"
             >
               Opslaan (+{SECTION_POINTS.music} punten)
-            </Button>
-          </div>
-        );
-
-      case 'jkvHistorie':
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-cream/70">
-              Vertel ons over je JKV en Bovenkamer geschiedenis.
-            </p>
-
-            {/* JKV Join Year */}
-            <Select
-              label="Wanneer lid geworden van JKV?"
-              value={jkvJoinYear?.toString() || ''}
-              onChange={(e) => setJkvJoinYear(e.target.value ? parseInt(e.target.value) : null)}
-              options={JKV_JOIN_YEARS.map(year => ({ value: year.toString(), label: year.toString() }))}
-              placeholder="Selecteer jaar"
-            />
-
-            {/* JKV Exit Year */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Wanneer gestopt bij JKV?
-              </label>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setJkvExitYear(JKV_STILL_ACTIVE)}
-                  className={`px-4 py-3 rounded-lg border transition-all ${
-                    jkvExitYear === JKV_STILL_ACTIVE
-                      ? 'border-gold bg-gold/20 text-gold'
-                      : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                  }`}
-                >
-                  Nog actief in JKV
-                </button>
-              </div>
-              {jkvExitYear !== JKV_STILL_ACTIVE && (
-                <Select
-                  value={typeof jkvExitYear === 'number' ? jkvExitYear.toString() : ''}
-                  onChange={(e) => setJkvExitYear(e.target.value ? parseInt(e.target.value) : null)}
-                  options={JKV_EXIT_YEARS.filter(y => !jkvJoinYear || y >= jkvJoinYear).map(year => ({
-                    value: year.toString(),
-                    label: year.toString()
-                  }))}
-                  placeholder="Selecteer uittreed jaar"
-                />
-              )}
-            </div>
-
-            {/* Validation message */}
-            {jkvJoinYear && jkvExitYear && jkvExitYear !== JKV_STILL_ACTIVE && (jkvExitYear as number) < jkvJoinYear && (
-              <div className="flex items-center gap-2 text-warm-red text-sm">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Uittreed jaar moet na instap jaar zijn</span>
-              </div>
-            )}
-
-            {/* Bovenkamer Join Year (derived) */}
-            {jkvExitYear && jkvExitYear !== JKV_STILL_ACTIVE && (
-              <div className="p-4 bg-gold/10 border border-gold/20 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-gold" />
-                  <span className="text-sm text-cream">Bovenkamer lid sinds: <strong className="text-gold">{jkvExitYear}</strong></span>
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={saveJkvSection}
-              disabled={!isJkvValid || isLoading}
-              isLoading={isLoading}
-              className="w-full"
-            >
-              Opslaan (+{SECTION_POINTS.jkvHistorie} punten)
-            </Button>
-          </div>
-        );
-
-      case 'borrelStats':
-        return (
-          <div className="space-y-6">
-            <p className="text-sm text-cream/70">
-              Hoe vaak kom je naar de maandelijkse borrel? (10x per jaar, elke 4e donderdag)
-            </p>
-
-            {/* 2025 Borrels */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-cream">
-                Borrels 2025: <span className="text-gold">{borrelCount2025}</span> van 10 bezocht
-              </label>
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-cream/50 w-12">Nooit</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={borrelCount2025}
-                  onChange={(e) => setBorrelCount2025(parseInt(e.target.value))}
-                  className="flex-1 h-2 bg-dark-wood rounded-lg appearance-none cursor-pointer accent-gold"
-                />
-                <span className="text-xs text-cream/50 w-12 text-right">Altijd</span>
-              </div>
-              <div className="text-center">
-                <span className="text-2xl">
-                  {borrelCount2025 === 0 ? '😢' :
-                   borrelCount2025 <= 3 ? '🙂' :
-                   borrelCount2025 <= 6 ? '😊' :
-                   borrelCount2025 <= 9 ? '🍻' : '🏆'}
-                </span>
-                <p className="text-xs text-cream/50 mt-1">
-                  {borrelCount2025 === 0 ? 'Nog nooit geweest' :
-                   borrelCount2025 <= 3 ? 'Af en toe' :
-                   borrelCount2025 <= 6 ? 'Regelmatig' :
-                   borrelCount2025 <= 9 ? 'Trouwe bezoeker' : 'Nooit gemist!'}
-                </p>
-              </div>
-            </div>
-
-            {/* 2026 Planning */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-cream">
-                Borrels 2026: <span className="text-gold">{borrelPlanning2026}</span> van 10 gepland
-              </label>
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-cream/50 w-12">Geen</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={borrelPlanning2026}
-                  onChange={(e) => setBorrelPlanning2026(parseInt(e.target.value))}
-                  className="flex-1 h-2 bg-dark-wood rounded-lg appearance-none cursor-pointer accent-gold"
-                />
-                <span className="text-xs text-cream/50 w-12 text-right">Allemaal</span>
-              </div>
-              <div className="text-center">
-                <span className="text-2xl">
-                  {borrelPlanning2026 === 0 ? '😢' :
-                   borrelPlanning2026 <= 3 ? '🤔' :
-                   borrelPlanning2026 <= 6 ? '👍' :
-                   borrelPlanning2026 <= 9 ? '🎉' : '🌟'}
-                </span>
-                <p className="text-xs text-cream/50 mt-1">
-                  {borrelPlanning2026 === 0 ? 'Geen plannen' :
-                   borrelPlanning2026 <= 3 ? 'Misschien een paar' :
-                   borrelPlanning2026 <= 6 ? 'Goede intenties' :
-                   borrelPlanning2026 <= 9 ? 'Enthousiast!' : 'Superfan!'}
-                </p>
-              </div>
-            </div>
-
-            <Button
-              onClick={saveBorrelSection}
-              disabled={isLoading}
-              isLoading={isLoading}
-              className="w-full"
-            >
-              Opslaan (+{SECTION_POINTS.borrelStats} punten)
             </Button>
           </div>
         );
@@ -864,7 +586,7 @@ export default function ProfilePage() {
           return (
             <motion.div key={section.id} layout>
               <Card className={isCompleted
-                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80 hover:border-gold/40 transition-colors'
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
                 : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
               }>
                 <button
@@ -915,12 +637,6 @@ export default function ProfilePage() {
                       className="overflow-hidden"
                     >
                       <div className="px-6 pb-6 pt-2 border-t border-gold/10">
-                        {isCompleted && (
-                          <p className="text-xs text-success-green mb-4 flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            Al opgeslagen - je kunt aanpassen
-                          </p>
-                        )}
                         {renderSectionContent(section.id)}
                       </div>
                     </motion.div>

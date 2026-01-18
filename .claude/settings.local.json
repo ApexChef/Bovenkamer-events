@@ -33,7 +33,13 @@
       "Bash(npm run dev)",
       "Skill(playwright-mcp-testing)",
       "Bash(open http://localhost:3000)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(npm run reset:dry:*)",
+      "Bash(npm run reset:confirm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(gh pr list:*)"
     ]
   }
 }

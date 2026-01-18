@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache } from '@/types';
+import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache, SkillSelections, SkillCategoryKey } from '@/types';
 
 // Profile sections for progressive registration
 export interface ProfileSections {
@@ -61,6 +61,7 @@ interface RegistrationState {
   // Actions
   setFormData: (data: Partial<RegistrationFormData>) => void;
   setQuizAnswer: (key: keyof QuizAnswers, value: string) => void;
+  setSkill: (category: SkillCategoryKey, value: string) => void;
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -75,6 +76,17 @@ interface RegistrationState {
   reset: () => void;
 }
 
+const initialSkills: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
+
 const initialFormData: RegistrationFormData = {
   pin: '',
   name: '',
@@ -87,8 +99,8 @@ const initialFormData: RegistrationFormData = {
   hasPartner: false,
   partnerName: '',
   dietaryRequirements: '',
-  // Skills
-  primarySkill: '',
+  // Skills (8 categories)
+  skills: initialSkills,
   additionalSkills: '',
   // Music
   musicDecade: '',
@@ -146,6 +158,14 @@ export const useRegistrationStore = create<RegistrationState>()(
           formData: {
             ...state.formData,
             quizAnswers: { ...state.formData.quizAnswers, [key]: value },
+          },
+        })),
+
+      setSkill: (category, value) =>
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            skills: { ...state.formData.skills, [category]: value },
           },
         })),
 
@@ -247,19 +267,26 @@ export const useRegistrationStore = create<RegistrationState>()(
   )
 );
 
+// Event start time - predictions are locked after this
+export const EVENT_START = new Date('2026-01-31T14:00:00');
+
 // Predictions store
 interface PredictionsState {
   predictions: Predictions;
-  isSubmitted: boolean;
+  isDraft: boolean;        // true = saved as draft, can still edit
+  isSubmitted: boolean;    // true = definitively submitted
   setPrediction: <K extends keyof Predictions>(key: K, value: Predictions[K]) => void;
-  setSubmitted: (submitted: boolean) => void;
+  saveDraft: () => void;
+  submitFinal: () => void;
+  canEdit: () => boolean;  // false after event starts
   reset: () => void;
 }
 
 export const usePredictionsStore = create<PredictionsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       predictions: {},
+      isDraft: false,
       isSubmitted: false,
 
       setPrediction: (key, value) =>
@@ -267,9 +294,21 @@ export const usePredictionsStore = create<PredictionsState>()(
           predictions: { ...state.predictions, [key]: value },
         })),
 
-      setSubmitted: (submitted) => set({ isSubmitted: submitted }),
+      saveDraft: () => set({ isDraft: true }),
 
-      reset: () => set({ predictions: {}, isSubmitted: false }),
+      submitFinal: () => set({ isSubmitted: true, isDraft: false }),
+
+      canEdit: () => {
+        const state = get();
+        const now = new Date();
+        // Cannot edit if event has started or already submitted
+        if (now >= EVENT_START || state.isSubmitted) {
+          return false;
+        }
+        return true;
+      },
+
+      reset: () => set({ predictions: {}, isDraft: false, isSubmitted: false }),
     }),
     {
       name: 'bovenkamer-predictions',

@@ -9,11 +9,17 @@ interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'
   max: number;
   showValue?: boolean;
   unit?: string;
+  formatValue?: (value: number) => string;
+  formatMin?: string;
+  formatMax?: string;
 }
 
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(
-  ({ className = '', label, hint, min, max, value, showValue = true, unit = '', id, ...props }, ref) => {
+  ({ className = '', label, hint, min, max, value, showValue = true, unit = '', formatValue, formatMin, formatMax, id, ...props }, ref) => {
     const sliderId = id || label?.toLowerCase().replace(/\s/g, '-');
+    const displayValue = formatValue ? formatValue(Number(value)) : `${value}${unit}`;
+    const displayMin = formatMin ?? `${min}${unit}`;
+    const displayMax = formatMax ?? `${max}${unit}`;
 
     return (
       <div className="w-full">
@@ -27,7 +33,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             </label>
             {showValue && (
               <span className="text-gold font-bold text-lg">
-                {value}{unit}
+                {displayValue}
               </span>
             )}
           </div>
@@ -61,8 +67,8 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
           {...props}
         />
         <div className="flex justify-between mt-1 text-xs text-cream/40">
-          <span>{min}{unit}</span>
-          <span>{max}{unit}</span>
+          <span>{displayMin}</span>
+          <span>{displayMax}</span>
         </div>
         {hint && (
           <p className="mt-2 text-xs text-cream/50">{hint}</p>
