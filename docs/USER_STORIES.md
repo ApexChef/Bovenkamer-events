@@ -1290,12 +1290,64 @@ CREATE TABLE report_reactions (
 - [ ] Export rapport als afbeelding
 - [ ] Jaarlijkse vergelijking (als er meerdere events zijn)
 
+### Beslissingen US-006
+
+| Vraag | Beslissing |
+|-------|------------|
+| Event tracking (check-in/out) | Niet nodig - registratie + betaling volstaat |
+| Timing awards activeren | Admin kiest het moment handmatig |
+| Scherpte aanpassen | Max 3x regenereren, wordt zelf roast materiaal |
+
+### Voorspellingen Status Tracker
+
+Vóór het event moet zichtbaar zijn wie nog voorspellingen moet invullen:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  📋 VOORSPELLINGEN STATUS                    [Admin]    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ✅ Ingevuld (12/15):                                   │
+│  Klaas, Marie, Piet, Jan, Lisa, Tom, Eva, Dirk,        │
+│  Sophie, Mark, Anne, Frank                              │
+│                                                         │
+│  ⏳ Nog niet ingevuld (3/15):                           │
+│  • Henk (laatste reminder: 2 dagen geleden)            │
+│  • Ingrid (nog geen reminder verstuurd)                │
+│  • Bas (3 reminders verstuurd, reageert niet)          │
+│                                                         │
+│  [📧 Stuur Reminder aan Allen]  [📧 Selectief Reminder] │
+│                                                         │
+│  Deadline: 2 uur voor event start                      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Reminder Systeem
+- Admin kan handmatig reminders sturen
+- Grill Guru toon in reminder: "De tijd tikt, [NAAM]..."
+- Tracking hoeveel reminders per persoon verstuurd
+
+#### In-App Notificatie
+Deelnemers die nog moeten invullen zien:
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚠️ VOORSPELLINGEN NOG NIET INGEVULD                    │
+│                                                         │
+│  Je hebt je voorspellingen nog niet gedaan!            │
+│  Nog [X uur] tot de deadline.                          │
+│                                                         │
+│  [📝 Nu Invullen]                                       │
+│                                                         │
+│  Grill Guru zegt: "Geen voorspellingen = geen          │
+│  excuses als je het mis hebt."                         │
+└─────────────────────────────────────────────────────────┘
+```
+
 ### Open Vragen US-006
 
-1. **Event tracking**: Hoe tracken we check-in/out tijden? (QR code? Handmatig? Honor system?)
-2. **Fun survey**: Willen we een korte survey tijdens het event? ("Hoeveel wijn heb je gedronken?")
-3. **Reactie types**: Welke emoji's voor reactions? (👍 😂 🔥 😱 ?)
-4. **Timing**: Wanneer precies activeren? (Vaste tijd of admin kiest?)
+1. **Fun survey**: Willen we een korte survey tijdens het event? ("Hoeveel wijn heb je gedronken?")
+2. **Reactie types**: Welke emoji's voor reactions? (👍 😂 🔥 😱 ?)
 
 ---
 
