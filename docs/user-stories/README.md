@@ -8,7 +8,7 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 |----|------|------------|--------|-----|-------------|
 | [US-001](./US-001-skill-categories/) | Skill Categorieën | #2 | ✅ DONE | [#14](https://github.com/ApexChef/Bovenkamer-events/pull/14) | 8 skill categorieën geïmplementeerd |
 | [US-002](./US-002-profile-fields/) | Uitgebreide Profielvelden | #3 | ✅ DONE | [#12](https://github.com/ApexChef/Bovenkamer-events/pull/12), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | JKV historie + borrel stats UI compleet |
-| [US-005](./US-005-burger-stack/) | Burger Stack Mini-Game | #4 | ✅ MVP DONE | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4) | Basis game werkt |
+| [US-005](./US-005-burger-stack/) | Burger Stack Mini-Game | #4 | ✅ FASE 1+2 DONE | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4), [#16](https://github.com/ApexChef/Bovenkamer-events/pull/16) | Special items, graphics, feedback, CTA |
 | [US-007](./US-007-progressive-registration/) | Progressieve Registratie | #1 | ✅ DONE | [#10](https://github.com/ApexChef/Bovenkamer-events/pull/10), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | Alle 6 profiel secties met punten |
 | [US-003](./US-003-sarcastic-dashboard/) | Sarcastisch Dashboard | #5 | 🔲 TODO | - | Nog niet gestart |
 | [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 TODO | - | Nog niet gestart |
@@ -58,13 +58,14 @@ US-007 (Progressieve Registratie)
 
 | Component | Gebruikt door | Status |
 |-----------|---------------|--------|
-| **E-mail Service** | US-007, US-006 | Bestaand (Resend) |
-| **LLM Service** | US-003, US-005, US-006, US-007 | Te maken |
-| **Grill Guru Persona** | US-005, US-006, US-007 | Te maken |
-| **Admin Config Panel** | US-005, US-006, US-007 | Te maken |
-| **Real-time Updates** | US-005 (challenges), US-006 (dashboard) | Te maken |
-| **Punten Systeem** | US-007, US-005, US-006 | Bestaand (uitbreiden) |
-| **Leaderboard Component** | US-007, US-005 | Te maken |
+| **E-mail Service** | US-007, US-006 | ✅ Bestaand (Resend) |
+| **LLM Service** | US-003, US-005, US-006, US-007 | 🔲 Te maken |
+| **Grill Guru Persona** | US-005, US-006, US-007 | 🔲 Te maken |
+| **Admin Config Panel** | US-005, US-006, US-007 | 🔲 Te maken |
+| **Real-time Updates** | US-005 (challenges), US-006 (dashboard) | 🔲 Te maken |
+| **Punten Systeem** | US-007, US-005, US-006 | ✅ Bestaand |
+| **Leaderboard Component** | US-007, US-005 | ✅ Geïmplementeerd |
+| **Game Engine** | US-005 | ✅ Canvas API met special items |
 
 ## Database Wijzigingen
 
@@ -155,7 +156,7 @@ US-007 (Progressieve Registratie)
 | US-007 | Opt-out per reminder type of globaal? | Open |
 | US-003 | Minimum aantal registraties voor analyses? | Open |
 | US-003 | Hoe vaak LLM analyses refreshen? | Open |
-| US-005 | Canvas API of Phaser.js? | Open |
+| US-005 | Canvas API of Phaser.js? | Besloten: Canvas API |
 | US-005 | Geluid in MVP? | Besloten: Nee |
 | US-006 | Fun survey tijdens event? | Open |
 | US-006 | Welke emoji's voor reactions? | Open |
@@ -210,15 +211,21 @@ docs/user-stories/
 ### Voltooid ✅
 - **US-001**: 8 skill categorieën in profiel pagina
 - **US-002**: JKV historie + borrel stats secties compleet
-- **US-005 MVP**: Burger Stack game speelbaar
+- **US-005 Fase 1+2**: Burger Stack game met special items, verbeterde graphics en feedback
+  - Special items: golden steak (3x), slow-mo, extra life, fire
+  - Graphics: gradients, shadows, rounded corners, grid background
+  - Feedback: floating score text, drop guide, target zone highlight
+  - Dashboard CTA met burger thema
+  - Leaderboard toont alleen beste score per user
 - **US-007**: Alle 6 profiel secties met punten systeem (260 totaal)
 
 ### Nog Te Doen 🔲
+- **US-005 Fase 3**: Grill Guru LLM commentaar, thema's, statistieken pagina
 - **US-003**: Sarcastisch Dashboard (LLM analyses)
 - **US-006**: Einde-Avond Awards
 - **US-008**: Voorspellingen Analytics Dashboard
 
 ### Volgende Stappen
-1. US-008 implementeren: Voorspellingen analytics op dashboard
+1. US-005 Fase 3: Grill Guru statische teksten toevoegen
 2. US-003 starten: LLM integratie voor sarcastische analyses
 3. US-006 voorbereiden: Einde-avond awards systeem
