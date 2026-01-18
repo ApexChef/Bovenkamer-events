@@ -44,7 +44,7 @@ export default function Home() {
           Het collectief nodigt u uit voor de jaarlijkse beproeving
         </p>
         <p className="text-cream/90 text-xl font-semibold mb-8">
-          Nieuwjaars BBQ — 24 januari 2026
+          Nieuwjaars BBQ — Zaterdag 31 januari 2026
         </p>
 
         {/* Card */}
@@ -58,16 +58,17 @@ export default function Home() {
         </div>
 
         {/* Registration CTA */}
-        <div className="mb-8">
+        <div className="mb-12">
           {isAuthenticated ? (
             <>
               <Link
                 href="/dashboard"
-                className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
+                className="group relative inline-flex items-center justify-center bg-gold text-dark-wood font-bold uppercase tracking-wider px-10 py-5 rounded-lg text-lg shadow-lg shadow-gold/25 hover:bg-gold/90 hover:shadow-xl hover:shadow-gold/30 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
               >
-                Naar Dashboard
+                <span className="relative z-10">Naar Dashboard</span>
+                <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-gold via-yellow-400 to-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
-              <p className="text-cream/50 text-sm mt-3">
+              <p className="text-cream/60 text-sm mt-4">
                 Bekijk uw toewijzing en status
               </p>
             </>
@@ -75,11 +76,12 @@ export default function Home() {
             <>
               <Link
                 href="/register"
-                className="inline-block bg-gold text-dark-wood font-semibold uppercase tracking-wider px-8 py-4 rounded-lg hover:bg-gold/90 transition-all duration-200 transform hover:scale-105"
+                className="group relative inline-flex items-center justify-center bg-gold text-dark-wood font-bold uppercase tracking-wider px-10 py-5 rounded-lg text-lg shadow-lg shadow-gold/25 hover:bg-gold/90 hover:shadow-xl hover:shadow-gold/30 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
               >
-                Registreer Nu
+                <span className="relative z-10">Registreer Nu</span>
+                <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-gold via-yellow-400 to-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
-              <p className="text-cream/50 text-sm mt-3">
+              <p className="text-cream/60 text-sm mt-4">
                 Meld u aan voor het festijn en ontvang uw toewijzing
               </p>
             </>
@@ -88,17 +90,41 @@ export default function Home() {
 
         {/* Features preview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
-            <p className="text-gold mb-1">Registratie</p>
-            <p className="text-cream/50">Meld u aan voor het festijn</p>
-          </div>
-          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
-            <p className="text-gold mb-1">Voorspellingen</p>
-            <p className="text-cream/50">Waag uw gok</p>
-          </div>
-          <div className="p-4 border border-gold/20 rounded hover:border-gold/40 transition-colors">
-            <p className="text-gold mb-1">Live Quiz</p>
-            <p className="text-cream/50">Bewijs uw kennis</p>
+          <Link
+            href={isAuthenticated ? "/dashboard" : "/register"}
+            className="group p-6 border border-gold/20 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all duration-300 cursor-pointer"
+          >
+            <div className="text-2xl mb-2">{isAuthenticated ? "🏠" : "📝"}</div>
+            <p className="text-gold font-semibold mb-1 group-hover:text-gold/90">
+              {isAuthenticated ? "Dashboard" : "Registratie"}
+            </p>
+            <p className="text-cream/50 group-hover:text-cream/70">
+              {isAuthenticated ? "Bekijk uw status" : "Meld u aan voor het festijn"}
+            </p>
+            <span className="inline-block mt-3 text-gold/60 text-xs uppercase tracking-wider group-hover:text-gold transition-colors">
+              {isAuthenticated ? "Open →" : "Start →"}
+            </span>
+          </Link>
+          <Link
+            href="/predictions"
+            className="group p-6 border border-gold/20 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all duration-300 cursor-pointer"
+          >
+            <div className="text-2xl mb-2">🔮</div>
+            <p className="text-gold font-semibold mb-1 group-hover:text-gold/90">Voorspellingen</p>
+            <p className="text-cream/50 group-hover:text-cream/70">Waag uw gok</p>
+            <span className="inline-block mt-3 text-gold/60 text-xs uppercase tracking-wider group-hover:text-gold transition-colors">
+              Voorspel →
+            </span>
+          </Link>
+          <div
+            className="group p-6 border border-gold/10 rounded-lg bg-dark-wood/30 opacity-60 cursor-not-allowed"
+          >
+            <div className="text-2xl mb-2">🎯</div>
+            <p className="text-gold/70 font-semibold mb-1">Live Quiz</p>
+            <p className="text-cream/40">Bewijs uw kennis</p>
+            <span className="inline-block mt-3 text-cream/30 text-xs uppercase tracking-wider">
+              Beschikbaar op 31 jan
+            </span>
           </div>
         </div>
 
