@@ -14,6 +14,7 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 | [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 TODO | - | Nog niet gestart |
 | [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | #7 | 📝 DRAFT | - | User story draft aangemaakt |
 | ~~US-004~~ | Taaktoewijzing | - | ❌ Uitgesteld | - | - |
+| [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | URGENT | 🔧 IN PROGRESS | - | Bug fix: profiel laadt niet na login |
 
 ## Dependency Graph
 
@@ -198,8 +199,11 @@ docs/user-stories/
 ├── US-007-progressive-registration/
 │   ├── README.md
 │   └── PACT.md
-└── US-008-predictions-analytics/
-    └── README.md                     # Draft user story
+├── US-008-predictions-analytics/
+│   └── README.md                     # Draft user story
+└── US-009-profile-data-sync/
+    ├── README.md                     # Bug fix user story
+    └── PACT.md                       # Prepare documentatie
 ```
 
 ---
