@@ -42,10 +42,14 @@ export default function PredictionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [participants, setParticipants] = useState(FALLBACK_PARTICIPANTS);
+  const [isLocked, setIsLocked] = useState(false);
+  const [eventStarted, setEventStarted] = useState(false);
 
-  // Check if editing is allowed
-  const isLocked = !canEdit();
-  const eventStarted = new Date() >= EVENT_START;
+  // Check if editing is allowed (client-side only to avoid hydration mismatch)
+  useEffect(() => {
+    setIsLocked(!canEdit());
+    setEventStarted(new Date() >= EVENT_START);
+  }, [canEdit, isSubmitted]);
 
   // Fetch participants from database
   useEffect(() => {
