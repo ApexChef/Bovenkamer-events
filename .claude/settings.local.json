@@ -21,7 +21,19 @@
       "Bash(openssl rand:*)",
       "mcp__MCP_DOCKER__browser_evaluate",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git push:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(gh auth:*)",
+      "Bash(git checkout:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run dev)",
+      "Skill(playwright-mcp-testing)",
+      "Bash(open http://localhost:3000)",
+      "Bash(gh pr create:*)"
     ]
   }
 }
