@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -62,6 +62,32 @@ const DECLINE_REASONS = [
   { id: 'serious', label: 'Ik heb echt een goede reden...', emoji: '😢' },
 ];
 
+// Event date: January 31, 2026 at 14:00
+const EVENT_DATE = new Date('2026-01-31T14:00:00');
+
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+function calculateTimeLeft(): TimeLeft {
+  const now = new Date();
+  const difference = EVENT_DATE.getTime() - now.getTime();
+
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((difference / (1000 * 60)) % 60),
+    seconds: Math.floor((difference / 1000) % 60),
+  };
+}
+
 export function HomeTab({
   formData,
   aiAssignment,
@@ -69,9 +95,18 @@ export function HomeTab({
 }: HomeTabProps) {
   const { attendance, setAttendance } = useRegistrationStore();
   const [isEditingAttendance, setIsEditingAttendance] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
   const isProfileComplete = profileCompletion.percentage === 100;
 
   const totalCost = attendance.bringingPlusOne ? 100 : 50;
+
+  // Update countdown every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Check if attendance step is complete
   const isAttendanceComplete = attendance.confirmed !== null &&
@@ -110,6 +145,39 @@ export function HomeTab({
             }
           </p>
         </div>
+      </motion.div>
+
+      {/* Countdown Timer */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <Card className="border-gold/30 bg-gradient-to-br from-gold/5 to-transparent">
+          <CardContent className="py-4">
+            <p className="text-center text-sm text-cream/60 mb-3">
+              Nog tot de Winterproef
+            </p>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="bg-dark-wood/50 rounded-lg p-3">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.days}</p>
+                <p className="text-xs text-cream/50">dagen</p>
+              </div>
+              <div className="bg-dark-wood/50 rounded-lg p-3">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.hours}</p>
+                <p className="text-xs text-cream/50">uren</p>
+              </div>
+              <div className="bg-dark-wood/50 rounded-lg p-3">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.minutes}</p>
+                <p className="text-xs text-cream/50">min</p>
+              </div>
+              <div className="bg-dark-wood/50 rounded-lg p-3">
+                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.seconds}</p>
+                <p className="text-xs text-cream/50">sec</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Attendance Summary - Show when complete and not editing */}

@@ -66,35 +66,39 @@ export function Step2Skills() {
               <p className="text-sm text-cream/60 mb-4">
                 Selecteer per categorie wat je het beste kunt. "Niks" is ook valide!
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-4">
                 {(Object.entries(SKILL_CATEGORIES) as [SkillCategoryKey, typeof SKILL_CATEGORIES[SkillCategoryKey]][]).map(([categoryKey, category]) => (
                   <div
                     key={categoryKey}
-                    className={`p-3 rounded-lg border transition-all ${
+                    className={`p-4 rounded-lg border transition-all ${
                       skills[categoryKey]
-                        ? 'border-gold/40 bg-gold/10'
+                        ? 'border-gold/40 bg-gold/5'
                         : 'border-cream/20 bg-dark-wood/30'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">{category.icon}</span>
-                      <span className="text-sm font-medium text-cream">{category.label}</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xl">{category.icon}</span>
+                      <span className="text-sm font-semibold text-cream">{category.label}</span>
                       {skills[categoryKey] && (
                         <Check className="w-4 h-4 text-success-green ml-auto" />
                       )}
                     </div>
-                    <select
-                      value={skills[categoryKey]}
-                      onChange={(e) => handleSkillChange(categoryKey, e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-dark-wood border border-cream/20 rounded-lg text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Selecteer...</option>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {category.options.map((option) => (
-                        <option key={option.value} value={option.value}>
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleSkillChange(categoryKey, option.value)}
+                          className={`px-3 py-2 text-sm rounded-lg border transition-all text-center ${
+                            skills[categoryKey] === option.value
+                              ? 'border-gold bg-gold/20 text-gold font-medium'
+                              : 'border-cream/20 text-cream/70 hover:border-cream/40 hover:text-cream'
+                          }`}
+                        >
                           {option.label}
-                        </option>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 ))}
               </div>
