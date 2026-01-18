@@ -30,17 +30,18 @@ interface RegisterRequest {
   name: string;
   email: string;
   pin: string;
-  pinConfirm: string;
+  pinConfirm?: string;
   expectedParticipantId?: string;
+  minimal?: boolean; // Flag for minimal/progressive registration
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterRequest = await request.json();
-    const { name, email, pin, pinConfirm, expectedParticipantId } = body;
+    const { name, email, pin, pinConfirm, expectedParticipantId, minimal } = body;
 
-    // Input validation
-    if (!name || !email || !pin || !pinConfirm) {
+    // Input validation - for minimal registration, pinConfirm is handled client-side
+    if (!name || !email || !pin) {
       return NextResponse.json(
         {
           success: false,
@@ -49,15 +50,26 @@ export async function POST(request: NextRequest) {
             name: !name ? 'Naam is verplicht' : undefined,
             email: !email ? 'Email is verplicht' : undefined,
             pin: !pin ? 'PIN is verplicht' : undefined,
-            pinConfirm: !pinConfirm ? 'PIN bevestiging is verplicht' : undefined,
           },
         },
         { status: 400 }
       );
     }
 
-    // Validate PIN format
-    const pinErrors = validatePINFields(pin, pinConfirm);
+    // For non-minimal registration, require pinConfirm
+    if (!minimal && !pinConfirm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'VALIDATION_ERROR',
+          fields: { pinConfirm: 'PIN bevestiging is verplicht' },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate PIN format - for minimal, use pin as both values
+    const pinErrors = validatePINFields(pin, minimal ? pin : pinConfirm!);
     if (Object.keys(pinErrors).length > 0) {
       return NextResponse.json(
         {
@@ -123,17 +135,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user
+    // Create user - for minimal registration, auto-approve for immediate access
     const { data: newUser, error: createUserError } = await supabase
       .from('users')
       .insert({
         email: normalizedEmail,
         name: name.trim(),
         role: 'participant',
-        email_verified: false,
-        registration_status: 'pending',
+        email_verified: minimal ? true : false, // Skip email verification for minimal
+        registration_status: minimal ? 'approved' : 'pending', // Auto-approve for minimal
+        profile_completion: minimal ? 10 : 0, // Track profile completion (10 = basic info)
       })
-      .select('id, email, name')
+      .select('id, email, name, registration_status, profile_completion')
       .single();
 
     if (createUserError || !newUser) {
@@ -171,31 +184,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate verification token
-    const verificationToken = randomUUID();
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+    // Skip email verification for minimal registration (they get immediate access)
+    if (!minimal) {
+      // Generate verification token
+      const verificationToken = randomUUID();
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
 
-    const { error: verificationError } = await supabase.from('email_verifications').insert({
-      user_id: newUser.id,
-      token: verificationToken,
-      expires_at: expiresAt.toISOString(),
-    });
+      const { error: verificationError } = await supabase.from('email_verifications').insert({
+        user_id: newUser.id,
+        token: verificationToken,
+        expires_at: expiresAt.toISOString(),
+      });
 
-    if (verificationError) {
-      console.error('Error creating verification token:', verificationError);
-      // Continue anyway - user can request resend
-    }
+      if (verificationError) {
+        console.error('Error creating verification token:', verificationError);
+        // Continue anyway - user can request resend
+      }
 
-    // Send verification email
-    const emailResult = await sendVerificationEmail(
-      normalizedEmail,
-      name.trim(),
-      verificationToken
-    );
+      // Send verification email
+      const emailResult = await sendVerificationEmail(
+        normalizedEmail,
+        name.trim(),
+        verificationToken
+      );
 
-    if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.error);
-      // Continue anyway - user can request resend
+      if (!emailResult.success) {
+        console.error('Failed to send verification email:', emailResult.error);
+        // Continue anyway - user can request resend
+      }
     }
 
     // If registered from expected participants list, mark it
@@ -207,6 +223,28 @@ export async function POST(request: NextRequest) {
           registered_by_user_id: newUser.id,
         })
         .eq('id', expectedParticipantId);
+    }
+
+    // For minimal registration, return user object and token for immediate login
+    if (minimal) {
+      // Generate a simple session token
+      const sessionToken = randomUUID();
+
+      return NextResponse.json(
+        {
+          success: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            registrationStatus: newUser.registration_status,
+            profileCompletion: newUser.profile_completion,
+          },
+          token: sessionToken,
+          message: 'Registratie succesvol! Je kunt nu je profiel verder aanvullen.',
+        },
+        { status: 201 }
+      );
     }
 
     return NextResponse.json(
