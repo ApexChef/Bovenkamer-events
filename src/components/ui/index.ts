@@ -9,3 +9,6 @@ export { Slider } from './Slider';
 export { RadioGroup } from './RadioGroup';
 export { PINInput } from './PINInput';
 export type { PINInputRef } from './PINInput';
+export { BottomNav } from './BottomNav';
+export type { TabType } from './BottomNav';
+export { HamburgerMenu } from './HamburgerMenu';

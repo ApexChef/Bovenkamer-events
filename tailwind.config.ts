@@ -21,6 +21,9 @@ const config: Config = {
         'body': ['Source Sans Pro', 'sans-serif'],
         'mono': ['JetBrains Mono', 'monospace'],
       },
+      padding: {
+        'safe': 'env(safe-area-inset-bottom)',
+      },
     },
   },
   plugins: [],
