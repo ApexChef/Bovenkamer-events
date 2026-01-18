@@ -20,7 +20,7 @@ export default function Home() {
         {/* Stamp */}
         <div className="mb-8">
           <span className="stamp text-sm tracking-widest animate-glow">
-            Anno 2026
+            Anno 2023
           </span>
         </div>
 
@@ -74,15 +74,23 @@ export default function Home() {
             </>
           ) : (
             <>
-              <Link
-                href="/register"
-                className="group relative inline-flex items-center justify-center bg-gold text-dark-wood font-bold uppercase tracking-wider px-10 py-5 rounded-lg text-lg shadow-lg shadow-gold/25 hover:bg-gold/90 hover:shadow-xl hover:shadow-gold/30 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
-              >
-                <span className="relative z-10">Registreer Nu</span>
-                <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-gold via-yellow-400 to-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                  href="/register"
+                  className="group relative inline-flex items-center justify-center bg-gold text-dark-wood font-bold uppercase tracking-wider w-48 py-5 rounded-lg text-lg shadow-lg shadow-gold/25 hover:bg-gold/90 hover:shadow-xl hover:shadow-gold/30 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+                >
+                  <span className="relative z-10">Registreer</span>
+                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-gold via-yellow-400 to-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center border-2 border-gold text-gold font-bold uppercase tracking-wider w-48 py-4 rounded-lg hover:bg-gold/10 transition-all duration-300"
+                >
+                  Inloggen
+                </Link>
+              </div>
               <p className="text-cream/60 text-sm mt-4">
-                Meld u aan voor het festijn en ontvang uw toewijzing
+                Nieuw? Registreer. Al lid? Log in.
               </p>
             </>
           )}

@@ -101,7 +101,7 @@ export function HamburgerMenu({ onLogout }: HamburgerMenuProps) {
 
               {/* Logout */}
               {onLogout && (
-                <div className="p-4 border-t border-gold/20">
+                <div className="p-4 border-t border-gold/20" style={{ backgroundColor: '#2C1810' }}>
                   <button
                     onClick={() => {
                       setIsOpen(false);

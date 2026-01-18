@@ -1,3 +1,4 @@
+
 # PACT Analyse: US-007 - Progressieve Registratie
 
 > **PACT Framework**: Prepare, Architecture, Code, Test
@@ -26,15 +27,23 @@
 9. **FR-007.9**: Leaderboard integratie met profiel-punten
 
 ### Profiel Secties & Punten
-| Sectie | Velden | Punten | Prioriteit |
-|--------|--------|--------|------------|
-| Persoonlijk | Geboortedatum, geslacht, partner | 50 | Hoog |
-| JKV Historie | JKV/Bovenkamer jaren | 30 | Medium |
-| Skills | 8 skill categorieën | 40 | Hoog |
-| Muziek | Decennium, genre | 20 | Laag |
-| Borrel Stats | 2025 geweest, 2026 planning | 30 | Medium |
-| Fun Quiz | 15 grappige vragen | 80 | Hoog |
-| **Totaal** | | **250** | |
+
+**MVP (geïmplementeerd):**
+| Sectie | Velden | Punten | Status |
+|--------|--------|--------|--------|
+| Basic | Naam, email | 10 | ✅ MVP |
+| Persoonlijk | Geboortejaar, partner, dieet | 50 | ✅ MVP |
+| Skills | Primaire + extra skills | 40 | ✅ MVP |
+| Muziek | Decennium, genre | 20 | ✅ MVP |
+| Fun Quiz | 7 vragen (min. 5) | 80 | ✅ MVP |
+| **Totaal MVP** | | **200** | |
+
+**Later toe te voegen:**
+| Sectie | Velden | Punten | Status |
+|--------|--------|--------|--------|
+| JKV Historie | JKV/Bovenkamer jaren | 30 | ⏳ v1.1 |
+| Borrel Stats | 2025 geweest, 2026 planning | 30 | ⏳ v1.1 |
+| **Totaal Compleet** | | **260** | |
 
 ### Scope Afbakening
 | In Scope | Buiten Scope |
@@ -384,10 +393,88 @@ Cron Trigger (maandag 10:00)
 
 ## CODE
 
-*Nog niet uitgewerkt - volgt na Architecture review*
+### Implementatie Status
+
+#### MVP (v1.0) - ✅ GEDAAN
+
+| Component | Status | Beschrijving |
+|-----------|--------|--------------|
+| **Minimale Registratie** | ✅ Klaar | `/register` - alleen naam, email, PIN |
+| **StepMinimalRegistration** | ✅ Klaar | `src/components/forms/StepMinimalRegistration.tsx` |
+| **API Register (minimal)** | ✅ Klaar | `src/app/api/auth/register/route.ts` - `minimal: true` flag |
+| **Store Profile Tracking** | ✅ Klaar | `src/lib/store.ts` - `completedSections`, `getProfileCompletion()` |
+| **Profile Page** | ✅ Klaar | `/profile` - uitklapbare secties |
+| **Dashboard CTA** | ✅ Klaar | `HomeTab.tsx` - profile completion card |
+
+#### Geïmplementeerde Secties & Punten (MVP)
+
+| Sectie | Velden | Punten | Status |
+|--------|--------|--------|--------|
+| Basic | Naam, email | 10 | ✅ Auto-complete bij registratie |
+| Personal | Geboortejaar, partner, dieetwensen | 50 | ✅ Klaar |
+| Skills | Primaire skill, extra skills | 40 | ✅ Klaar |
+| Music | Decennium, genre | 20 | ✅ Klaar |
+| Quiz | 7 grappige vragen (min. 5 verplicht) | 80 | ✅ Klaar |
+| **Totaal MVP** | | **200** | |
+
+#### Bestanden Gewijzigd/Toegevoegd (MVP)
+
+```
+src/
+├── app/
+│   ├── api/auth/register/route.ts    # Updated: minimal flag support
+│   ├── dashboard/page.tsx            # Updated: profileCompletion prop
+│   ├── profile/page.tsx              # NEW: profiel aanvullen pagina
+│   └── register/page.tsx             # Updated: simplified, uses minimal form
+├── components/
+│   ├── dashboard/HomeTab.tsx         # Updated: profile completion CTA
+│   └── forms/
+│       ├── index.ts                  # Updated: export StepMinimalRegistration
+│       └── StepMinimalRegistration.tsx # NEW: minimal registration form
+└── lib/
+    └── store.ts                      # Updated: ProfileSections, SECTION_POINTS
+```
+
+---
+
+### Nog Te Doen (v1.1+)
+
+| Feature | Prioriteit | Beschrijving |
+|---------|------------|--------------|
+| **JKV Historie sectie** | Medium | JKV/Bovenkamer jaren (+30 punten) |
+| **Borrel Stats sectie** | Medium | 2025 geweest, 2026 planning (+30 punten) |
+| **E-mail herinneringen** | Hoog | Automatisch na 24h, wekelijks, laatste kans |
+| **Admin reminder beheer** | Medium | Handmatige e-mails sturen |
+| **"Passeer X" berekening** | Medium | Toon wie je kunt inhalen met extra punten |
+| **In-app notificaties** | Laag | Badge/prompt bij incomplete profiel |
+| **Database sync** | Hoog | Profiel data opslaan in Supabase (nu alleen localStorage) |
+| **Leaderboard integratie** | Hoog | Profile points meerekenen in totaal |
+
+---
+
+### Technische Schuld
+
+| Item | Impact | Beschrijving |
+|------|--------|--------------|
+| localStorage only | Medium | Profiel data gaat verloren bij wissen cache |
+| Geen server-side validatie sectie data | Laag | Alleen client-side validatie |
+| Geen optimistic updates | Laag | UI wacht op state update |
 
 ---
 
 ## TEST
 
-*Nog niet uitgewerkt - volgt na Code implementatie*
+### Handmatige Test Scenarios (MVP)
+
+| Test | Stappen | Verwacht Resultaat |
+|------|---------|-------------------|
+| **Minimale registratie** | 1. Ga naar `/register` 2. Vul naam, email, PIN in 3. Klik Aanmelden | Redirect naar `/dashboard`, basic sectie = 10 punten |
+| **Profiel aanvullen** | 1. Ga naar `/profile` 2. Vul Personal sectie in 3. Klik Opslaan | Sectie groen, +50 punten, progress bar updated |
+| **Dashboard CTA** | 1. Login met incompleet profiel 2. Bekijk dashboard | "Profiel Aanvullen" card zichtbaar met percentage |
+| **100% complete** | Vul alle secties in | Celebratie message, CTA verdwijnt van dashboard |
+
+### Nog Te Schrijven Tests
+
+- [ ] Unit tests voor `getProfileCompletion()`
+- [ ] Integration tests voor register API met minimal flag
+- [ ] E2E tests voor complete registratie + profiel flow

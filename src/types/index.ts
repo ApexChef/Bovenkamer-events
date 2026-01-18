@@ -78,12 +78,13 @@ export interface Predictions {
   meatKilos?: number;
   firstSleeper?: string;
   spontaneousSinger?: string;
-  lastToLeave?: string;
+  firstToLeave?: string;      // Wie vertrekt als eerste?
+  lastToLeave?: string;       // Wie gaat als laatste naar huis?
   loudestLaugher?: string;
   longestStoryTeller?: string;
   somethingBurned?: boolean;
   outsideTemp?: number;
-  lastGuestTime?: string;
+  lastGuestTime?: number;     // Slider value: 0=19:00, 22=06:00 (half-hour increments)
 }
 
 export interface Registration {
@@ -197,9 +198,11 @@ export interface RegistrationFormData {
   partnerName: string;
   dietaryRequirements: string;
 
-  // Step 2
-  primarySkill: string;
+  // Step 2 - Skills (8 categories)
+  skills: SkillSelections;
   additionalSkills: string;
+
+  // Step 2 - Music
   musicDecade: string;
   musicGenre: string;
 
@@ -221,6 +224,111 @@ export const SKILL_OPTIONS = [
   { value: 'organizing', label: 'Organiseren', description: 'Alles onder controle' },
   { value: 'photos', label: "Foto's maken", description: 'Influencer-niveau' },
 ] as const;
+
+// Skill categories for US-001
+export const SKILL_CATEGORIES = {
+  food_prep: {
+    label: 'Eten bereiden',
+    icon: '🍳',
+    options: [
+      { value: 'cooking', label: 'Koken' },
+      { value: 'salads', label: 'Salades maken' },
+      { value: 'cutting', label: 'Snijden & voorbereiden' },
+      { value: 'marinating', label: 'Marineren' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  bbq_grill: {
+    label: 'BBQ & Grill',
+    icon: '🔥',
+    options: [
+      { value: 'meat', label: 'Vlees grillen' },
+      { value: 'fish', label: 'Vis grillen' },
+      { value: 'veggie', label: 'Vegetarisch' },
+      { value: 'fire_watch', label: 'Vuur bewaken' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  drinks: {
+    label: 'Dranken',
+    icon: '🍷',
+    options: [
+      { value: 'wine', label: 'Wijn selecteren' },
+      { value: 'beer', label: 'Bier tappen' },
+      { value: 'cocktails', label: 'Cocktails mixen' },
+      { value: 'coffee', label: 'Koffie & thee' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  entertainment: {
+    label: 'Entertainment',
+    icon: '🎵',
+    options: [
+      { value: 'dj', label: 'DJ-en / Muziek' },
+      { value: 'games', label: 'Spelletjes organiseren' },
+      { value: 'karaoke', label: 'Karaoke' },
+      { value: 'stories', label: 'Verhalen vertellen' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  atmosphere: {
+    label: 'Sfeer',
+    icon: '✨',
+    options: [
+      { value: 'fire', label: 'Vuur maken & onderhouden' },
+      { value: 'decoration', label: 'Decoratie' },
+      { value: 'lighting', label: 'Verlichting' },
+      { value: 'comfort', label: 'Zitplekken regelen' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  social: {
+    label: 'Sociaal',
+    icon: '💬',
+    options: [
+      { value: 'conversation', label: 'Gesprekken leiden' },
+      { value: 'introducing', label: 'Mensen voorstellen' },
+      { value: 'host', label: 'Gastheer/vrouw' },
+      { value: 'mediator', label: 'Bemiddelaar' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  cleanup: {
+    label: 'Opruimen',
+    icon: '🧹',
+    options: [
+      { value: 'dishes', label: 'Afwassen' },
+      { value: 'tidying', label: 'Opruimen' },
+      { value: 'garbage', label: 'Afval verwerken' },
+      { value: 'organizing', label: 'Organiseren' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+  documentation: {
+    label: 'Documentatie',
+    icon: '📸',
+    options: [
+      { value: 'photos', label: "Foto's maken" },
+      { value: 'video', label: 'Video opnemen' },
+      { value: 'social_media', label: 'Social media' },
+      { value: 'memories', label: 'Herinneringen vastleggen' },
+      { value: 'nothing', label: 'Niks' },
+    ],
+  },
+} as const;
+
+export type SkillCategoryKey = keyof typeof SKILL_CATEGORIES;
+
+export interface SkillSelections {
+  food_prep: string;
+  bbq_grill: string;
+  drinks: string;
+  entertainment: string;
+  atmosphere: string;
+  social: string;
+  cleanup: string;
+  documentation: string;
+}
 
 export const MUSIC_DECADES = [
   { value: '80s', label: "80's", description: 'Synthpop en power ballads' },

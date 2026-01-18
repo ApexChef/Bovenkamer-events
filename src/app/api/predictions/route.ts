@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       await supabase.from('points_ledger').insert({
         user_id: user.id,
         source: 'prediction',
-        points: 5,
+        points: 40,
         description: 'Voorspellingen ingediend',
       });
     }

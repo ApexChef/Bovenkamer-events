@@ -1,6 +1,35 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache } from '@/types';
+import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache, SkillSelections, SkillCategoryKey } from '@/types';
+
+// Profile sections for progressive registration
+export interface ProfileSections {
+  basic: boolean;      // Name, email (always true after minimal registration)
+  personal: boolean;   // Birth year, partner, dietary
+  skills: boolean;     // Primary + additional skills
+  music: boolean;      // Music decade, genre
+  quiz: boolean;       // Quiz answers
+}
+
+// Points per section
+export const SECTION_POINTS = {
+  basic: 10,
+  personal: 50,
+  skills: 40,
+  music: 20,
+  quiz: 80,
+} as const;
+
+export const TOTAL_PROFILE_POINTS = Object.values(SECTION_POINTS).reduce((a, b) => a + b, 0);
+
+// Attendance data for event confirmation
+export interface AttendanceData {
+  confirmed: boolean | null;       // null = not answered, true = coming, false = not coming
+  bringingPlusOne: boolean | null; // null = not answered
+  plusOneName: string;
+  declineReason: string | null;
+  customDeclineReason: string;
+}
 
 interface RegistrationState {
   // Form data
@@ -8,6 +37,12 @@ interface RegistrationState {
   currentStep: number;
   isSubmitting: boolean;
   isComplete: boolean;
+
+  // Profile completion tracking
+  completedSections: ProfileSections;
+
+  // Attendance confirmation
+  attendance: AttendanceData;
 
   // AI Assignment result
   aiAssignment: AIAssignment | null;
@@ -22,6 +57,7 @@ interface RegistrationState {
   // Actions
   setFormData: (data: Partial<RegistrationFormData>) => void;
   setQuizAnswer: (key: keyof QuizAnswers, value: string) => void;
+  setSkill: (category: SkillCategoryKey, value: string) => void;
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -30,8 +66,22 @@ interface RegistrationState {
   setAIAssignment: (assignment: AIAssignment) => void;
   setUser: (userId: string, authCode: string) => void;
   setHasHydrated: (state: boolean) => void;
+  markSectionComplete: (section: keyof ProfileSections) => void;
+  getProfileCompletion: () => { percentage: number; points: number; completedSections: string[] };
+  setAttendance: (data: Partial<AttendanceData>) => void;
   reset: () => void;
 }
+
+const initialSkills: SkillSelections = {
+  food_prep: '',
+  bbq_grill: '',
+  drinks: '',
+  entertainment: '',
+  atmosphere: '',
+  social: '',
+  cleanup: '',
+  documentation: '',
+};
 
 const initialFormData: RegistrationFormData = {
   pin: '',
@@ -41,20 +91,38 @@ const initialFormData: RegistrationFormData = {
   hasPartner: false,
   partnerName: '',
   dietaryRequirements: '',
-  primarySkill: '',
+  skills: initialSkills,
   additionalSkills: '',
   musicDecade: '',
   musicGenre: '',
   quizAnswers: {},
 };
 
+const initialCompletedSections: ProfileSections = {
+  basic: false,
+  personal: false,
+  skills: false,
+  music: false,
+  quiz: false,
+};
+
+const initialAttendance: AttendanceData = {
+  confirmed: null,
+  bringingPlusOne: null,
+  plusOneName: '',
+  declineReason: null,
+  customDeclineReason: '',
+};
+
 export const useRegistrationStore = create<RegistrationState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       formData: initialFormData,
       currentStep: 0,
       isSubmitting: false,
       isComplete: false,
+      completedSections: initialCompletedSections,
+      attendance: initialAttendance,
       aiAssignment: null,
       userId: null,
       authCode: null,
@@ -73,6 +141,14 @@ export const useRegistrationStore = create<RegistrationState>()(
           },
         })),
 
+      setSkill: (category, value) =>
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            skills: { ...state.formData.skills, [category]: value },
+          },
+        })),
+
       setCurrentStep: (step) => set({ currentStep: step }),
 
       nextStep: () =>
@@ -87,9 +163,51 @@ export const useRegistrationStore = create<RegistrationState>()(
 
       setAIAssignment: (assignment) => set({ aiAssignment: assignment }),
 
+      setAttendance: (data) =>
+        set((state) => ({
+          attendance: { ...state.attendance, ...data },
+        })),
+
       setUser: (userId, authCode) => set({ userId, authCode }),
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
+
+      markSectionComplete: (section) =>
+        set((state) => ({
+          completedSections: { ...state.completedSections, [section]: true },
+        })),
+
+      getProfileCompletion: () => {
+        const state = get();
+        const completed = state.completedSections;
+        const completedSections: string[] = [];
+        let points = 0;
+
+        if (completed.basic) {
+          completedSections.push('basic');
+          points += SECTION_POINTS.basic;
+        }
+        if (completed.personal) {
+          completedSections.push('personal');
+          points += SECTION_POINTS.personal;
+        }
+        if (completed.skills) {
+          completedSections.push('skills');
+          points += SECTION_POINTS.skills;
+        }
+        if (completed.music) {
+          completedSections.push('music');
+          points += SECTION_POINTS.music;
+        }
+        if (completed.quiz) {
+          completedSections.push('quiz');
+          points += SECTION_POINTS.quiz;
+        }
+
+        const percentage = Math.round((points / TOTAL_PROFILE_POINTS) * 100);
+
+        return { percentage, points, completedSections };
+      },
 
       reset: () =>
         set({
@@ -97,6 +215,8 @@ export const useRegistrationStore = create<RegistrationState>()(
           currentStep: 1,
           isSubmitting: false,
           isComplete: false,
+          completedSections: initialCompletedSections,
+          attendance: initialAttendance,
           aiAssignment: null,
         }),
     }),
@@ -106,6 +226,8 @@ export const useRegistrationStore = create<RegistrationState>()(
         formData: state.formData,
         currentStep: state.currentStep,
         isComplete: state.isComplete,
+        completedSections: state.completedSections,
+        attendance: state.attendance,
         aiAssignment: state.aiAssignment,
         userId: state.userId,
         authCode: state.authCode,
@@ -117,19 +239,26 @@ export const useRegistrationStore = create<RegistrationState>()(
   )
 );
 
+// Event start time - predictions are locked after this
+export const EVENT_START = new Date('2026-01-31T14:00:00');
+
 // Predictions store
 interface PredictionsState {
   predictions: Predictions;
-  isSubmitted: boolean;
+  isDraft: boolean;        // true = saved as draft, can still edit
+  isSubmitted: boolean;    // true = definitively submitted
   setPrediction: <K extends keyof Predictions>(key: K, value: Predictions[K]) => void;
-  setSubmitted: (submitted: boolean) => void;
+  saveDraft: () => void;
+  submitFinal: () => void;
+  canEdit: () => boolean;  // false after event starts
   reset: () => void;
 }
 
 export const usePredictionsStore = create<PredictionsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       predictions: {},
+      isDraft: false,
       isSubmitted: false,
 
       setPrediction: (key, value) =>
@@ -137,9 +266,21 @@ export const usePredictionsStore = create<PredictionsState>()(
           predictions: { ...state.predictions, [key]: value },
         })),
 
-      setSubmitted: (submitted) => set({ isSubmitted: submitted }),
+      saveDraft: () => set({ isDraft: true }),
 
-      reset: () => set({ predictions: {}, isSubmitted: false }),
+      submitFinal: () => set({ isSubmitted: true, isDraft: false }),
+
+      canEdit: () => {
+        const state = get();
+        const now = new Date();
+        // Cannot edit if event has started or already submitted
+        if (now >= EVENT_START || state.isSubmitted) {
+          return false;
+        }
+        return true;
+      },
+
+      reset: () => set({ predictions: {}, isDraft: false, isSubmitted: false }),
     }),
     {
       name: 'bovenkamer-predictions',

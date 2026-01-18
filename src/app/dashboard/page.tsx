@@ -22,7 +22,7 @@ interface LeaderboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete, _hasHydrated } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, _hasHydrated, getProfileCompletion } = useRegistrationStore();
   const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
   const { logout } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
@@ -66,6 +66,7 @@ export default function DashboardPage() {
 
   const userPoints = leaderboardData?.currentUser?.points ?? 0;
   const userRank = leaderboardData?.currentUser?.rank ?? '-';
+  const profileCompletion = getProfileCompletion();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -78,6 +79,7 @@ export default function DashboardPage() {
             userRank={userRank}
             isLoading={isLoading}
             predictionsSubmitted={predictionsSubmitted}
+            profileCompletion={profileCompletion}
           />
         );
       case 'predictions':
@@ -150,6 +152,7 @@ export default function DashboardPage() {
               isLoading={isLoading}
               predictionsSubmitted={predictionsSubmitted}
               leaderboardData={leaderboardData}
+              profileCompletion={profileCompletion}
             />
           </div>
         </div>
@@ -177,6 +180,7 @@ function DesktopDashboard({
   isLoading,
   predictionsSubmitted,
   leaderboardData,
+  profileCompletion,
 }: {
   formData: any;
   aiAssignment: any;
@@ -185,6 +189,7 @@ function DesktopDashboard({
   isLoading: boolean;
   predictionsSubmitted: boolean;
   leaderboardData: LeaderboardData | null;
+  profileCompletion: { percentage: number; points: number; completedSections: string[] };
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -197,6 +202,7 @@ function DesktopDashboard({
           userRank={userRank}
           isLoading={isLoading}
           predictionsSubmitted={predictionsSubmitted}
+          profileCompletion={profileCompletion}
         />
       </div>
 

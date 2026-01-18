@@ -1,22 +1,9 @@
 'use client';
 
-import { useRegistrationStore } from '@/lib/store';
-import { ProgressSteps } from '@/components/ui';
-import { Step0Auth, Step1Personal, Step2Skills, Step3Quiz, Step4Assignment } from '@/components/forms';
-import { AnimatePresence } from 'framer-motion';
+import { StepMinimalRegistration } from '@/components/forms';
 import Link from 'next/link';
 
-const STEPS = [
-  { number: 0, title: 'PIN' },
-  { number: 1, title: 'Gegevens' },
-  { number: 2, title: 'Capaciteiten' },
-  { number: 3, title: 'Quiz' },
-  { number: 4, title: 'Toewijzing' },
-];
-
 export default function RegisterPage() {
-  const { currentStep } = useRegistrationStore();
-
   return (
     <main className="min-h-screen py-8 px-4">
       {/* Background decorations */}
@@ -25,7 +12,7 @@ export default function RegisterPage() {
         <div className="absolute bottom-20 right-20 w-48 h-48 border border-gold/10 rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-2xl mx-auto">
+      <div className="relative z-10 max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
@@ -33,21 +20,20 @@ export default function RegisterPage() {
               Bovenkamer Winterproef
             </h1>
           </Link>
-          <p className="text-cream/60">Registratie 2026</p>
+          <p className="text-cream/60">Snel aanmelden</p>
         </div>
 
-        {/* Progress Steps */}
-        <ProgressSteps steps={STEPS} currentStep={currentStep} />
+        {/* Minimal Registration Form */}
+        <StepMinimalRegistration />
 
-        {/* Form Steps */}
-        <div className="mt-12">
-          <AnimatePresence mode="wait">
-            {currentStep === 0 && <Step0Auth key="step0" />}
-            {currentStep === 1 && <Step1Personal key="step1" />}
-            {currentStep === 2 && <Step2Skills key="step2" />}
-            {currentStep === 3 && <Step3Quiz key="step3" />}
-            {currentStep === 4 && <Step4Assignment key="step4" />}
-          </AnimatePresence>
+        {/* Login link */}
+        <div className="mt-6 text-center">
+          <p className="text-cream/50 text-sm">
+            Al geregistreerd?{' '}
+            <Link href="/login" className="text-gold hover:text-gold/80 underline">
+              Log in
+            </Link>
+          </p>
         </div>
 
         {/* Footer */}
