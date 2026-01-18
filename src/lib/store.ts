@@ -2,12 +2,35 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache } from '@/types';
 
+// Profile sections for progressive registration
+export interface ProfileSections {
+  basic: boolean;      // Name, email (always true after minimal registration)
+  personal: boolean;   // Birth year, partner, dietary
+  skills: boolean;     // Primary + additional skills
+  music: boolean;      // Music decade, genre
+  quiz: boolean;       // Quiz answers
+}
+
+// Points per section
+export const SECTION_POINTS = {
+  basic: 10,
+  personal: 50,
+  skills: 40,
+  music: 20,
+  quiz: 80,
+} as const;
+
+export const TOTAL_PROFILE_POINTS = Object.values(SECTION_POINTS).reduce((a, b) => a + b, 0);
+
 interface RegistrationState {
   // Form data
   formData: RegistrationFormData;
   currentStep: number;
   isSubmitting: boolean;
   isComplete: boolean;
+
+  // Profile completion tracking
+  completedSections: ProfileSections;
 
   // AI Assignment result
   aiAssignment: AIAssignment | null;
@@ -30,6 +53,8 @@ interface RegistrationState {
   setAIAssignment: (assignment: AIAssignment) => void;
   setUser: (userId: string, authCode: string) => void;
   setHasHydrated: (state: boolean) => void;
+  markSectionComplete: (section: keyof ProfileSections) => void;
+  getProfileCompletion: () => { percentage: number; points: number; completedSections: string[] };
   reset: () => void;
 }
 
@@ -48,13 +73,22 @@ const initialFormData: RegistrationFormData = {
   quizAnswers: {},
 };
 
+const initialCompletedSections: ProfileSections = {
+  basic: false,
+  personal: false,
+  skills: false,
+  music: false,
+  quiz: false,
+};
+
 export const useRegistrationStore = create<RegistrationState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       formData: initialFormData,
       currentStep: 0,
       isSubmitting: false,
       isComplete: false,
+      completedSections: initialCompletedSections,
       aiAssignment: null,
       userId: null,
       authCode: null,
@@ -91,12 +125,50 @@ export const useRegistrationStore = create<RegistrationState>()(
 
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
+      markSectionComplete: (section) =>
+        set((state) => ({
+          completedSections: { ...state.completedSections, [section]: true },
+        })),
+
+      getProfileCompletion: () => {
+        const state = get();
+        const completed = state.completedSections;
+        const completedSections: string[] = [];
+        let points = 0;
+
+        if (completed.basic) {
+          completedSections.push('basic');
+          points += SECTION_POINTS.basic;
+        }
+        if (completed.personal) {
+          completedSections.push('personal');
+          points += SECTION_POINTS.personal;
+        }
+        if (completed.skills) {
+          completedSections.push('skills');
+          points += SECTION_POINTS.skills;
+        }
+        if (completed.music) {
+          completedSections.push('music');
+          points += SECTION_POINTS.music;
+        }
+        if (completed.quiz) {
+          completedSections.push('quiz');
+          points += SECTION_POINTS.quiz;
+        }
+
+        const percentage = Math.round((points / TOTAL_PROFILE_POINTS) * 100);
+
+        return { percentage, points, completedSections };
+      },
+
       reset: () =>
         set({
           formData: initialFormData,
           currentStep: 1,
           isSubmitting: false,
           isComplete: false,
+          completedSections: initialCompletedSections,
           aiAssignment: null,
         }),
     }),
@@ -106,6 +178,7 @@ export const useRegistrationStore = create<RegistrationState>()(
         formData: state.formData,
         currentStep: state.currentStep,
         isComplete: state.isComplete,
+        completedSections: state.completedSections,
         aiAssignment: state.aiAssignment,
         userId: state.userId,
         authCode: state.authCode,

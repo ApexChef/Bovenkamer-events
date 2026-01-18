@@ -1,8 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Trophy, Star, Target, Flame } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import Link from 'next/link';
+import { Trophy, Star, Target, Flame, ChevronRight, User } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 
 interface AIAssignment {
   officialTitle: string;
@@ -23,6 +24,11 @@ interface HomeTabProps {
   userRank: number | string;
   isLoading: boolean;
   predictionsSubmitted: boolean;
+  profileCompletion: {
+    percentage: number;
+    points: number;
+    completedSections: string[];
+  };
 }
 
 const WARNING_COLORS = {
@@ -39,6 +45,7 @@ export function HomeTab({
   userRank,
   isLoading,
   predictionsSubmitted,
+  profileCompletion,
 }: HomeTabProps) {
   return (
     <div className="space-y-4">
@@ -90,11 +97,70 @@ export function HomeTab({
         </Card>
       </motion.div>
 
+      {/* Profile Completion Card */}
+      {profileCompletion.percentage < 100 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Link href="/profile">
+            <Card className="border-gold/30 hover:border-gold/50 transition-colors cursor-pointer">
+              <CardContent className="py-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center relative">
+                    <User className="w-6 h-6 text-gold" />
+                    <svg
+                      className="absolute inset-0 w-12 h-12"
+                      viewBox="0 0 48 48"
+                    >
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="text-dark-wood"
+                      />
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray={`${profileCompletion.percentage * 1.26} 126`}
+                        strokeLinecap="round"
+                        className="text-gold"
+                        transform="rotate(-90 24 24)"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-cream">Profiel Aanvullen</p>
+                      <span className="text-xs text-gold bg-gold/20 px-2 py-0.5 rounded-full">
+                        +{200 - profileCompletion.points} punten
+                      </span>
+                    </div>
+                    <p className="text-xs text-cream/60">
+                      {profileCompletion.percentage}% compleet - verdien extra punten
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-cream/40" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
+      )}
+
       {/* Assignment Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: profileCompletion.percentage < 100 ? 0.2 : 0.1 }}
       >
         <Card>
           <CardHeader className="pb-2">
