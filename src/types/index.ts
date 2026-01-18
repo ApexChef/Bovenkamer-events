@@ -78,12 +78,13 @@ export interface Predictions {
   meatKilos?: number;
   firstSleeper?: string;
   spontaneousSinger?: string;
-  lastToLeave?: string;
+  firstToLeave?: string;      // Wie vertrekt als eerste?
+  lastToLeave?: string;       // Wie gaat als laatste naar huis?
   loudestLaugher?: string;
   longestStoryTeller?: string;
   somethingBurned?: boolean;
   outsideTemp?: number;
-  lastGuestTime?: string;
+  lastGuestTime?: number;     // Slider value: 0=19:00, 22=06:00 (half-hour increments)
 }
 
 export interface Registration {

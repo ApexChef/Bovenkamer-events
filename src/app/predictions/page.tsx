@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePredictionsStore, useRegistrationStore } from '@/lib/store';
+import { usePredictionsStore, useRegistrationStore, EVENT_START } from '@/lib/store';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select } from '@/components/ui';
 import { Slider } from '@/components/ui/Slider';
 import { RadioGroup } from '@/components/ui/RadioGroup';
@@ -24,19 +24,28 @@ const FALLBACK_PARTICIPANTS = [
   { value: 'wim', label: 'Wim' },
 ];
 
-const TIME_OPTIONS = Array.from({ length: 15 }, (_, i) => {
-  const hour = 20 + Math.floor(i / 2);
-  const minutes = (i % 2) * 30;
-  const time = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  return { value: time, label: time };
-});
+// Time slider: 0=19:00, 22=06:00 (half-hour increments)
+// 19:00 to 00:00 = 10 half-hours (0-10)
+// 00:00 to 06:00 = 12 half-hours (10-22)
+const formatTimeSlider = (value: number): string => {
+  // value 0 = 19:00, value 22 = 06:00
+  const totalMinutes = 19 * 60 + value * 30;
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
 
 export default function PredictionsPage() {
   const router = useRouter();
   const { formData, isComplete } = useRegistrationStore();
-  const { predictions, setPrediction, isSubmitted, setSubmitted } = usePredictionsStore();
+  const { predictions, setPrediction, isDraft, isSubmitted, saveDraft, submitFinal, canEdit } = usePredictionsStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [participants, setParticipants] = useState(FALLBACK_PARTICIPANTS);
+
+  // Check if editing is allowed
+  const isLocked = !canEdit();
+  const eventStarted = new Date() >= EVENT_START;
 
   // Fetch participants from database
   useEffect(() => {
@@ -69,12 +78,8 @@ export default function PredictionsPage() {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const savePredictionsToServer = async () => {
     try {
-      // Save to database
       const response = await fetch('/api/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,22 +91,30 @@ export default function PredictionsPage() {
 
       if (!response.ok) {
         console.error('Failed to save predictions to database');
-        // Continue anyway - localStorage backup is available
       }
-
-      setSubmitted(true);
-      router.push('/dashboard');
     } catch (error) {
       console.error('Error saving predictions:', error);
-      // Continue anyway
-      setSubmitted(true);
-      router.push('/dashboard');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (isSubmitted) {
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    await savePredictionsToServer();
+    saveDraft();
+    setIsSavingDraft(false);
+    router.push('/dashboard');
+  };
+
+  const handleSubmitFinal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    await savePredictionsToServer();
+    submitFinal();
+    setIsLoading(false);
+    router.push('/dashboard');
+  };
+
+  if (isSubmitted || eventStarted) {
     return (
       <main className="min-h-screen py-8 px-4">
         <div className="max-w-2xl mx-auto">
@@ -112,8 +125,14 @@ export default function PredictionsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="font-display text-2xl text-gold mb-2">Voorspellingen Ingediend</h2>
-              <p className="text-cream/60 mb-6">Uw voorspellingen zijn geregistreerd. Na de BBQ worden de punten toegekend.</p>
+              <h2 className="font-display text-2xl text-gold mb-2">
+                {eventStarted ? 'Voorspellingen Vergrendeld' : 'Voorspellingen Ingediend'}
+              </h2>
+              <p className="text-cream/60 mb-6">
+                {eventStarted
+                  ? 'Het evenement is begonnen. Voorspellingen kunnen niet meer worden aangepast.'
+                  : 'Uw voorspellingen zijn definitief ingediend. Na de BBQ worden de punten toegekend.'}
+              </p>
               <Link href="/dashboard">
                 <Button>Terug naar Dashboard</Button>
               </Link>
@@ -137,7 +156,7 @@ export default function PredictionsPage() {
           <p className="text-cream/60">Waag uw gok en verdien punten</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmitFinal} className="space-y-6">
           {/* Consumption Predictions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -170,11 +189,12 @@ export default function PredictionsPage() {
 
                 <Slider
                   label="Kilo's vlees"
-                  min={5}
-                  max={15}
-                  value={predictions.meatKilos ?? 10}
+                  min={2}
+                  max={8}
+                  value={predictions.meatKilos ?? 4}
                   onChange={(e) => setPrediction('meatKilos', parseInt(e.target.value))}
                   unit=" kg"
+                  hint="~20 personen × 200g = 4kg"
                 />
               </CardContent>
             </Card>
@@ -206,6 +226,14 @@ export default function PredictionsPage() {
                   placeholder="Selecteer een deelnemer"
                   value={predictions.spontaneousSinger ?? ''}
                   onChange={(e) => setPrediction('spontaneousSinger', e.target.value)}
+                />
+
+                <Select
+                  label="Wie vertrekt als eerste?"
+                  options={participants}
+                  placeholder="Selecteer een deelnemer"
+                  value={predictions.firstToLeave ?? ''}
+                  onChange={(e) => setPrediction('firstToLeave', e.target.value)}
                 />
 
                 <Select
@@ -267,12 +295,15 @@ export default function PredictionsPage() {
                   unit="°C"
                 />
 
-                <Select
+                <Slider
                   label="Hoe laat vertrekt de laatste gast?"
-                  options={TIME_OPTIONS}
-                  placeholder="Selecteer een tijd"
-                  value={predictions.lastGuestTime ?? ''}
-                  onChange={(e) => setPrediction('lastGuestTime', e.target.value)}
+                  min={0}
+                  max={22}
+                  value={predictions.lastGuestTime ?? 10}
+                  onChange={(e) => setPrediction('lastGuestTime', parseInt(e.target.value))}
+                  formatValue={formatTimeSlider}
+                  formatMin="19:00"
+                  formatMax="06:00"
                 />
               </CardContent>
             </Card>
@@ -296,16 +327,43 @@ export default function PredictionsPage() {
             </Card>
           </motion.div>
 
+          {/* Draft status */}
+          {isDraft && !isSubmitted && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <Card className="bg-blue-500/10 border-blue-500/30">
+                <CardContent className="py-4">
+                  <p className="text-blue-400 text-sm">
+                    Je voorspellingen zijn opgeslagen als concept. Je kunt ze nog aanpassen tot het evenement begint.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Submit */}
-          <CardFooter className="flex justify-between px-0">
+          <CardFooter className="flex flex-col sm:flex-row gap-3 sm:justify-between px-0">
             <Link href="/dashboard">
               <Button type="button" variant="ghost">
                 Terug
               </Button>
             </Link>
-            <Button type="submit" isLoading={isLoading}>
-              Voorspellingen Indienen
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleSaveDraft}
+                isLoading={isSavingDraft}
+              >
+                Opslaan als concept
+              </Button>
+              <Button type="submit" isLoading={isLoading}>
+                Definitief indienen
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </div>

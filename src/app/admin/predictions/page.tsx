@@ -43,6 +43,7 @@ const PREDICTION_LABELS: Record<keyof Predictions, string> = {
   meatKilos: "Kilo's vlees",
   firstSleeper: 'Eerste slaper',
   spontaneousSinger: 'Spontane zanger',
+  firstToLeave: 'Eerste vertrekker',
   lastToLeave: 'Laatste vertrekker',
   loudestLaugher: 'Luidste lacher',
   longestStoryTeller: 'Langste verhaal',

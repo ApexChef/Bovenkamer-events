@@ -64,7 +64,7 @@ export function Step2Skills() {
                 Waar bent u goed in? (per categorie)
               </label>
               <p className="text-sm text-cream/60 mb-4">
-                Selecteer per categorie wat je het beste kunt. "Niks" is ook valide!
+                Selecteer per categorie wat je het beste kunt. &quot;Niks&quot; is ook valide!
               </p>
               <div className="space-y-4">
                 {(Object.entries(SKILL_CATEGORIES) as [SkillCategoryKey, typeof SKILL_CATEGORIES[SkillCategoryKey]][]).map(([categoryKey, category]) => (

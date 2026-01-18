@@ -323,7 +323,7 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             <p className="text-sm text-cream/70">
-              Selecteer per categorie wat je het beste kunt. "Niks" is ook een valide keuze!
+              Selecteer per categorie wat je het beste kunt. &quot;Niks&quot; is ook een valide keuze!
             </p>
 
             <div className="space-y-4">

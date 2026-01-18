@@ -18,17 +18,18 @@ interface ActualResults {
   meatKilos?: number;
   firstSleeper?: string;
   spontaneousSinger?: string;
+  firstToLeave?: string;
   lastToLeave?: string;
   loudestLaugher?: string;
   longestStoryTeller?: string;
   somethingBurned?: boolean;
   outsideTemp?: number;
-  lastGuestTime?: string;
+  lastGuestTime?: number;  // Slider value: 0=19:00, 22=06:00
 }
 
 const PREDICTION_KEYS = [
   'wineBottles', 'beerCrates', 'meatKilos',
-  'firstSleeper', 'spontaneousSinger', 'lastToLeave',
+  'firstSleeper', 'spontaneousSinger', 'firstToLeave', 'lastToLeave',
   'loudestLaugher', 'longestStoryTeller',
   'somethingBurned', 'outsideTemp', 'lastGuestTime'
 ];
@@ -70,23 +71,21 @@ function calculateLivePoints(
     }
   };
 
-  const scoreTime = (predicted: string | undefined, actual: string | undefined, key: string) => {
-    if (!predicted || !actual) return;
-    const toMinutes = (time: string) => {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-    const predictedMins = toMinutes(predicted);
-    const actualMins = toMinutes(actual);
-    const diff = Math.abs(predictedMins - actualMins);
+  // lastGuestTime is now a slider value: 0=19:00, each unit = 30 min, max 22=06:00
+  const scoreTime = (predicted: number | undefined, actual: number | undefined, key: string) => {
+    if (predicted === undefined || actual === undefined) return;
+    // Each unit is 30 minutes, so diff of 1 = 30 minutes apart
+    const diff = Math.abs(predicted - actual);
 
     if (diff === 0) {
       breakdown[key] = 50;
       total += 50;
-    } else if (diff <= 30) {
+    } else if (diff <= 1) {
+      // Within 30 minutes (1 slider unit)
       breakdown[key] = 25;
       total += 25;
-    } else if (diff <= 60) {
+    } else if (diff <= 2) {
+      // Within 1 hour (2 slider units)
       breakdown[key] = 10;
       total += 10;
     } else {
@@ -100,6 +99,7 @@ function calculateLivePoints(
 
   scoreExact(prediction.firstSleeper, actual.firstSleeper, 'firstSleeper');
   scoreExact(prediction.spontaneousSinger, actual.spontaneousSinger, 'spontaneousSinger');
+  scoreExact(prediction.firstToLeave, actual.firstToLeave, 'firstToLeave');
   scoreExact(prediction.lastToLeave, actual.lastToLeave, 'lastToLeave');
   scoreExact(prediction.loudestLaugher, actual.loudestLaugher, 'loudestLaugher');
   scoreExact(prediction.longestStoryTeller, actual.longestStoryTeller, 'longestStoryTeller');

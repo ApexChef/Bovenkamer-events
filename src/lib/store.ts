@@ -239,19 +239,26 @@ export const useRegistrationStore = create<RegistrationState>()(
   )
 );
 
+// Event start time - predictions are locked after this
+export const EVENT_START = new Date('2026-01-31T14:00:00');
+
 // Predictions store
 interface PredictionsState {
   predictions: Predictions;
-  isSubmitted: boolean;
+  isDraft: boolean;        // true = saved as draft, can still edit
+  isSubmitted: boolean;    // true = definitively submitted
   setPrediction: <K extends keyof Predictions>(key: K, value: Predictions[K]) => void;
-  setSubmitted: (submitted: boolean) => void;
+  saveDraft: () => void;
+  submitFinal: () => void;
+  canEdit: () => boolean;  // false after event starts
   reset: () => void;
 }
 
 export const usePredictionsStore = create<PredictionsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       predictions: {},
+      isDraft: false,
       isSubmitted: false,
 
       setPrediction: (key, value) =>
@@ -259,9 +266,21 @@ export const usePredictionsStore = create<PredictionsState>()(
           predictions: { ...state.predictions, [key]: value },
         })),
 
-      setSubmitted: (submitted) => set({ isSubmitted: submitted }),
+      saveDraft: () => set({ isDraft: true }),
 
-      reset: () => set({ predictions: {}, isSubmitted: false }),
+      submitFinal: () => set({ isSubmitted: true, isDraft: false }),
+
+      canEdit: () => {
+        const state = get();
+        const now = new Date();
+        // Cannot edit if event has started or already submitted
+        if (now >= EVENT_START || state.isSubmitted) {
+          return false;
+        }
+        return true;
+      },
+
+      reset: () => set({ predictions: {}, isDraft: false, isSubmitted: false }),
     }),
     {
       name: 'bovenkamer-predictions',
