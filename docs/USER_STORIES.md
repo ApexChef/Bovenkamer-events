@@ -752,14 +752,59 @@ CREATE TABLE game_challenges (
 | Grill Guru audio | Nee, eerst alleen tekst |
 | LLM logging | Ja, alle uitspraken worden gelogd |
 | Highscores per dag | Onbeperkt, meerdere pogingen toegestaan |
-| Timing | Spel is bedoeld voor VÓÓR het event |
+| Timing | Puur pre-event, NIET tijdens het evenement |
 | Multiplayer | Async Challenge mode (niet real-time) |
+| Dagelijkse challenges | Nee, niet in MVP (zie toekomstige uitbreidingen) |
+| Live quiz integratie | Nee, game blijft puur pre-event |
+| Challenge expiratie | Geen tijdslimiet - hoogste score wint |
 
-### Open Vragen
+### Challenge Winnaar Bepaling
 
-1. **Dagelijkse challenges**: Bijv. "Vandaag: alleen met bacon"?
-2. **Integratie quiz**: Burger Stack ronde tijdens live quiz?
-3. **Challenge expiratie**: Na hoeveel dagen verloopt een uitdaging? (bijv. 7 dagen)
+Challenges hebben geen expiratie. De winnaar wordt bepaald door:
+- **Hoogste score wint** - Wie de meeste punten haalt
+- Beide spelers kunnen onbeperkt proberen tot ze tevreden zijn
+- Challenge blijft open tot beide partijen klaar zijn of tot event-datum
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚔️ LOPENDE CHALLENGE                                   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Jij: 8.450 pts (beste poging)                         │
+│  vs                                                     │
+│  Klaas: 7.200 pts (beste poging)                       │
+│                                                         │
+│  Status: Jij leidt! 🏆                                  │
+│                                                         │
+│  [🎮 Verbeter je score]  [✅ Ik ben klaar]              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Toekomstige Uitbreidingen (Backlog)
+
+De volgende features zijn gedocumenteerd maar NIET in scope voor MVP:
+
+#### Dagelijkse Challenges
+Speciale spelvarianten met eigen leaderboard:
+| Challenge | Beschrijving |
+|-----------|--------------|
+| "Bacon Day" | Alleen bacon ingrediënten (zeer snel) |
+| "Vegetarisch" | Geen vlees, alleen groenten |
+| "Speed Run" | Alles 2x sneller |
+| "Combo King" | Alleen combo's tellen voor punten |
+| "One Life" | Geen fouten toegestaan |
+
+*Implementatie: Automatisch roterende challenges, elke dag om middernacht nieuwe challenge.*
+
+#### Live Event Modus
+Projectie battle tijdens het evenement:
+- 4-8 spelers tegelijk op telefoon
+- Live scores op groot scherm
+- Tijdslimiet (60-90 sec)
+- Winnaar krijgt quiz-punten
+
+*Reden uitgesteld: Focus op pre-event engagement, live event heeft al quiz.*
 
 ---
 
