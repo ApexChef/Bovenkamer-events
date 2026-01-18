@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -24,6 +24,17 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [pinError, setPinError] = useState('');
+  const [rememberEmail, setRememberEmail] = useState(true);
+
+  // Load remembered email from localStorage on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('bovenkamer_remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      // Focus on PIN input if email is pre-filled
+      setTimeout(() => pinInputRef.current?.focus(), 100);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +88,14 @@ function LoginForm() {
         return;
       }
 
-      // Success - compute PIN hash for cache
+      // Success - save or clear remembered email
+      if (rememberEmail) {
+        localStorage.setItem('bovenkamer_remembered_email', email);
+      } else {
+        localStorage.removeItem('bovenkamer_remembered_email');
+      }
+
+      // Compute PIN hash for cache
       const encoder = new TextEncoder();
       const pinData = encoder.encode(pin);
       const hashBuffer = await crypto.subtle.digest('SHA-256', pinData);
@@ -162,8 +180,20 @@ function LoginForm() {
               placeholder="jouw@email.nl"
               disabled={isLoading}
               autoComplete="email"
-              autoFocus
+              autoFocus={!email}
             />
+
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(e) => setRememberEmail(e.target.checked)}
+                className="w-4 h-4 rounded border-gold/30 bg-dark-wood text-gold focus:ring-gold/50 focus:ring-offset-0 cursor-pointer"
+              />
+              <span className="text-sm text-cream/70 group-hover:text-cream/90 transition-colors">
+                Onthoud mijn email
+              </span>
+            </label>
 
             <div>
               <PINInput
