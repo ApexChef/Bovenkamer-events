@@ -9,6 +9,10 @@ import {
   IngredientType,
   INGREDIENT_CONFIGS,
   INGREDIENT_SPAWN_WEIGHTS,
+  SpecialItemType,
+  SpecialItem,
+  ActiveEffect,
+  SPECIAL_ITEM_CONFIGS,
 } from '@/types/game';
 
 export function createInitialGameState(): GameState {
@@ -24,6 +28,9 @@ export function createInitialGameState(): GameState {
     level: 1,
     gameStartTime: null,
     gameEndTime: null,
+    activeEffects: [],
+    floatingItem: null,
+    itemsCollected: 0,
   };
 }
 
@@ -104,11 +111,14 @@ export function updateGame(
     return state;
   }
 
-  const newState = { ...state };
+  let newState = { ...state };
   const current = { ...state.currentIngredient };
 
+  // Apply speed multiplier from effects
+  const speedMultiplier = getSpeedMultiplier(state);
+
   // Move ingredient
-  current.x += current.speed * current.direction * (deltaTime / 16);
+  current.x += current.speed * current.direction * speedMultiplier * (deltaTime / 16);
 
   // Bounce off walls
   if (current.x + current.width >= config.canvasWidth) {
@@ -120,6 +130,44 @@ export function updateGame(
   }
 
   newState.currentIngredient = current;
+
+  // Update floating item
+  if (newState.floatingItem) {
+    const topOfStackY = newState.stack.length > 0
+      ? newState.stack[newState.stack.length - 1].y
+      : config.canvasHeight - config.ingredientHeight - 20;
+
+    // Check if collected
+    if (checkItemCollection(newState.floatingItem, current, topOfStackY)) {
+      newState = applySpecialItem(newState, newState.floatingItem.type);
+    } else {
+      // Update position
+      newState.floatingItem = updateFloatingItem(newState.floatingItem, config, deltaTime);
+    }
+  }
+
+  // Maybe spawn new item
+  if (!newState.floatingItem && Math.random() < 0.001) {
+    const topOfStackY = newState.stack.length > 0
+      ? newState.stack[newState.stack.length - 1].y
+      : config.canvasHeight - config.ingredientHeight - 20;
+
+    // Only spawn if stack is high enough
+    if (newState.stack.length >= 3) {
+      const itemType = SPECIAL_ITEM_TYPES[Math.floor(Math.random() * SPECIAL_ITEM_TYPES.length)];
+      newState.floatingItem = {
+        type: itemType,
+        x: Math.random() * (config.canvasWidth - 40) + 20,
+        y: topOfStackY - 150,
+        width: 40,
+        height: 40,
+      };
+    }
+  }
+
+  // Cleanup expired effects
+  newState = cleanupExpiredEffects(newState);
+
   return newState;
 }
 
@@ -225,9 +273,23 @@ export function dropIngredient(
     newState.maxCombo = newState.combo;
   }
 
-  // Calculate points (with combo bonus)
+  // Calculate points (with combo bonus and golden steak)
   const comboMultiplier = isPerfect ? Math.min(1 + newState.combo * 0.5, 5) : 1;
-  const pointsEarned = Math.floor(ingredientConfig.points * comboMultiplier);
+
+  // Check for golden steak effect
+  const goldenSteakEffect = newState.activeEffects.find(
+    e => e.type === 'golden_steak' && !e.used
+  );
+  const goldenMultiplier = goldenSteakEffect ? 3 : 1;
+
+  // Mark golden steak as used
+  if (goldenSteakEffect) {
+    newState.activeEffects = newState.activeEffects.map(e =>
+      e === goldenSteakEffect ? { ...e, used: true } : e
+    );
+  }
+
+  const pointsEarned = Math.floor(ingredientConfig.points * comboMultiplier * goldenMultiplier);
   newState.score += pointsEarned;
 
   // Level up every 5 successful drops
@@ -287,4 +349,149 @@ export function getGameDuration(state: GameState): number {
   if (!state.gameStartTime) return 0;
   const endTime = state.gameEndTime || Date.now();
   return Math.floor((endTime - state.gameStartTime) / 1000);
+}
+
+// Special Items Functions
+
+const SPECIAL_ITEM_TYPES: SpecialItemType[] = ['golden_steak', 'slow_mo', 'extra_life', 'fire'];
+
+export function maybeSpawnSpecialItem(
+  state: GameState,
+  config: GameConfig
+): SpecialItem | null {
+  // 10% chance to spawn after every 3 successful drops
+  if (state.stack.length < 4 || state.stack.length % 3 !== 0) {
+    return null;
+  }
+
+  if (Math.random() > 0.10) {
+    return null;
+  }
+
+  const itemType = SPECIAL_ITEM_TYPES[Math.floor(Math.random() * SPECIAL_ITEM_TYPES.length)];
+  const itemConfig = SPECIAL_ITEM_CONFIGS[itemType];
+
+  return {
+    type: itemType,
+    x: Math.random() * (config.canvasWidth - 40) + 20,
+    y: 60,
+    width: 40,
+    height: 40,
+  };
+}
+
+export function updateFloatingItem(
+  item: SpecialItem,
+  config: GameConfig,
+  deltaTime: number
+): SpecialItem | null {
+  // Float down slowly
+  const newY = item.y + 1.5 * (deltaTime / 16);
+
+  // Remove if off screen
+  if (newY > config.canvasHeight) {
+    return null;
+  }
+
+  return { ...item, y: newY };
+}
+
+export function checkItemCollection(
+  item: SpecialItem,
+  currentIngredient: { x: number; width: number } | null,
+  topOfStackY: number
+): boolean {
+  if (!currentIngredient) return false;
+
+  // Check if the current moving ingredient overlaps with the item
+  const ingredientLeft = currentIngredient.x;
+  const ingredientRight = currentIngredient.x + currentIngredient.width;
+  const itemLeft = item.x;
+  const itemRight = item.x + item.width;
+
+  // Y position of moving ingredient (above stack)
+  const ingredientY = topOfStackY - 50;
+
+  // Check overlap
+  const xOverlap = ingredientLeft < itemRight && ingredientRight > itemLeft;
+  const yOverlap = Math.abs(ingredientY - item.y) < 50;
+
+  return xOverlap && yOverlap;
+}
+
+export function applySpecialItem(
+  state: GameState,
+  itemType: SpecialItemType
+): GameState {
+  const newState = { ...state };
+  newState.itemsCollected += 1;
+  newState.floatingItem = null;
+
+  const now = Date.now();
+  const itemConfig = SPECIAL_ITEM_CONFIGS[itemType];
+
+  switch (itemType) {
+    case 'golden_steak':
+      // 3x points on next drop - single use effect
+      newState.activeEffects = [
+        ...newState.activeEffects,
+        { type: 'golden_steak', expiresAt: null, used: false }
+      ];
+      break;
+
+    case 'slow_mo':
+      // Slow down for 5 seconds
+      newState.activeEffects = [
+        ...newState.activeEffects.filter(e => e.type !== 'slow_mo'),
+        { type: 'slow_mo', expiresAt: now + (itemConfig.duration || 5000) }
+      ];
+      break;
+
+    case 'extra_life':
+      // Add extra life
+      newState.lives += 1;
+      break;
+
+    case 'fire':
+      // Speed up for 3 seconds
+      newState.activeEffects = [
+        ...newState.activeEffects.filter(e => e.type !== 'fire'),
+        { type: 'fire', expiresAt: now + (itemConfig.duration || 3000) }
+      ];
+      break;
+  }
+
+  return newState;
+}
+
+export function getSpeedMultiplier(state: GameState): number {
+  const now = Date.now();
+  let multiplier = 1;
+
+  for (const effect of state.activeEffects) {
+    if (effect.expiresAt && effect.expiresAt < now) continue;
+
+    if (effect.type === 'slow_mo') {
+      multiplier *= 0.5; // Half speed
+    } else if (effect.type === 'fire') {
+      multiplier *= 2; // Double speed
+    }
+  }
+
+  return multiplier;
+}
+
+export function cleanupExpiredEffects(state: GameState): GameState {
+  const now = Date.now();
+  const activeEffects = state.activeEffects.filter(effect => {
+    // Keep effects that don't expire (like golden_steak until used)
+    if (effect.expiresAt === null) return !effect.used;
+    // Keep effects that haven't expired
+    return effect.expiresAt > now;
+  });
+
+  if (activeEffects.length !== state.activeEffects.length) {
+    return { ...state, activeEffects };
+  }
+  return state;
 }

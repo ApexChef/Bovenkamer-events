@@ -4,9 +4,10 @@
 | Aspect | Waarde |
 |--------|--------|
 | **Prioriteit** | #4 |
-| **Status** | In Planning |
+| **Status** | ✅ Fase 1 & 2 DONE |
 | **Complexiteit** | Zeer Hoog |
-| **PACT Fase** | Prepare + Architecture |
+| **PACT Fase** | Code + Test |
+| **PRs** | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4), [#16](https://github.com/ApexChef/Bovenkamer-events/pull/16) |
 
 ## User Story
 > Als Bovenkamer-lid wil ik een leuk burger-stapelspel kunnen spelen op mijn telefoon, zodat ik punten kan verdienen en kan strijden om de hoogste score vóór het evenement.
@@ -119,17 +120,20 @@ De Grill Guru kent ALLE deelnemers persoonlijk, niet alleen spelers. Hij gebruik
 
 ## Acceptatiecriteria
 
-### MVP (Fase 1)
-- [ ] Basis gameplay werkend (tap to drop, stacking)
-- [ ] Score systeem functioneel
-- [ ] Mobile-first responsive design
-- [ ] Highscore opslaan in database
-- [ ] Simpel leaderboard tonen
-- [ ] Koppeling met bestaande auth (ingelogde gebruikers)
+### MVP (Fase 1) ✅ DONE
+- [x] Basis gameplay werkend (tap to drop, stacking)
+- [x] Score systeem functioneel
+- [x] Mobile-first responsive design
+- [x] Highscore opslaan in database
+- [x] Simpel leaderboard tonen (beste score per user)
+- [x] Koppeling met bestaande auth (ingelogde gebruikers)
 
-### Uitbreiding (Fase 2)
-- [ ] Speciale items implementeren
-- [ ] Combo systeem met visuele feedback
+### Uitbreiding (Fase 2) ✅ DONE
+- [x] Speciale items implementeren (golden steak, slow-mo, extra life, fire)
+- [x] Combo systeem met visuele feedback (floating "+30 PERFECT!" tekst)
+- [x] Verbeterde graphics (gradients, shadows, rounded corners)
+- [x] Drop guide en target zone visualisatie
+- [x] Game CTA op dashboard
 - [ ] Grill Guru commentaar (statische teksten eerst)
 - [ ] Thema's unlockbaar
 - [ ] Persoonlijke statistieken pagina

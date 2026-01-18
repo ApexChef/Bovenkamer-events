@@ -136,6 +136,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const response = await fetch('/api/game/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Ensure cookies are sent
         body: JSON.stringify({
           score: gameState.score,
           layers: gameState.stack.length,
@@ -146,6 +147,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (data.saved === false) {
+          console.log('Score not saved:', data.message);
+        }
         // Refresh leaderboard after saving
         get().fetchLeaderboard();
       }

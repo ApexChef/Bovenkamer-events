@@ -14,7 +14,9 @@ import {
   Sparkles,
   AlertCircle,
   Edit3,
-  X
+  X,
+  Gamepad2,
+  Trophy
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 import { TOTAL_PROFILE_POINTS, useRegistrationStore } from '@/lib/store';
@@ -178,6 +180,48 @@ export function HomeTab({
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Burger Stack Game CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+      >
+        <Link href="/game">
+          <Card className="border-orange-500/40 bg-gradient-to-br from-orange-500/10 via-yellow-500/5 to-transparent hover:border-orange-500/60 transition-all cursor-pointer group overflow-hidden">
+            <CardContent className="py-4 relative">
+              {/* Background burger emoji decoration */}
+              <div className="absolute -right-4 -top-4 text-6xl opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
+                🍔
+              </div>
+
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <span className="text-3xl">🍔</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-display text-lg text-orange-400 group-hover:text-orange-300 transition-colors">
+                      Burger Stack
+                    </p>
+                    <span className="text-xs bg-orange-500/30 text-orange-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Trophy className="w-3 h-3" />
+                      Verdien punten!
+                    </span>
+                  </div>
+                  <p className="text-xs text-cream/60 mt-1">
+                    Stapel de perfecte burger en scoor de hoogste punten
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <Gamepad2 className="w-6 h-6 text-orange-400/70 group-hover:text-orange-400 transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </motion.div>
 
       {/* Attendance Summary - Show when complete and not editing */}
