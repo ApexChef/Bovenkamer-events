@@ -8,26 +8,21 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const COOKIE_NAME = 'bovenkamer_auth_token';
+
 async function getUserFromToken(request: NextRequest) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-
-  // Debug: log all cookies
-  const allCookies = cookieStore.getAll();
-  console.log('Available cookies:', allCookies.map(c => c.name));
+  const token = cookieStore.get(COOKIE_NAME)?.value;
 
   if (!token) {
-    console.log('No auth_token cookie found');
     return null;
   }
 
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    console.log('JWT verified for user:', payload.email);
     return payload as { userId: string; email: string; role: string };
-  } catch (error) {
-    console.log('JWT verification failed:', error);
+  } catch {
     return null;
   }
 }
@@ -104,7 +99,6 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // Return success but indicate score wasn't saved (for anonymous/unauthenticated users)
-      console.log('Game score not saved - user not authenticated');
       return NextResponse.json({
         success: false,
         saved: false,
