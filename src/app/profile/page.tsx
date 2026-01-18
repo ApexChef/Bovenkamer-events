@@ -150,6 +150,37 @@ export default function ProfilePage() {
     }
   }, [_hasHydrated, isAuthenticated, router]);
 
+  // Load profile data from database on mount
+  useEffect(() => {
+    const loadProfileFromDb = async () => {
+      if (!_hasHydrated || !formData.email) return;
+
+      try {
+        const response = await fetch(`/api/profile?email=${encodeURIComponent(formData.email)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile) {
+            // Update local state with database values
+            setFormData(data.profile);
+            // Update completed sections
+            if (data.completedSections) {
+              const sections = ['basic', 'personal', 'skills', 'music', 'jkvHistorie', 'borrelStats', 'quiz'] as const;
+              sections.forEach((section) => {
+                if (data.completedSections[section]) {
+                  markSectionComplete(section);
+                }
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile from database:', error);
+      }
+    };
+
+    loadProfileFromDb();
+  }, [_hasHydrated, formData.email, setFormData, markSectionComplete]);
+
   // Sync local state with store after hydration
   useEffect(() => {
     if (_hasHydrated) {
@@ -187,15 +218,34 @@ export default function ProfilePage() {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
   };
 
+  // Helper to save section to database
+  const saveSectionToDb = async (section: string, data: Record<string, unknown>) => {
+    try {
+      await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          section,
+          data,
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving to database:', error);
+    }
+  };
+
   const savePersonalSection = async () => {
     setIsLoading(true);
     try {
-      setFormData({
+      const data = {
         birthYear,
         hasPartner,
         partnerName,
         dietaryRequirements,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('personal', data);
       markSectionComplete('personal');
       setExpandedSection(null);
     } finally {
@@ -206,10 +256,12 @@ export default function ProfilePage() {
   const saveSkillsSection = async () => {
     setIsLoading(true);
     try {
-      setFormData({
+      const data = {
         skills,
         additionalSkills,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('skills', data);
       markSectionComplete('skills');
       setExpandedSection(null);
     } finally {
@@ -220,10 +272,12 @@ export default function ProfilePage() {
   const saveMusicSection = async () => {
     setIsLoading(true);
     try {
-      setFormData({
+      const data = {
         musicDecade,
         musicGenre,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('music', data);
       markSectionComplete('music');
       setExpandedSection(null);
     } finally {
@@ -239,11 +293,13 @@ export default function ProfilePage() {
         ? new Date().getFullYear()
         : typeof jkvExitYear === 'number' ? jkvExitYear : null;
 
-      setFormData({
+      const data = {
         jkvJoinYear,
         jkvExitYear,
         bovenkamerJoinYear,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('jkvHistorie', data);
       markSectionComplete('jkvHistorie');
       setExpandedSection(null);
     } finally {
@@ -254,10 +310,12 @@ export default function ProfilePage() {
   const saveBorrelStatsSection = async () => {
     setIsLoading(true);
     try {
-      setFormData({
+      const data = {
         borrelCount2025,
         borrelPlanning2026,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('borrelStats', data);
       markSectionComplete('borrelStats');
       setExpandedSection(null);
     } finally {
@@ -268,9 +326,11 @@ export default function ProfilePage() {
   const saveQuizSection = async () => {
     setIsLoading(true);
     try {
-      setFormData({
+      const data = {
         quizAnswers,
-      });
+      };
+      setFormData(data);
+      await saveSectionToDb('quiz', data);
       markSectionComplete('quiz');
       setExpandedSection(null);
     } finally {
