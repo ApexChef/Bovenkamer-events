@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Mail, Users, CreditCard } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import Link from 'next/link';
+import { User, Mail, Users, ChevronRight, Edit3 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/ui';
 import { PaymentCard } from '@/components/PaymentCard';
+import { useRegistrationStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
 
 interface ProfileTabProps {
   formData: {
@@ -15,18 +17,59 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ formData }: ProfileTabProps) {
+  const { getProfileCompletion } = useRegistrationStore();
+  const { percentage, points } = getProfileCompletion();
+
   return (
     <div className="space-y-4">
+      {/* Profile Completion & Edit Link */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Link href="/profile">
+          <Card className="border-gold/30 hover:border-gold/50 transition-colors cursor-pointer">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gold/20 rounded-full flex items-center justify-center">
+                    <Edit3 className="w-5 h-5 text-gold" />
+                  </div>
+                  <div>
+                    <p className="text-cream font-semibold">Profiel Aanvullen</p>
+                    <p className="text-cream/50 text-xs">{points} van {TOTAL_PROFILE_POINTS} punten</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gold" />
+              </div>
+              {/* Progress bar */}
+              <div className="h-2 bg-dark-wood rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-gold to-gold/70"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percentage}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="text-xs text-cream/50 mt-2 text-center">
+                {percentage === 100 ? 'Profiel compleet!' : `${percentage}% compleet - tik om aan te vullen`}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+      </motion.div>
+
       {/* Profile Info */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
       >
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5 text-gold" />
-              Mijn Profiel
+              Mijn Gegevens
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -69,7 +112,7 @@ export function ProfileTab({ formData }: ProfileTabProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.2 }}
       >
         <PaymentCard
           userId={formData.email}
@@ -82,7 +125,7 @@ export function ProfileTab({ formData }: ProfileTabProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.3 }}
       >
         <Card className="border-success-green/30 bg-success-green/5">
           <CardContent className="py-4">
