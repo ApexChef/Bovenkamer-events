@@ -358,21 +358,75 @@ interface GameScore {
 #### Karakter
 > **De Grill Guru** is een mysterieuze, alwetende BBQ-meester die sarcastische wijsheden deelt. Hij spreekt in raadselachtige one-liners en heeft een mening over alles en iedereen. Denk: Mr. Miyagi meets Gordon Ramsay meets die ene oom op elk feestje.
 
-#### Voorbeelduitspraken
+#### Kennis van de Groep
+De Grill Guru kent ALLE deelnemers persoonlijk, niet alleen spelers. Hij gebruikt:
+- **Profieldata**: Naam, geboortedatum, geslacht, JKV-jaren
+- **Skills**: Alle 8 skill-categorieën en zelfvertrouwen-score
+- **Registratie antwoorden**: Guilty pleasure songs, beste concert, verborgen talent, etc.
+- **Borrel aanwezigheid**: Wie komt wel/niet, beloftes vs. realiteit
+- **Spelstatistieken**: Voor wie wel speelt
+- **Onderlinge relaties**: Wie kent wie het langst, partners, etc.
+
+Dit maakt roasts herkenbaar en persoonlijk voor de hele groep.
+
+#### Voorbeelduitspraken (LLM gegenereerd)
 **Bij game start:**
-- "Ah, weer een leerling die denkt een burger te kunnen maken..."
-- "De grill wacht op niemand. Behalve op jou, blijkbaar."
+- "Ah, [NAAM]... [JKV_JAREN] jaar JKV-ervaring en je denkt nu pas te kunnen stapelen?"
+- "Iemand die [SKILL] als vaardigheid claimt. Laten we zien of je coördinatie beter is."
 
 **Bij game over:**
 - "Een ware meester faalt 1000 keer. Jij zit nu op [X]. Doorgaan."
-- "Zelfs een aangebrande burger is nog steeds een burger. Jij... bent geen burger."
+- "[NAAM], met een zelfvertrouwen van [SCORE]/10 had ik meer verwacht. Of juist minder."
 
 **Bij highscore:**
-- "De vlam brandt fel in jou. Of is het heartburn?"
-- "Eindelijk. Iemand die weet hoe je stapelt. Noteer deze dag."
+- "De vlam brandt fel in jou, [NAAM]. Net als die keer op [BORREL_DATUM] blijkbaar."
+- "Eindelijk. [GEBOORTEJAAR]-generatie doet iets goed."
 
 **Bij achievements:**
-- "Je hebt de Gouden Spatel verdiend. Gebruik hem wijselijk."
+- "Je hebt de Gouden Spatel verdiend. Meer dan [ANDERE_SPELER] ooit zal bereiken."
+
+#### Admin System Prompt Configuratie
+De admin kan de Grill Guru persoonlijkheid aanpassen:
+
+```typescript
+interface GrillGuruConfig {
+  systemPrompt: string;          // Basis persoonlijkheid
+  roastIntensity: 1 | 2 | 3;     // 1=mild, 2=medium, 3=spicy
+  useInsideJokes: boolean;       // Referenties naar groepsgeschiedenis
+  excludeTopics: string[];       // Onderwerpen om te vermijden
+  customInstructions: string;    // Extra instructies van admin
+  lastUpdated: Date;
+  updatedBy: string;
+}
+```
+
+**Admin UI voor System Prompt:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  ⚙️ GRILL GURU CONFIGURATIE                             │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Basis Persoonlijkheid:                                 │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ Je bent De Grill Guru, een sarcastische BBQ-    │   │
+│  │ meester. Je kent alle Bovenkamer leden. Je      │   │
+│  │ maakt grappen maar bent nooit gemeen. Je hebt   │   │
+│  │ een zwak voor [AANPASBAAR]...                   │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  Roast Intensiteit: [====○----] Medium                 │
+│                                                         │
+│  ☑️ Gebruik inside jokes                                │
+│  ☑️ Refereer aan registratie-antwoorden                 │
+│  ☐ Noem specifieke borrel-incidenten                   │
+│                                                         │
+│  Vermijd deze onderwerpen:                             │
+│  [werk] [x]  [relaties] [x]  [+ toevoegen]             │
+│                                                         │
+│  [💾 Opslaan]  [👁️ Preview]  [🔄 Reset naar default]    │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ### Analytics Dashboard (In-App)
 
@@ -417,21 +471,75 @@ Tijdens het evenement kan de quizmaster/admin "roast cards" tonen:
 └─────────────────────────────────────────────────────────┘
 ```
 
-#### Roast Categorieën
-| Award | Criteria | Roast Stijl |
-|-------|----------|-------------|
-| Burger Obsessie | Meeste pogingen | Verslaving benoemen |
-| One Hit Wonder | Hoge score, weinig games | Geluk vs skill |
-| De Volhouder | Veel games, lage scores | Doorzettingsvermogen... |
-| Combo Killer | Nooit boven 3 combo | Timing is niet je ding |
-| Speed Demon | Snelste game overs | Ongeduld |
-| Late Bloomer | Beste score op laatste dag | Net op tijd wakker |
+#### Roast Categorieën - Spelers
+| Award | Criteria | Data gebruikt |
+|-------|----------|---------------|
+| Burger Obsessie | Meeste pogingen | game_count, totale speeltijd |
+| One Hit Wonder | Hoge score, weinig games | best_score vs game_count |
+| De Volhouder | Veel games, lage scores | avg_score, game_count |
+| Combo Killer | Nooit boven 3 combo | max_combo historie |
+| Speed Demon | Snelste game overs | avg_duration, min_layers |
+| Late Bloomer | Beste score op laatste dag | score_timeline |
+| Guilty Pleasure Gamer | Speelt 's nachts | timestamps analyse |
+| De Occasionele | Lang niet gespeeld, plots wel | last_played gaps |
+
+#### Roast Categorieën - Niet-Spelers ("Schaduw Roasts")
+Deelnemers die NIET hebben gespeeld worden ook geroast op basis van hun profiel:
+
+| Award | Criteria | Data gebruikt |
+|-------|----------|---------------|
+| Te Cool Voor School | 0 games gespeeld | games_played = 0 |
+| De Drukke | Zegt altijd bezig te zijn | borrel_planned vs attended |
+| Zelfoverschatter | Hoog zelfvertrouwen, durft niet | selfConfidence vs games |
+| JKV Veteraan | Langste lidmaatschap, speelt niet | jkvYears, games_played |
+| De Mysterieuze | Minste profiel ingevuld | profile_completeness |
+| Beloftes Beloftes | Zegt te komen, komt niet | borrel attendance ratio |
+| De Wijze | Oudste deelnemer | birthDate |
+| Social Butterfly | Kent iedereen het langst | longestKnownMember data |
 
 #### LLM Roast Generator
-De Grill Guru genereert gepersonaliseerde roasts op basis van:
-- Spelstatistieken
-- Vergelijking met anderen
-- Profieldata (leeftijd, zelfvertrouwen, JKV-jaren)
+**Alle roasts worden volledig door de LLM gegenereerd.** De admin configureert alleen de toon en grenzen.
+
+Input voor elke roast:
+```typescript
+interface RoastContext {
+  // Doelwit
+  target: {
+    name: string;
+    profile: UserProfile;         // Alle profielvelden
+    registrationAnswers: object;  // Quiz antwoorden
+    skills: SkillSelection[];     // 8 categorieën
+    gameStats?: GameStats;        // Alleen als gespeeld
+    borrelStats: BorrelStats;     // Aanwezigheid
+  };
+
+  // Context
+  allParticipants: UserProfile[]; // Voor vergelijkingen
+  groupStats: GroupStats;         // Gemiddeldes, extremen
+
+  // Configuratie
+  guruConfig: GrillGuruConfig;    // Admin instellingen
+  roastType: string;              // Welke award/categorie
+}
+```
+
+**Voorbeeld LLM Prompt (intern):**
+```
+Je bent De Grill Guru. Genereer een roast voor [NAAM] die de
+"Te Cool Voor School" award krijgt (0 games gespeeld).
+
+Gebruik deze info:
+- Zelfvertrouwen: 8/10
+- Claimt te kunnen: BBQ-en, DJ-en
+- Guilty pleasure song: [X]
+- JKV sinds: 2005
+- Borrel aanwezigheid: 3/10 gepland, 1/10 geweest
+
+Vergelijk met de groep waar 12/15 mensen WEL hebben gespeeld.
+
+Roast intensiteit: Medium
+Vermijd: [geconfigureerde onderwerpen]
+```
 
 ### UI/UX Design
 
@@ -523,6 +631,15 @@ CREATE INDEX idx_game_scores_leaderboard ON game_scores(game_type, score DESC);
 - [ ] Admin panel voor roast selectie
 - [ ] Projectie-modus voor groot scherm
 - [ ] Export roasts als afbeeldingen
+
+### Beslissingen US-005
+
+| Vraag | Beslissing |
+|-------|------------|
+| Niet-spelers roasten | Ja, "Schaduw Roasts" op basis van profieldata |
+| Alle data gebruiken | Ja, Grill Guru kent alle deelnemers persoonlijk |
+| LLM roasts | Alle roasts volledig LLM gegenereerd |
+| Admin controle | System prompt configureerbaar door admin |
 
 ### Open Vragen
 
