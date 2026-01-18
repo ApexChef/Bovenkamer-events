@@ -189,21 +189,37 @@ export interface RegistrationFormData {
   // Step 0 (Auth)
   pin?: string;
 
-  // Step 1
+  // Basic (minimal registration)
   name: string;
   email: string;
-  birthYear: number | null;
+
+  // Personal section
+  birthDate: string; // YYYY-MM-DD format
+  birthYear: number | null; // Legacy, keep for compatibility
+  gender: string;
+  selfConfidence: number; // 1-10
   hasPartner: boolean;
   partnerName: string;
   dietaryRequirements: string;
 
-  // Step 2
+  // Skills section
   primarySkill: string;
   additionalSkills: string;
+
+  // Music section
   musicDecade: string;
   musicGenre: string;
 
-  // Step 3
+  // JKV Historie section
+  jkvJoinYear: number | null;
+  jkvExitYear: number | string | null; // number or 'nog_actief'
+  bovenkamerJoinYear: number | null; // Calculated from jkvExitYear
+
+  // Borrel Stats section
+  borrelCount2025: number; // How many borrels attended in 2025 (0-10)
+  borrelPlanning2026: number; // How many borrels planning to attend in 2026 (0-10)
+
+  // Quiz section
   quizAnswers: QuizAnswers;
 }
 
@@ -242,4 +258,51 @@ export const MUSIC_GENRES = [
   { value: 'reggae', label: 'Reggae / Ska' },
 ] as const;
 
-export const BIRTH_YEARS = [1980, 1981, 1982, 1983, 1984, 1985, 1986] as const;
+export const BIRTH_YEARS = Array.from({ length: 30 }, (_, i) => 1960 + i) as readonly number[];
+
+// Gender options
+export const GENDER_OPTIONS = [
+  { value: 'man', label: 'Man' },
+  { value: 'vrouw', label: 'Vrouw' },
+  { value: 'anders', label: 'Anders' },
+  { value: 'zeg_ik_niet', label: 'Zeg ik niet' },
+] as const;
+
+// JKV Join years (1990-2025)
+export const JKV_JOIN_YEARS = Array.from({ length: 36 }, (_, i) => 1990 + i) as readonly number[];
+
+// JKV Exit years (2000-2030 + "Nog actief")
+export const JKV_EXIT_YEARS = Array.from({ length: 31 }, (_, i) => 2000 + i) as readonly number[];
+export const JKV_STILL_ACTIVE = 'nog_actief' as const;
+
+// Borrel dates 2025 (past - "geweest" tracking)
+export const BORRELS_2025 = [
+  { date: '2025-01-23', label: '23 januari 2025' },
+  { date: '2025-02-27', label: '27 februari 2025' },
+  { date: '2025-03-27', label: '27 maart 2025' },
+  { date: '2025-04-24', label: '24 april 2025' },
+  { date: '2025-05-22', label: '22 mei 2025' },
+  { date: '2025-06-26', label: '26 juni 2025' },
+  // juli vervalt
+  { date: '2025-08-28', label: '28 augustus 2025' },
+  { date: '2025-09-25', label: '25 september 2025' },
+  { date: '2025-10-23', label: '23 oktober 2025' },
+  { date: '2025-11-27', label: '27 november 2025' },
+  // december vervalt
+] as const;
+
+// Borrel dates 2026 (future - "planning" tracking)
+export const BORRELS_2026 = [
+  { date: '2026-01-22', label: '22 januari 2026' },
+  { date: '2026-02-26', label: '26 februari 2026' },
+  { date: '2026-03-26', label: '26 maart 2026' },
+  { date: '2026-04-23', label: '23 april 2026', note: 'Meivakantie' },
+  { date: '2026-05-28', label: '28 mei 2026' },
+  { date: '2026-06-25', label: '25 juni 2026' },
+  // juli vervalt
+  { date: '2026-08-27', label: '27 augustus 2026' },
+  { date: '2026-09-24', label: '24 september 2026' },
+  { date: '2026-10-22', label: '22 oktober 2026', note: 'Herfstvakantie' },
+  { date: '2026-11-26', label: '26 november 2026' },
+  // december vervalt
+] as const;

@@ -4,11 +4,13 @@ import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser,
 
 // Profile sections for progressive registration
 export interface ProfileSections {
-  basic: boolean;      // Name, email (always true after minimal registration)
-  personal: boolean;   // Birth year, partner, dietary
-  skills: boolean;     // Primary + additional skills
-  music: boolean;      // Music decade, genre
-  quiz: boolean;       // Quiz answers
+  basic: boolean;        // Name, email (always true after minimal registration)
+  personal: boolean;     // Birth date, gender, selfConfidence, partner, dietary
+  skills: boolean;       // Primary + additional skills
+  music: boolean;        // Music decade, genre
+  jkvHistorie: boolean;  // JKV join/exit years, Bovenkamer join year
+  borrelStats: boolean;  // Borrel attendance 2025 & planning 2026
+  quiz: boolean;         // Quiz answers
 }
 
 // Points per section
@@ -17,6 +19,8 @@ export const SECTION_POINTS = {
   personal: 50,
   skills: 40,
   music: 20,
+  jkvHistorie: 30,
+  borrelStats: 30,
   quiz: 80,
 } as const;
 
@@ -75,14 +79,28 @@ const initialFormData: RegistrationFormData = {
   pin: '',
   name: '',
   email: '',
+  // Personal
+  birthDate: '',
   birthYear: null,
+  gender: '',
+  selfConfidence: 5,
   hasPartner: false,
   partnerName: '',
   dietaryRequirements: '',
+  // Skills
   primarySkill: '',
   additionalSkills: '',
+  // Music
   musicDecade: '',
   musicGenre: '',
+  // JKV Historie
+  jkvJoinYear: null,
+  jkvExitYear: null,
+  bovenkamerJoinYear: null,
+  // Borrel Stats
+  borrelCount2025: 0,
+  borrelPlanning2026: 0,
+  // Quiz
   quizAnswers: {},
 };
 
@@ -91,6 +109,8 @@ const initialCompletedSections: ProfileSections = {
   personal: false,
   skills: false,
   music: false,
+  jkvHistorie: false,
+  borrelStats: false,
   quiz: false,
 };
 
@@ -178,6 +198,14 @@ export const useRegistrationStore = create<RegistrationState>()(
         if (completed.music) {
           completedSections.push('music');
           points += SECTION_POINTS.music;
+        }
+        if (completed.jkvHistorie) {
+          completedSections.push('jkvHistorie');
+          points += SECTION_POINTS.jkvHistorie;
+        }
+        if (completed.borrelStats) {
+          completedSections.push('borrelStats');
+          points += SECTION_POINTS.borrelStats;
         }
         if (completed.quiz) {
           completedSections.push('quiz');
