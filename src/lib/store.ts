@@ -260,6 +260,38 @@ export const useRegistrationStore = create<RegistrationState>()(
         userId: state.userId,
         authCode: state.authCode,
       }),
+      // Deep merge to handle new fields added to nested objects
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<RegistrationState>;
+        return {
+          ...currentState,
+          ...persisted,
+          // Deep merge formData to preserve new fields
+          formData: {
+            ...currentState.formData,
+            ...(persisted.formData || {}),
+            // Ensure skills is properly merged
+            skills: {
+              ...currentState.formData.skills,
+              ...(persisted.formData?.skills || {}),
+            },
+            quizAnswers: {
+              ...currentState.formData.quizAnswers,
+              ...(persisted.formData?.quizAnswers || {}),
+            },
+          },
+          // Deep merge completedSections to add new fields
+          completedSections: {
+            ...currentState.completedSections,
+            ...(persisted.completedSections || {}),
+          },
+          // Deep merge attendance
+          attendance: {
+            ...currentState.attendance,
+            ...(persisted.attendance || {}),
+          },
+        };
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
