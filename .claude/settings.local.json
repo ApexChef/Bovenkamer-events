@@ -39,7 +39,8 @@
       "Bash(npm run reset:dry:*)",
       "Bash(npm run reset:confirm:*)",
       "Bash(npx tsc:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(open http://localhost:3000/profile)"
     ]
   }
 }

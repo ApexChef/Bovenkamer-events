@@ -64,6 +64,14 @@ export async function POST(request: NextRequest) {
       additional_skills: formData.additionalSkills || null,
       music_decade: formData.musicDecade,
       music_genre: formData.musicGenre,
+      // JKV Historie fields
+      jkv_join_year: formData.jkvJoinYear || null,
+      jkv_exit_year: formData.jkvExitYear || null,
+      bovenkamer_join_year: formData.bovenkamerJoinYear || null,
+      // Borrel Stats fields
+      borrel_count_2025: formData.borrelCount2025 || 0,
+      borrel_planning_2026: formData.borrelPlanning2026 || 0,
+      // Quiz and AI
       quiz_answers: formData.quizAnswers,
       ai_assignment: aiAssignment,
       updated_at: new Date().toISOString(),
