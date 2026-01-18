@@ -7,7 +7,7 @@ import { useRegistrationStore, usePredictionsStore } from '@/lib/store';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { PaymentCard } from '@/components/PaymentCard';
 import { motion } from 'framer-motion';
-import { Trophy, Flame, Target, Star } from 'lucide-react';
+import { Trophy, Flame, Target, Star, Gamepad2 } from 'lucide-react';
 
 interface LeaderboardEntry {
   rank: number;
@@ -427,7 +427,15 @@ export default function DashboardPage() {
             transition={{ delay: 0.7 }}
             className="md:col-span-2"
           >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <Link href="/game">
+                <Card className="hover:border-gold/50 transition-colors cursor-pointer h-full bg-gradient-to-br from-gold/10 to-transparent border-gold/30">
+                  <CardContent className="py-4 text-center">
+                    <Gamepad2 className="w-6 h-6 text-gold mx-auto mb-2" />
+                    <p className="text-sm text-cream font-medium">Burger Stack</p>
+                  </CardContent>
+                </Card>
+              </Link>
               <Link href="/predictions">
                 <Card className="hover:border-gold/50 transition-colors cursor-pointer h-full">
                   <CardContent className="py-4 text-center">
