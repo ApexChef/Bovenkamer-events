@@ -22,6 +22,15 @@ export const SECTION_POINTS = {
 
 export const TOTAL_PROFILE_POINTS = Object.values(SECTION_POINTS).reduce((a, b) => a + b, 0);
 
+// Attendance data for event confirmation
+export interface AttendanceData {
+  confirmed: boolean | null;       // null = not answered, true = coming, false = not coming
+  bringingPlusOne: boolean | null; // null = not answered
+  plusOneName: string;
+  declineReason: string | null;
+  customDeclineReason: string;
+}
+
 interface RegistrationState {
   // Form data
   formData: RegistrationFormData;
@@ -31,6 +40,9 @@ interface RegistrationState {
 
   // Profile completion tracking
   completedSections: ProfileSections;
+
+  // Attendance confirmation
+  attendance: AttendanceData;
 
   // AI Assignment result
   aiAssignment: AIAssignment | null;
@@ -55,6 +67,7 @@ interface RegistrationState {
   setHasHydrated: (state: boolean) => void;
   markSectionComplete: (section: keyof ProfileSections) => void;
   getProfileCompletion: () => { percentage: number; points: number; completedSections: string[] };
+  setAttendance: (data: Partial<AttendanceData>) => void;
   reset: () => void;
 }
 
@@ -81,6 +94,14 @@ const initialCompletedSections: ProfileSections = {
   quiz: false,
 };
 
+const initialAttendance: AttendanceData = {
+  confirmed: null,
+  bringingPlusOne: null,
+  plusOneName: '',
+  declineReason: null,
+  customDeclineReason: '',
+};
+
 export const useRegistrationStore = create<RegistrationState>()(
   persist(
     (set, get) => ({
@@ -89,6 +110,7 @@ export const useRegistrationStore = create<RegistrationState>()(
       isSubmitting: false,
       isComplete: false,
       completedSections: initialCompletedSections,
+      attendance: initialAttendance,
       aiAssignment: null,
       userId: null,
       authCode: null,
@@ -120,6 +142,11 @@ export const useRegistrationStore = create<RegistrationState>()(
       setComplete: (isComplete) => set({ isComplete }),
 
       setAIAssignment: (assignment) => set({ aiAssignment: assignment }),
+
+      setAttendance: (data) =>
+        set((state) => ({
+          attendance: { ...state.attendance, ...data },
+        })),
 
       setUser: (userId, authCode) => set({ userId, authCode }),
 
@@ -169,6 +196,7 @@ export const useRegistrationStore = create<RegistrationState>()(
           isSubmitting: false,
           isComplete: false,
           completedSections: initialCompletedSections,
+          attendance: initialAttendance,
           aiAssignment: null,
         }),
     }),
@@ -179,6 +207,7 @@ export const useRegistrationStore = create<RegistrationState>()(
         currentStep: state.currentStep,
         isComplete: state.isComplete,
         completedSections: state.completedSections,
+        attendance: state.attendance,
         aiAssignment: state.aiAssignment,
         userId: state.userId,
         authCode: state.authCode,

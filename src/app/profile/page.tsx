@@ -72,6 +72,7 @@ export default function ProfilePage() {
     completedSections,
     markSectionComplete,
     getProfileCompletion,
+    attendance,
     _hasHydrated
   } = useRegistrationStore();
 
@@ -79,9 +80,14 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state for each section
+  // Pre-fill partner info from attendance if available
   const [birthYear, setBirthYear] = useState<number | null>(formData.birthYear);
-  const [hasPartner, setHasPartner] = useState(formData.hasPartner);
-  const [partnerName, setPartnerName] = useState(formData.partnerName);
+  const [hasPartner, setHasPartner] = useState(
+    formData.hasPartner || attendance.bringingPlusOne === true
+  );
+  const [partnerName, setPartnerName] = useState(
+    formData.partnerName || attendance.plusOneName || ''
+  );
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
 
   const [primarySkill, setPrimarySkill] = useState(formData.primarySkill);
@@ -181,6 +187,9 @@ export default function ProfilePage() {
   const renderSectionContent = (sectionId: SectionId) => {
     switch (sectionId) {
       case 'personal':
+        // Check if partner info comes from attendance (pre-filled)
+        const hasPartnerFromAttendance = attendance.bringingPlusOne === true;
+
         return (
           <div className="space-y-4">
             <Select
@@ -191,49 +200,76 @@ export default function ProfilePage() {
               placeholder="Selecteer je geboortejaar"
             />
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Kom je met partner?
-              </label>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setHasPartner(false)}
-                  className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
-                    !hasPartner
-                      ? 'border-gold bg-gold/20 text-gold'
-                      : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                  }`}
-                >
-                  Nee, alleen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHasPartner(true)}
-                  className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
-                    hasPartner
-                      ? 'border-gold bg-gold/20 text-gold'
-                      : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                  }`}
-                >
-                  Ja, met partner
-                </button>
-              </div>
-            </div>
-
-            {hasPartner && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
+            {/* Show pre-filled partner info or ask */}
+            {hasPartnerFromAttendance ? (
+              <div className="space-y-3 p-4 bg-gold/10 border border-gold/20 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gold" />
+                    <span className="text-sm text-cream">Je komt met +1</span>
+                  </div>
+                  <span className="text-xs text-cream/50">(via aanmelding)</span>
+                </div>
+                {partnerName && (
+                  <p className="text-gold font-medium">{partnerName}</p>
+                )}
                 <Input
-                  label="Naam partner"
+                  label="Naam partner/+1 aanpassen"
                   value={partnerName}
-                  onChange={(e) => setPartnerName(e.target.value)}
-                  placeholder="Naam van je partner"
+                  onChange={(e) => {
+                    setPartnerName(e.target.value);
+                    setHasPartner(true);
+                  }}
+                  placeholder="Naam van je partner/+1"
                 />
-              </motion.div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-cream">
+                    Kom je met partner?
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setHasPartner(false)}
+                      className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                        !hasPartner
+                          ? 'border-gold bg-gold/20 text-gold'
+                          : 'border-cream/20 text-cream/60 hover:border-cream/40'
+                      }`}
+                    >
+                      Nee, alleen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHasPartner(true)}
+                      className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                        hasPartner
+                          ? 'border-gold bg-gold/20 text-gold'
+                          : 'border-cream/20 text-cream/60 hover:border-cream/40'
+                      }`}
+                    >
+                      Ja, met partner
+                    </button>
+                  </div>
+                </div>
+
+                {hasPartner && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <Input
+                      label="Naam partner"
+                      value={partnerName}
+                      onChange={(e) => setPartnerName(e.target.value)}
+                      placeholder="Naam van je partner"
+                    />
+                  </motion.div>
+                )}
+              </>
             )}
 
             <Input
@@ -440,7 +476,7 @@ export default function ProfilePage() {
 
       <div className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
         {/* Progress Overview */}
-        <Card>
+        <Card className="border-gold/30 bg-dark-wood/70">
           <CardContent className="py-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -471,7 +507,7 @@ export default function ProfilePage() {
         </Card>
 
         {/* Basic Section - Always completed */}
-        <Card className="border-success-green/30 bg-success-green/5">
+        <Card className="border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-success-green/20 rounded-full flex items-center justify-center">
@@ -497,7 +533,10 @@ export default function ProfilePage() {
 
           return (
             <motion.div key={section.id} layout>
-              <Card className={isCompleted ? 'border-success-green/30 bg-success-green/5' : ''}>
+              <Card className={isCompleted
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+                : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+              }>
                 <button
                   onClick={() => !isCompleted && toggleSection(section.id)}
                   disabled={isCompleted}
