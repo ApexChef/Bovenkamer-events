@@ -4,9 +4,9 @@
 | Aspect | Waarde |
 |--------|--------|
 | **Prioriteit** | URGENT (Bug Fix) |
-| **Status** | In Progress |
+| **Status** | Code Complete - Ready for Test |
 | **Complexiteit** | Medium |
-| **PACT Fase** | Prepare |
+| **PACT Fase** | Code |
 | **Type** | Bug Fix |
 
 ## Bug Report
@@ -111,12 +111,12 @@ Velden in `registrations` tabel die gesynchroniseerd moeten worden:
 
 ## Acceptatiecriteria
 
-- [ ] Login API retourneert alle profielvelden
-- [ ] `completedSections` wordt correct hersteld na login
-- [ ] Profiel compleetheid toont juiste percentage
-- [ ] Werkt op mobiel en desktop
-- [ ] Werkt na wissen van local storage
-- [ ] Bestaande sessies blijven werken
+- [x] Login API retourneert alle profielvelden
+- [x] `completedSections` wordt correct hersteld na login
+- [ ] Profiel compleetheid toont juiste percentage (te testen)
+- [ ] Werkt op mobiel en desktop (te testen)
+- [ ] Werkt na wissen van local storage (te testen)
+- [ ] Bestaande sessies blijven werken (te testen)
 
 ## Test Scenarios
 
