@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase';
+import { getUserFromRequest, isAdmin } from '@/lib/auth/jwt';
 import { FeatureKey, DEFAULT_FEATURES } from '@/types';
 
 /**
@@ -8,24 +9,13 @@ import { FeatureKey, DEFAULT_FEATURES } from '@/types';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check admin authorization
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin role (simplified check - in production use JWT verification)
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('auth_token', token)
-      .single();
-
-    if (userError || !user || user.role !== 'admin') {
+    // Check authentication and admin role
+    const user = await getUserFromRequest(request);
+    if (!user || !isAdmin(user)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
+
+    const supabase = createServerClient();
 
     // Fetch all feature toggles
     const { data: toggles, error } = await supabase
@@ -73,25 +63,13 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    // Check admin authorization
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('auth_token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify admin role
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, role, email')
-      .eq('auth_token', token)
-      .single();
-
-    if (userError || !user || user.role !== 'admin') {
+    // Check authentication and admin role
+    const user = await getUserFromRequest(request);
+    if (!user || !isAdmin(user)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
+    const supabase = createServerClient();
     const body = await request.json();
     const { feature_key, is_enabled } = body;
 
