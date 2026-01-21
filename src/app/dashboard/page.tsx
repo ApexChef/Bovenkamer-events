@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRegistrationStore, usePredictionsStore, useAuthStore } from '@/lib/store';
-import { BottomNav, HamburgerMenu } from '@/components/ui';
+import { BottomNav, HamburgerMenu, DesktopHeader } from '@/components/ui';
 import type { TabType } from '@/components/ui';
-import { HomeTab, PredictionsTab, LeaderboardTab, ProfileTab } from '@/components/dashboard';
+import { HomeTab, PredictionsTab, LeaderboardTab, ProfileTab, MiniLeaderboard } from '@/components/dashboard';
+import { FeatureToggle } from '@/components/FeatureToggle';
 
 interface LeaderboardEntry {
   rank: number;
@@ -149,16 +150,8 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Desktop Header */}
-      <header className="hidden md:block py-8 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="stamp text-xs mb-4 inline-block">GEREGISTREERD</span>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-gold mb-2">
-            Welkom, {formData.name}
-          </h1>
-          <p className="text-cream/60">Bovenkamer Winterproef 2026</p>
-        </div>
-      </header>
+      {/* Desktop Header Navigation */}
+      <DesktopHeader userName={formData.name} onLogout={handleLogout} />
 
       {/* Content */}
       <div className="relative z-10 px-4 py-4 md:py-0">
@@ -218,9 +211,10 @@ function DesktopDashboard({
   profileCompletion: { percentage: number; points: number; completedSections: string[] };
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Row 1: Home Tab Content */}
-      <div className="md:col-span-2">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content - 2 columns on large screens */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* Home Tab Content */}
         <HomeTab
           formData={formData}
           aiAssignment={aiAssignment}
@@ -230,22 +224,36 @@ function DesktopDashboard({
           predictionsSubmitted={predictionsSubmitted}
           profileCompletion={profileCompletion}
         />
+
+        {/* Predictions */}
+        <PredictionsTab predictionsSubmitted={predictionsSubmitted} />
+
+        {/* Profile */}
+        <ProfileTab formData={formData} />
       </div>
 
-      {/* Row 2: Predictions & Leaderboard */}
-      <PredictionsTab predictionsSubmitted={predictionsSubmitted} />
-      <LeaderboardTab
-        leaderboard={leaderboardData?.leaderboard ?? []}
-        totalParticipants={leaderboardData?.totalParticipants ?? 0}
-        currentUserName={formData.name}
-        currentUserRank={userRank}
-        currentUserPoints={userPoints}
-        isLoading={isLoading}
-      />
+      {/* Sidebar - 1 column on large screens */}
+      <div className="space-y-6">
+        {/* Mini Leaderboard CTA */}
+        <FeatureToggle feature="show_leaderboard_preview">
+          <MiniLeaderboard
+            leaderboard={leaderboardData?.leaderboard ?? []}
+            currentUserName={formData.name}
+            currentUserRank={userRank}
+            currentUserPoints={userPoints}
+            isLoading={isLoading}
+          />
+        </FeatureToggle>
 
-      {/* Row 3: Profile */}
-      <div className="md:col-span-2">
-        <ProfileTab formData={formData} />
+        {/* Full Leaderboard (collapsible on desktop) */}
+        <LeaderboardTab
+          leaderboard={leaderboardData?.leaderboard ?? []}
+          totalParticipants={leaderboardData?.totalParticipants ?? 0}
+          currentUserName={formData.name}
+          currentUserRank={userRank}
+          currentUserPoints={userPoints}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
