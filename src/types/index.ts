@@ -28,7 +28,7 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   show_countdown: true,
   show_ai_assignment: true,
   show_leaderboard_preview: true,
-  show_burger_game: true,
+  show_burger_game: false, // Hidden by default - enable closer to event
   show_predictions: true,
 };
 

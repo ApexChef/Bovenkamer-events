@@ -20,7 +20,7 @@ VALUES
   ('show_countdown', true, 'Toon afteltimer tot het evenement'),
   ('show_ai_assignment', true, 'Toon AI-gegenereerde taaktoewijzing'),
   ('show_leaderboard_preview', true, 'Toon mini-leaderboard op de homepagina'),
-  ('show_burger_game', true, 'Toon Burger Stack game CTA'),
+  ('show_burger_game', false, 'Toon Burger Stack game CTA'),  -- Hidden by default, enable closer to event
   ('show_predictions', true, 'Toon voorspellingen sectie')
 ON CONFLICT (feature_key) DO NOTHING;
 
