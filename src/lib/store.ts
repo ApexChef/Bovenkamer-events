@@ -354,6 +354,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isCheckingAuth: boolean;
   authToken: string | null;
+  _hasHydrated: boolean;
 
   // Actions
   login: (user: AuthUser, token: string, pinHash: string) => void;
@@ -361,6 +362,7 @@ interface AuthState {
   updateUser: (user: Partial<AuthUser>) => void;
   checkSession: () => Promise<boolean>;
   setCheckingAuth: (checking: boolean) => void;
+  setHasHydrated: (state: boolean) => void;
 }
 
 const CACHE_EXPIRY_DAYS = 30;
@@ -388,8 +390,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isCheckingAuth: false,
       authToken: null,
+      _hasHydrated: false,
 
-      login: async (user, token, pinHash) => {
+      login: (user, token, pinHash) => {
         const expiresAt = Date.now() + (CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
         const cache: AuthCache = {
           user,
@@ -398,14 +401,15 @@ export const useAuthStore = create<AuthState>()(
           expiresAt,
         };
 
+        // Store in localStorage for cache validation FIRST
+        // This ensures the cache is available before state update triggers re-renders
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+
         set({
           currentUser: user,
           isAuthenticated: true,
           authToken: token,
         });
-
-        // Store in localStorage for cache validation
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       },
 
       logout: () => {
@@ -472,6 +476,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setCheckingAuth: (checking) => set({ isCheckingAuth: checking }),
+
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: 'bovenkamer-auth',
@@ -480,6 +486,9 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         authToken: state.authToken,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

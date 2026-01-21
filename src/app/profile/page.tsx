@@ -102,7 +102,7 @@ const sections: Section[] = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { currentUser, isAuthenticated } = useAuthStore();
+  const { currentUser, isAuthenticated, _hasHydrated: authHydrated } = useAuthStore();
   const {
     formData,
     setFormData,
@@ -110,7 +110,7 @@ export default function ProfilePage() {
     markSectionComplete,
     getProfileCompletion,
     attendance,
-    _hasHydrated
+    _hasHydrated: registrationHydrated
   } = useRegistrationStore();
 
   const [expandedSection, setExpandedSection] = useState<SectionId | null>(null);
@@ -143,17 +143,17 @@ export default function ProfilePage() {
 
   const [quizAnswers, setQuizAnswers] = useState(formData.quizAnswers);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (wait for BOTH stores to hydrate)
   useEffect(() => {
-    if (_hasHydrated && !isAuthenticated) {
+    if (registrationHydrated && authHydrated && !isAuthenticated) {
       router.push('/login');
     }
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [registrationHydrated, authHydrated, isAuthenticated, router]);
 
   // Load profile data from database on mount
   useEffect(() => {
     const loadProfileFromDb = async () => {
-      if (!_hasHydrated || !formData.email) return;
+      if (!registrationHydrated || !authHydrated || !formData.email) return;
 
       try {
         const response = await fetch(`/api/profile?email=${encodeURIComponent(formData.email)}`);
@@ -179,11 +179,11 @@ export default function ProfilePage() {
     };
 
     loadProfileFromDb();
-  }, [_hasHydrated, formData.email, setFormData, markSectionComplete]);
+  }, [registrationHydrated, authHydrated, formData.email, setFormData, markSectionComplete]);
 
   // Sync local state with store after hydration
   useEffect(() => {
-    if (_hasHydrated) {
+    if (registrationHydrated && authHydrated) {
       setBirthYear(formData.birthYear);
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
@@ -198,9 +198,9 @@ export default function ProfilePage() {
       setBorrelPlanning2026(formData.borrelPlanning2026 ?? 0);
       setQuizAnswers(formData.quizAnswers);
     }
-  }, [_hasHydrated, formData, attendance]);
+  }, [registrationHydrated, authHydrated, formData, attendance]);
 
-  if (!_hasHydrated) {
+  if (!registrationHydrated || !authHydrated) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>

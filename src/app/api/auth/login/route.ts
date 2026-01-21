@@ -280,10 +280,26 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', user.id);
 
-    // Fetch registration data including ai_assignment
+    // Fetch registration data including all profile fields
     const { data: registration } = await supabase
       .from('registrations')
-      .select('ai_assignment, birth_year, has_partner, partner_name, dietary_requirements, primary_skill, additional_skills, music_decade, music_genre, quiz_answers')
+      .select(`
+        ai_assignment,
+        birth_year,
+        has_partner,
+        partner_name,
+        dietary_requirements,
+        skills,
+        additional_skills,
+        music_decade,
+        music_genre,
+        quiz_answers,
+        jkv_join_year,
+        jkv_exit_year,
+        bovenkamer_join_year,
+        borrel_count_2025,
+        borrel_planning_2026
+      `)
       .eq('user_id', user.id)
       .single();
 
@@ -322,11 +338,16 @@ export async function POST(request: NextRequest) {
           hasPartner: registration.has_partner,
           partnerName: registration.partner_name,
           dietaryRequirements: registration.dietary_requirements,
-          primarySkill: registration.primary_skill,
+          skills: registration.skills,
           additionalSkills: registration.additional_skills,
           musicDecade: registration.music_decade,
           musicGenre: registration.music_genre,
           quizAnswers: registration.quiz_answers,
+          jkvJoinYear: registration.jkv_join_year,
+          jkvExitYear: registration.jkv_exit_year,
+          bovenkamerJoinYear: registration.bovenkamer_join_year,
+          borrelCount2025: registration.borrel_count_2025,
+          borrelPlanning2026: registration.borrel_planning_2026,
         } : null,
         token,
         message: `Welkom terug, ${user.name}!`,

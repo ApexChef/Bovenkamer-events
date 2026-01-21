@@ -15,7 +15,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
   const { login } = useAuthStore();
-  const { setComplete, setFormData, setAIAssignment } = useRegistrationStore();
+  const { setComplete, setFormData, setAIAssignment, markSectionComplete } = useRegistrationStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
   const [email, setEmail] = useState('');
@@ -102,40 +102,92 @@ function LoginForm() {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const pinHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Store in auth store
-      await login(data.user, data.token, pinHash);
+      // Store in auth store (synchronous - updates state and localStorage)
+      login(data.user, data.token, pinHash);
 
       // Restore registration data including AI assignment (for dashboard access)
       if (data.registration) {
+        const reg = data.registration;
+        const defaultSkills = {
+          food_prep: '',
+          bbq_grill: '',
+          drinks: '',
+          entertainment: '',
+          atmosphere: '',
+          social: '',
+          cleanup: '',
+          documentation: '',
+        };
+
         setFormData({
           email: data.user.email,
           name: data.user.name,
-          birthYear: data.registration.birthYear,
-          hasPartner: data.registration.hasPartner,
-          partnerName: data.registration.partnerName || '',
-          dietaryRequirements: data.registration.dietaryRequirements || '',
-          skills: data.registration.skills || {
-            food_prep: '',
-            bbq_grill: '',
-            drinks: '',
-            entertainment: '',
-            atmosphere: '',
-            social: '',
-            cleanup: '',
-            documentation: '',
-          },
-          additionalSkills: data.registration.additionalSkills || '',
-          musicDecade: data.registration.musicDecade || '',
-          musicGenre: data.registration.musicGenre || '',
-          quizAnswers: data.registration.quizAnswers || {},
+          birthYear: reg.birthYear,
+          hasPartner: reg.hasPartner,
+          partnerName: reg.partnerName || '',
+          dietaryRequirements: reg.dietaryRequirements || '',
+          skills: reg.skills || defaultSkills,
+          additionalSkills: reg.additionalSkills || '',
+          musicDecade: reg.musicDecade || '',
+          musicGenre: reg.musicGenre || '',
+          quizAnswers: reg.quizAnswers || {},
+          jkvJoinYear: reg.jkvJoinYear || null,
+          jkvExitYear: reg.jkvExitYear || null,
+          bovenkamerJoinYear: reg.bovenkamerJoinYear || null,
+          borrelCount2025: reg.borrelCount2025 || 0,
+          borrelPlanning2026: reg.borrelPlanning2026 || 0,
         });
-        if (data.registration.aiAssignment) {
-          setAIAssignment(data.registration.aiAssignment);
+
+        if (reg.aiAssignment) {
+          setAIAssignment(reg.aiAssignment);
+        }
+
+        // Restore completedSections based on data presence
+        // basic: always true when logged in with registration
+        markSectionComplete('basic');
+
+        // personal: check if birthYear is present
+        if (reg.birthYear) {
+          markSectionComplete('personal');
+        }
+
+        // skills: check if skills object has any filled values
+        if (reg.skills && Object.values(reg.skills).some((v) => v !== '')) {
+          markSectionComplete('skills');
+        }
+
+        // music: check if decade or genre is present
+        if (reg.musicDecade || reg.musicGenre) {
+          markSectionComplete('music');
+        }
+
+        // jkvHistorie: check if any JKV year is present
+        if (reg.jkvJoinYear || reg.jkvExitYear || reg.bovenkamerJoinYear) {
+          markSectionComplete('jkvHistorie');
+        }
+
+        // borrelStats: check if borrel data is present (> 0 or array with items)
+        const hasBorrelCount = reg.borrelCount2025 && reg.borrelCount2025 > 0;
+        const hasBorrelPlanning = reg.borrelPlanning2026 &&
+          (typeof reg.borrelPlanning2026 === 'number' ? reg.borrelPlanning2026 > 0 :
+           Array.isArray(reg.borrelPlanning2026) ? reg.borrelPlanning2026.length > 0 : false);
+        if (hasBorrelCount || hasBorrelPlanning) {
+          markSectionComplete('borrelStats');
+        }
+
+        // quiz: check if quizAnswers has any entries
+        if (reg.quizAnswers && Object.keys(reg.quizAnswers).length > 0) {
+          markSectionComplete('quiz');
         }
       } else {
         setFormData({ email: data.user.email, name: data.user.name });
+        markSectionComplete('basic');
       }
       setComplete(true);
+
+      // Small delay to ensure Zustand persist middleware saves state to localStorage
+      // This prevents race conditions where the redirect happens before state is persisted
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Redirect to intended destination or default based on status
       if (data.user.registrationStatus === 'pending') {

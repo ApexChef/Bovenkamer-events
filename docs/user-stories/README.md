@@ -14,6 +14,9 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 | [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 TODO | - | Nog niet gestart |
 | [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | #7 | 📝 DRAFT | - | User story draft aangemaakt |
 | ~~US-004~~ | Taaktoewijzing | - | ❌ Uitgesteld | - | - |
+| [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | URGENT | 🔧 IN PROGRESS | - | Bug fix: profiel laadt niet na login |
+| [US-010](./US-010-mobile-pin-keyboard/) | Mobiel PIN Toetsenbord | Medium | ✅ DONE | [#20](https://github.com/ApexChef/Bovenkamer-events/pull/20) | Numeriek toetsenbord voor laatste 2 PIN cijfers |
+| [US-011](./US-011-desktop-login-hang/) | Desktop Login/Dashboard Issues | URGENT | 🔧 IN PROGRESS | - | Dashboard loading, profiel sync bug fix |
 
 ## Dependency Graph
 
@@ -198,8 +201,15 @@ docs/user-stories/
 ├── US-007-progressive-registration/
 │   ├── README.md
 │   └── PACT.md
-└── US-008-predictions-analytics/
-    └── README.md                     # Draft user story
+├── US-008-predictions-analytics/
+│   └── README.md                     # Draft user story
+├── US-009-profile-data-sync/
+│   ├── README.md                     # Bug fix user story
+│   └── PACT.md                       # Prepare documentatie
+├── US-010-mobile-pin-keyboard/
+│   └── README.md                     # UX verbetering mobiel toetsenbord
+└── US-011-desktop-login-hang/
+    └── README.md                     # Bug fix dashboard loading/sync
 ```
 
 ---
