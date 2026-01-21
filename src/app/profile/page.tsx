@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import {
   Beer
 } from 'lucide-react';
 import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { Slider } from '@/components/ui/Slider';
 import {
@@ -28,11 +29,45 @@ import {
   SkillCategoryKey,
   MUSIC_DECADES,
   MUSIC_GENRES,
-  BIRTH_YEARS,
   JKV_JOIN_YEARS,
   JKV_EXIT_YEARS,
   JKV_STILL_ACTIVE
 } from '@/types';
+
+// Event date for age calculation
+const EVENT_DATE = new Date('2026-01-31');
+
+// Validate birth date - soft validation
+function validateBirthDate(dateStr: string): { isValid: boolean; warning?: string } {
+  if (!dateStr) return { isValid: false };
+
+  const birthDate = new Date(dateStr);
+  const birthYear = birthDate.getFullYear();
+
+  // Calculate age on event date
+  let age = EVENT_DATE.getFullYear() - birthYear;
+  const monthDiff = EVENT_DATE.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && EVENT_DATE.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  // Hard validation: born after 1980 is too young for this group
+  if (birthYear > 1986) {
+    return { isValid: true, warning: `Je bent ${age} jaar op de Winterproef. Normaal zijn gasten 40+, maar je bent welkom!` };
+  }
+
+  // Hard validation: born before 1960 seems too old
+  if (birthYear < 1960) {
+    return { isValid: true, warning: `Geboortejaar ${birthYear} - weet je zeker dat dit klopt?` };
+  }
+
+  // Soft validation: should be at least 40 on event date
+  if (age < 40) {
+    return { isValid: true, warning: `Je bent ${age} jaar op de Winterproef. Normaal zijn gasten 40+, maar je bent welkom!` };
+  }
+
+  return { isValid: true };
+}
 
 const DEFAULT_SKILLS: SkillSelections = {
   food_prep: '',
@@ -107,8 +142,8 @@ export default function ProfilePage() {
     formData,
     setFormData,
     completedSections,
+    setCompletedSections,
     markSectionComplete,
-    getProfileCompletion,
     attendance,
     _hasHydrated: registrationHydrated
   } = useRegistrationStore();
@@ -118,7 +153,8 @@ export default function ProfilePage() {
 
   // Form state for each section
   // Pre-fill partner info from attendance if available
-  const [birthYear, setBirthYear] = useState<number | null>(formData.birthYear);
+  const [birthDate, setBirthDate] = useState<string>(formData.birthDate || '');
+  const [birthDateWarning, setBirthDateWarning] = useState<string>('');
   const [hasPartner, setHasPartner] = useState(
     formData.hasPartner || attendance.bringingPlusOne === true
   );
@@ -162,13 +198,16 @@ export default function ProfilePage() {
           if (data.profile) {
             // Update local state with database values
             setFormData(data.profile);
-            // Update completed sections
+            // Update ALL completed sections from API (overwrite to sync with actual points)
             if (data.completedSections) {
-              const sections = ['basic', 'personal', 'skills', 'music', 'jkvHistorie', 'borrelStats', 'quiz'] as const;
-              sections.forEach((section) => {
-                if (data.completedSections[section]) {
-                  markSectionComplete(section);
-                }
+              setCompletedSections({
+                basic: !!data.completedSections.basic,
+                personal: !!data.completedSections.personal,
+                skills: !!data.completedSections.skills,
+                music: !!data.completedSections.music,
+                jkvHistorie: !!data.completedSections.jkvHistorie,
+                borrelStats: !!data.completedSections.borrelStats,
+                quiz: !!data.completedSections.quiz,
               });
             }
           }
@@ -179,12 +218,12 @@ export default function ProfilePage() {
     };
 
     loadProfileFromDb();
-  }, [registrationHydrated, authHydrated, formData.email, setFormData, markSectionComplete]);
+  }, [registrationHydrated, authHydrated, formData.email, setFormData, setCompletedSections]);
 
   // Sync local state with store after hydration
   useEffect(() => {
     if (registrationHydrated && authHydrated) {
-      setBirthYear(formData.birthYear);
+      setBirthDate(formData.birthDate || '');
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
       setDietaryRequirements(formData.dietaryRequirements);
@@ -212,7 +251,21 @@ export default function ProfilePage() {
     return null;
   }
 
-  const { percentage, points } = getProfileCompletion();
+  // Calculate points directly from Zustand's completedSections (which is synced from DB)
+  // Using completedSections directly ensures React re-renders when values change
+  const points = useMemo(() => {
+    let pts = 0;
+    if (completedSections.basic) pts += SECTION_POINTS.basic;
+    if (completedSections.personal) pts += SECTION_POINTS.personal;
+    if (completedSections.skills) pts += SECTION_POINTS.skills;
+    if (completedSections.music) pts += SECTION_POINTS.music;
+    if (completedSections.jkvHistorie) pts += SECTION_POINTS.jkvHistorie;
+    if (completedSections.borrelStats) pts += SECTION_POINTS.borrelStats;
+    if (completedSections.quiz) pts += SECTION_POINTS.quiz;
+    return pts;
+  }, [completedSections]);
+
+  const percentage = Math.round((points / TOTAL_PROFILE_POINTS) * 100);
 
   const toggleSection = (sectionId: SectionId) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -238,7 +291,10 @@ export default function ProfilePage() {
   const savePersonalSection = async () => {
     setIsLoading(true);
     try {
+      // Extract year from birthDate for backward compatibility
+      const birthYear = birthDate ? new Date(birthDate).getFullYear() : null;
       const data = {
+        birthDate,
         birthYear,
         hasPartner,
         partnerName,
@@ -338,7 +394,17 @@ export default function ProfilePage() {
     }
   };
 
-  const isPersonalValid = birthYear !== null;
+  // Validate birth date when it changes
+  useEffect(() => {
+    if (birthDate) {
+      const validation = validateBirthDate(birthDate);
+      setBirthDateWarning(validation.warning || '');
+    } else {
+      setBirthDateWarning('');
+    }
+  }, [birthDate]);
+
+  const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid;
   // All 8 skill categories must be selected
   const isSkillsValid = Object.values(skills).every(skill => skill !== '');
   const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
@@ -355,13 +421,22 @@ export default function ProfilePage() {
 
         return (
           <div className="space-y-4">
-            <Select
-              label="Geboortejaar"
-              value={birthYear?.toString() || ''}
-              onChange={(e) => setBirthYear(e.target.value ? parseInt(e.target.value) : null)}
-              options={BIRTH_YEARS.map(year => ({ value: year.toString(), label: year.toString() }))}
-              placeholder="Selecteer je geboortejaar"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-cream">
+                Geboortedatum
+              </label>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                max="1986-12-31"
+                min="1940-01-01"
+                className="w-full px-4 py-3 bg-dark-wood/50 border border-cream/20 rounded-lg text-cream focus:outline-none focus:border-gold/50 [color-scheme:dark]"
+              />
+              {birthDateWarning && (
+                <p className="text-sm text-yellow-500 mt-1">{birthDateWarning}</p>
+              )}
+            </div>
 
             {/* Show pre-filled partner info or ask */}
             {hasPartnerFromAttendance ? (
@@ -889,26 +964,13 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen pb-8">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-deep-green/95 backdrop-blur-sm border-b border-gold/20">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="p-2 rounded-lg hover:bg-gold/10 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gold" />
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-xl font-display font-bold text-gold">Profiel Aanvullen</h1>
-              <p className="text-sm text-cream/60">Verdien extra punten</p>
-            </div>
-          </div>
+    <DashboardLayout>
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Page Title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-display font-bold text-gold">Profiel Aanvullen</h1>
+          <p className="text-sm text-cream/60">Verdien extra punten</p>
         </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
         {/* Progress Overview */}
         <Card className="border-gold/30 bg-dark-wood/70">
           <CardContent className="py-6">
@@ -1051,6 +1113,6 @@ export default function ProfilePage() {
           </motion.div>
         )}
       </div>
-    </main>
+    </DashboardLayout>
   );
 }

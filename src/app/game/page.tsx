@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { GameCanvas, GameOverModal, Leaderboard } from '@/components/game';
 import { useGameStore } from '@/lib/game/store';
 import { AuthGuard } from '@/components/AuthGuard';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { Button } from '@/components/ui';
 
 function GameContent() {
@@ -24,29 +25,21 @@ function GameContent() {
   }, [initGame, fetchLeaderboard]);
 
   return (
-    <div className="min-h-screen bg-deep-green">
-      {/* Header */}
-      <header className="p-4 flex items-center justify-between">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-cream hover:text-gold transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Terug</span>
-        </Link>
-
-        <h1 className="text-xl font-display text-gold">Burger Stack</h1>
-
+    <DashboardLayout>
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-display text-gold">Burger Stack</h1>
         <button
           onClick={() => setShowLeaderboard(true)}
           className="flex items-center gap-2 text-cream hover:text-gold transition-colors"
         >
           <Trophy className="w-5 h-5" />
+          <span className="hidden sm:inline">Leaderboard</span>
         </button>
-      </header>
+      </div>
 
       {/* Game Container */}
-      <main className="flex flex-col items-center px-4 pb-8">
+      <div className="flex flex-col items-center">
         {/* Instructions (only shown when idle) */}
         {gameState.status === 'idle' && (
           <motion.div
@@ -110,12 +103,12 @@ function GameContent() {
             </span>
           </motion.div>
         )}
-      </main>
+      </div>
 
       {/* Modals */}
       <GameOverModal />
       <Leaderboard />
-    </div>
+    </DashboardLayout>
   );
 }
 

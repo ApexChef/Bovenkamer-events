@@ -120,6 +120,7 @@ function getFeatureDescription(key: FeatureKey): string {
     show_leaderboard_preview: 'Toon mini-leaderboard op de homepagina',
     show_burger_game: 'Toon Burger Stack game CTA',
     show_predictions: 'Toon voorspellingen sectie',
+    show_live_ranking: 'Toon live ranking menu item',
   };
   return descriptions[key] || key;
 }

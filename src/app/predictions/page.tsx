@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePredictionsStore, useRegistrationStore, EVENT_START } from '@/lib/store';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select } from '@/components/ui';
 import { Slider } from '@/components/ui/Slider';
 import { RadioGroup } from '@/components/ui/RadioGroup';
@@ -120,7 +121,7 @@ export default function PredictionsPage() {
 
   if (isSubmitted || eventStarted) {
     return (
-      <main className="min-h-screen py-8 px-4">
+      <DashboardLayout>
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardContent className="py-12 text-center">
@@ -143,20 +144,18 @@ export default function PredictionsPage() {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </DashboardLayout>
     );
   }
 
   return (
-    <main className="min-h-screen py-8 px-4">
+    <DashboardLayout>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/dashboard" className="inline-block">
-            <h1 className="font-display text-3xl font-bold text-gold mb-2">
-              Voorspellingen
-            </h1>
-          </Link>
+        <div className="mb-8">
+          <h1 className="font-display text-2xl font-bold text-gold mb-2">
+            Voorspellingen
+          </h1>
           <p className="text-cream/60">Waag uw gok en verdien punten</p>
         </div>
 
@@ -371,6 +370,6 @@ export default function PredictionsPage() {
           </CardFooter>
         </form>
       </div>
-    </main>
+    </DashboardLayout>
   );
 }

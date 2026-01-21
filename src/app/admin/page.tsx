@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/AuthGuard';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { FeatureKey } from '@/types';
 
 interface Registration {
@@ -74,6 +75,7 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   show_leaderboard_preview: 'Mini Leaderboard',
   show_burger_game: 'Burger Stack Game',
   show_predictions: 'Voorspellingen',
+  show_live_ranking: 'Live Ranking',
 };
 
 function AdminPageContent() {
@@ -156,19 +158,14 @@ function AdminPageContent() {
   };
 
   return (
-    <main className="min-h-screen py-8 px-4">
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-gold mb-2">
-              Admin Dashboard
-            </h1>
-            <p className="text-cream/60">Beheer registraties en bekijk statistieken</p>
-          </div>
-          <Link href="/">
-            <Button variant="ghost">← Terug</Button>
-          </Link>
+        <div className="mb-8">
+          <h1 className="font-display text-2xl font-bold text-gold mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-cream/60">Beheer registraties en bekijk statistieken</p>
         </div>
 
         {/* Stats */}
@@ -398,6 +395,6 @@ function AdminPageContent() {
           </p>
         </div>
       </div>
-    </main>
+    </DashboardLayout>
   );
 }

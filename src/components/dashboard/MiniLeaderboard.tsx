@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Trophy, ChevronRight, Medal } from 'lucide-react';
+import { Trophy, ChevronRight, Medal, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
 interface LeaderboardEntry {
@@ -18,10 +19,16 @@ interface MiniLeaderboardProps {
   currentUserRank: number | string;
   currentUserPoints: number;
   isLoading?: boolean;
+  onRefresh?: () => Promise<void>;
 }
 
 const RANK_MEDALS = ['', '🥇', '🥈', '🥉'];
 const RANK_COLORS = ['', 'text-yellow-400', 'text-gray-300', 'text-amber-600'];
+
+// Helper function to extract first name
+const getFirstName = (fullName: string): string => {
+  return fullName.split(' ')[0];
+};
 
 export function MiniLeaderboard({
   leaderboard,
@@ -29,7 +36,20 @@ export function MiniLeaderboard({
   currentUserRank,
   currentUserPoints,
   isLoading = false,
+  onRefresh,
 }: MiniLeaderboardProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!onRefresh || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Get top 5
   const topFive = leaderboard.slice(0, 5);
 
@@ -72,15 +92,20 @@ export function MiniLeaderboard({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Trophy className="w-5 h-5 text-gold" />
-              Ranking
+              Leaderboard
             </CardTitle>
-            <Link
-              href="/dashboard?tab=leaderboard"
-              className="text-xs text-gold/70 hover:text-gold flex items-center gap-1 transition-colors"
-            >
-              Volledig
-              <ChevronRight className="w-3 h-3" />
-            </Link>
+            <div className="flex items-center gap-2">
+              {onRefresh && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="p-1.5 text-cream/50 hover:text-gold hover:bg-gold/10 rounded-md transition-colors disabled:opacity-50"
+                  aria-label="Ververs ranking"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-3 pb-4">
@@ -120,7 +145,7 @@ export function MiniLeaderboard({
                       isCurrentUser ? 'text-gold font-medium' : 'text-cream/80'
                     }`}
                   >
-                    {entry.name}
+                    {getFirstName(entry.name)}
                     {isCurrentUser && (
                       <span className="text-gold/60 ml-1">(jij)</span>
                     )}
@@ -132,7 +157,7 @@ export function MiniLeaderboard({
                       isCurrentUser ? 'text-gold' : 'text-cream/60'
                     }`}
                   >
-                    {entry.points} pts
+                    {entry.points}
                   </span>
                 </div>
               );
@@ -154,11 +179,11 @@ export function MiniLeaderboard({
                   </span>
                 </div>
                 <span className="flex-1 text-sm text-gold font-medium truncate">
-                  {currentUserName}
+                  {getFirstName(currentUserName)}
                   <span className="text-gold/60 ml-1">(jij)</span>
                 </span>
                 <span className="text-sm font-medium text-gold">
-                  {currentUserPoints} pts
+                  {currentUserPoints}
                 </span>
               </div>
             </>
@@ -166,7 +191,7 @@ export function MiniLeaderboard({
 
           {/* CTA Button */}
           <Link
-            href="/dashboard?tab=leaderboard"
+            href="/leaderboard"
             className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-gold/10 hover:bg-gold/20 border border-gold/30 rounded-lg text-gold text-sm font-medium transition-colors"
           >
             <Medal className="w-4 h-4" />
