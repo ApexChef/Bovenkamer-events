@@ -15,6 +15,7 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 | [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | #7 | 📝 DRAFT | - | User story draft aangemaakt |
 | ~~US-004~~ | Taaktoewijzing | - | ❌ Uitgesteld | - | - |
 | [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | URGENT | 🔧 IN PROGRESS | - | Bug fix: profiel laadt niet na login |
+| [US-010](./US-010-mobile-pin-keyboard/) | Mobiel PIN Toetsenbord | Medium | 🔧 IN PROGRESS | - | Numeriek toetsenbord voor laatste 2 PIN cijfers |
 
 ## Dependency Graph
 
@@ -201,9 +202,11 @@ docs/user-stories/
 │   └── PACT.md
 ├── US-008-predictions-analytics/
 │   └── README.md                     # Draft user story
-└── US-009-profile-data-sync/
-    ├── README.md                     # Bug fix user story
-    └── PACT.md                       # Prepare documentatie
+├── US-009-profile-data-sync/
+│   ├── README.md                     # Bug fix user story
+│   └── PACT.md                       # Prepare documentatie
+└── US-010-mobile-pin-keyboard/
+    └── README.md                     # UX verbetering mobiel toetsenbord
 ```
 
 ---
