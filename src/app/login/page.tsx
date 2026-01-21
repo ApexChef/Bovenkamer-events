@@ -102,8 +102,8 @@ function LoginForm() {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const pinHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      // Store in auth store
-      await login(data.user, data.token, pinHash);
+      // Store in auth store (synchronous - updates state and localStorage)
+      login(data.user, data.token, pinHash);
 
       // Restore registration data including AI assignment (for dashboard access)
       if (data.registration) {
@@ -184,6 +184,10 @@ function LoginForm() {
         markSectionComplete('basic');
       }
       setComplete(true);
+
+      // Small delay to ensure Zustand persist middleware saves state to localStorage
+      // This prevents race conditions where the redirect happens before state is persisted
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Redirect to intended destination or default based on status
       if (data.user.registrationStatus === 'pending') {

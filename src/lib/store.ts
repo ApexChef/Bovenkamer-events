@@ -389,7 +389,7 @@ export const useAuthStore = create<AuthState>()(
       isCheckingAuth: false,
       authToken: null,
 
-      login: async (user, token, pinHash) => {
+      login: (user, token, pinHash) => {
         const expiresAt = Date.now() + (CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
         const cache: AuthCache = {
           user,
@@ -398,14 +398,15 @@ export const useAuthStore = create<AuthState>()(
           expiresAt,
         };
 
+        // Store in localStorage for cache validation FIRST
+        // This ensures the cache is available before state update triggers re-renders
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+
         set({
           currentUser: user,
           isAuthenticated: true,
           authToken: token,
         });
-
-        // Store in localStorage for cache validation
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
       },
 
       logout: () => {
