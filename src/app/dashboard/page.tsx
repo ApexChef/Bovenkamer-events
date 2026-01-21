@@ -22,9 +22,9 @@ interface LeaderboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete, _hasHydrated, getProfileCompletion } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
   const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
-  const { logout, isAuthenticated, currentUser } = useAuthStore();
+  const { logout, isAuthenticated, currentUser, _hasHydrated: authHydrated } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -37,8 +37,8 @@ export default function DashboardPage() {
 
   // Redirect if not authenticated or not registered (only after mount and hydration)
   useEffect(() => {
-    // Wait for client-side mount and hydration before checking
-    if (!isMounted || !_hasHydrated) return;
+    // Wait for client-side mount and BOTH stores to hydrate before checking
+    if (!isMounted || !registrationHydrated || !authHydrated) return;
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
@@ -50,7 +50,7 @@ export default function DashboardPage() {
     if (!isComplete) {
       router.push('/register');
     }
-  }, [isMounted, _hasHydrated, isComplete, isAuthenticated, router]);
+  }, [isMounted, registrationHydrated, authHydrated, isComplete, isAuthenticated, router]);
 
   // Fetch leaderboard data
   useEffect(() => {
@@ -71,8 +71,8 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  // Show loading while waiting for client-side mount and hydration
-  if (!isMounted || !_hasHydrated) {
+  // Show loading while waiting for client-side mount and BOTH stores to hydrate
+  if (!isMounted || !registrationHydrated || !authHydrated) {
     return (
       <div className="min-h-screen bg-deep-green flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin" />
