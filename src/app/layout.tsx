@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'Bovenkamer Winterproef 2026',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body className="min-h-screen bg-deep-green">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )
