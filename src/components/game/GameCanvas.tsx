@@ -20,6 +20,7 @@ export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
+  const lastTapTimeRef = useRef<number>(0);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
 
   const { gameState, config, update, drop, lastDropResult } = useGameStore();
@@ -441,8 +442,16 @@ export function GameCanvas() {
     };
   }, [gameLoop]);
 
-  // Handle tap/click
+  // Handle tap/click with debounce to prevent double-tap on mobile
+  // Mobile browsers can fire both touchstart and click events, causing double drops
   const handleTap = useCallback(() => {
+    const now = Date.now();
+    // Debounce: ignore taps within 100ms of the last tap
+    if (now - lastTapTimeRef.current < 100) {
+      return;
+    }
+    lastTapTimeRef.current = now;
+
     if (gameState.status === 'idle') {
       useGameStore.getState().start();
     } else if (gameState.status === 'playing') {
