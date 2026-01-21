@@ -12,3 +12,4 @@ export type { PINInputRef } from './PINInput';
 export { BottomNav } from './BottomNav';
 export type { TabType } from './BottomNav';
 export { HamburgerMenu } from './HamburgerMenu';
+export { DesktopHeader } from './DesktopHeader';

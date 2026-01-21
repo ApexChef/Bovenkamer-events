@@ -71,6 +71,7 @@ interface RegistrationState {
   setUser: (userId: string, authCode: string) => void;
   setHasHydrated: (state: boolean) => void;
   markSectionComplete: (section: keyof ProfileSections) => void;
+  setCompletedSections: (sections: Partial<ProfileSections>) => void;
   getProfileCompletion: () => { percentage: number; points: number; completedSections: string[] };
   setAttendance: (data: Partial<AttendanceData>) => void;
   reset: () => void;
@@ -195,6 +196,11 @@ export const useRegistrationStore = create<RegistrationState>()(
       markSectionComplete: (section) =>
         set((state) => ({
           completedSections: { ...state.completedSections, [section]: true },
+        })),
+
+      setCompletedSections: (sections) =>
+        set((state) => ({
+          completedSections: { ...state.completedSections, ...sections },
         })),
 
       getProfileCompletion: () => {

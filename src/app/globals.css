@@ -66,3 +66,53 @@ h1, h2, h3, h4, h5, h6 {
 .animate-glow {
   animation: glow 2s ease-in-out infinite;
 }
+
+
+
+@layer base {
+  :root {
+    /* Bovenkamer dark theme - deep-green background, cream text, gold accents */
+    --background: 148 31% 15%; /* deep-green #1B4332 */
+    --foreground: 60 56% 91%; /* cream #F5F5DC */
+    --card: 15 47% 12%; /* dark-wood #2C1810 */
+    --card-foreground: 60 56% 91%; /* cream */
+    --popover: 15 47% 12%; /* dark-wood */
+    --popover-foreground: 60 56% 91%; /* cream */
+    --primary: 43 64% 52%; /* gold #D4AF37 */
+    --primary-foreground: 15 47% 12%; /* dark-wood */
+    --secondary: 15 47% 15%; /* dark-wood lighter */
+    --secondary-foreground: 60 56% 91%; /* cream */
+    --muted: 148 31% 20%; /* deep-green lighter */
+    --muted-foreground: 60 56% 70%; /* cream muted */
+    --accent: 43 64% 52%; /* gold */
+    --accent-foreground: 15 47% 12%; /* dark-wood */
+    --destructive: 0 100% 27%; /* warm-red #8B0000 */
+    --destructive-foreground: 60 56% 91%; /* cream */
+    --border: 43 64% 52% / 0.2; /* gold with opacity */
+    --input: 43 64% 52% / 0.2; /* gold with opacity */
+    --ring: 43 64% 52%; /* gold */
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    /* Sidebar - dark-wood with gold accents */
+    --sidebar-background: 15 47% 12%; /* dark-wood #2C1810 */
+    --sidebar-foreground: 60 56% 91%; /* cream */
+    --sidebar-primary: 43 64% 52%; /* gold */
+    --sidebar-primary-foreground: 15 47% 12%; /* dark-wood */
+    --sidebar-accent: 43 64% 52% / 0.2; /* gold with opacity */
+    --sidebar-accent-foreground: 43 64% 52%; /* gold */
+    --sidebar-border: 43 64% 52% / 0.2; /* gold with opacity */
+    --sidebar-ring: 43 64% 52%; /* gold */
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}

@@ -9,13 +9,21 @@
     "lint": "next lint",
     "reset": "node --env-file=.env.local --import=tsx scripts/reset-app.ts",
     "reset:dry": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --dry-run",
-    "reset:confirm": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --confirm"
+    "reset:confirm": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --confirm",
+    "seed:users": "node --env-file=.env.local --import=tsx scripts/seed-test-users.ts",
+    "seed:users:dry": "node --env-file=.env.local --import=tsx scripts/seed-test-users.ts --dry-run"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.26.2",
     "jose": "^6.1.3",
     "lucide-react": "^0.562.0",
@@ -23,6 +31,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resend": "^6.7.0",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.10"
   },
   "devDependencies": {

@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRegistrationStore, usePredictionsStore, useAuthStore } from '@/lib/store';
-import { BottomNav, HamburgerMenu } from '@/components/ui';
-import type { TabType } from '@/components/ui';
-import { HomeTab, PredictionsTab, LeaderboardTab, ProfileTab } from '@/components/dashboard';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
+import { HomeTab, PredictionsTab, LeaderboardTab, MiniLeaderboard } from '@/components/dashboard';
+import { FeatureToggle } from '@/components/FeatureToggle';
 
 interface LeaderboardEntry {
   rank: number;
@@ -22,13 +22,13 @@ interface LeaderboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
   const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
-  const { logout, isAuthenticated, currentUser, _hasHydrated: authHydrated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated: authHydrated } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isMounted, setIsMounted] = useState(false);
+  const [profileSynced, setProfileSynced] = useState(false);
 
   // Track client-side mount
   useEffect(() => {
@@ -52,6 +52,44 @@ export default function DashboardPage() {
     }
   }, [isMounted, registrationHydrated, authHydrated, isComplete, isAuthenticated, router]);
 
+  // Sync profile data from database on dashboard load
+  const syncProfileFromDb = useCallback(async () => {
+    if (!formData.email || profileSynced) return;
+
+    try {
+      const response = await fetch(`/api/profile?email=${encodeURIComponent(formData.email)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.profile) {
+          // Update store with fresh data from database
+          setFormData(data.profile);
+          // Update ALL completed sections from API (overwrite to sync with actual points)
+          if (data.completedSections) {
+            setCompletedSections({
+              basic: !!data.completedSections.basic,
+              personal: !!data.completedSections.personal,
+              skills: !!data.completedSections.skills,
+              music: !!data.completedSections.music,
+              jkvHistorie: !!data.completedSections.jkvHistorie,
+              borrelStats: !!data.completedSections.borrelStats,
+              quiz: !!data.completedSections.quiz,
+            });
+          }
+        }
+        setProfileSynced(true);
+      }
+    } catch (error) {
+      console.error('Error syncing profile from database:', error);
+    }
+  }, [formData.email, profileSynced, setFormData, setCompletedSections]);
+
+  // Fetch profile from DB to sync any changes
+  useEffect(() => {
+    if (isComplete && formData.email && !profileSynced) {
+      syncProfileFromDb();
+    }
+  }, [isComplete, formData.email, profileSynced, syncProfileFromDb]);
+
   // Fetch leaderboard data
   useEffect(() => {
     if (isComplete && formData.email) {
@@ -65,11 +103,18 @@ export default function DashboardPage() {
     }
   }, [isComplete, formData.email]);
 
-  // Handle logout
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
+  // Refresh leaderboard data (must be before any conditional returns)
+  const refreshLeaderboard = useCallback(async () => {
+    if (!formData.email) return;
+
+    // Also sync profile to ensure points are up to date
+    await fetch(`/api/profile?email=${encodeURIComponent(formData.email)}`);
+
+    // Then fetch fresh leaderboard
+    const res = await fetch(`/api/leaderboard?email=${encodeURIComponent(formData.email)}`);
+    const data = await res.json();
+    setLeaderboardData(data);
+  }, [formData.email]);
 
   // Show loading while waiting for client-side mount and BOTH stores to hydrate
   if (!isMounted || !registrationHydrated || !authHydrated) {
@@ -94,159 +139,70 @@ export default function DashboardPage() {
   const userRank = leaderboardData?.currentUser?.rank ?? '-';
   const profileCompletion = getProfileCompletion();
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeTab
-            formData={formData}
-            aiAssignment={aiAssignment}
-            userPoints={userPoints}
-            userRank={userRank}
-            isLoading={isLoading}
-            predictionsSubmitted={predictionsSubmitted}
-            profileCompletion={profileCompletion}
-          />
-        );
-      case 'predictions':
-        return <PredictionsTab predictionsSubmitted={predictionsSubmitted} />;
-      case 'leaderboard':
-        return (
-          <LeaderboardTab
-            leaderboard={leaderboardData?.leaderboard ?? []}
-            totalParticipants={leaderboardData?.totalParticipants ?? 0}
-            currentUserName={formData.name}
-            currentUserRank={userRank}
-            currentUserPoints={userPoints}
-            isLoading={isLoading}
-          />
-        );
-      case 'profile':
-        return <ProfileTab formData={formData} />;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <main className="min-h-screen pb-20 md:pb-8">
+    <DashboardLayout>
       {/* Background decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-32 h-32 border border-gold/10 rounded-full" />
         <div className="absolute bottom-20 right-20 w-48 h-48 border border-gold/10 rounded-full" />
       </div>
 
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-40 md:hidden">
-        <div className="bg-dark-wood/95 backdrop-blur-lg border-b border-gold/20">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div>
-              <h1 className="font-display text-lg text-gold">Bovenkamer</h1>
-              <p className="text-cream/50 text-xs">Welkom, {formData.name}</p>
-            </div>
-            <HamburgerMenu onLogout={handleLogout} />
-          </div>
-        </div>
-      </header>
-
-      {/* Desktop Header */}
-      <header className="hidden md:block py-8 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="stamp text-xs mb-4 inline-block">GEREGISTREERD</span>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-gold mb-2">
-            Welkom, {formData.name}
-          </h1>
-          <p className="text-cream/60">Bovenkamer Winterproef 2026</p>
-        </div>
-      </header>
-
       {/* Content */}
-      <div className="relative z-10 px-4 py-4 md:py-0">
-        <div className="max-w-4xl mx-auto">
-          {/* Mobile: Tab Content */}
-          <div className="md:hidden">
-            {renderTabContent()}
-          </div>
-
-          {/* Desktop: Full Dashboard (original layout) */}
-          <div className="hidden md:block">
-            <DesktopDashboard
+      <div className="relative z-10 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content - 2 columns on large screens */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Home Tab Content */}
+            <HomeTab
               formData={formData}
               aiAssignment={aiAssignment}
               userPoints={userPoints}
               userRank={userRank}
               isLoading={isLoading}
               predictionsSubmitted={predictionsSubmitted}
-              leaderboardData={leaderboardData}
               profileCompletion={profileCompletion}
+            />
+
+            {/* Predictions */}
+            <FeatureToggle feature="show_predictions">
+              <PredictionsTab predictionsSubmitted={predictionsSubmitted} />
+            </FeatureToggle>
+          </div>
+
+          {/* Sidebar - 1 column on large screens */}
+          <div className="space-y-6">
+            {/* Mini Leaderboard CTA */}
+            <FeatureToggle feature="show_leaderboard_preview">
+              <MiniLeaderboard
+                leaderboard={leaderboardData?.leaderboard ?? []}
+                currentUserName={formData.name}
+                currentUserRank={userRank}
+                currentUserPoints={userPoints}
+                isLoading={isLoading}
+                onRefresh={refreshLeaderboard}
+              />
+            </FeatureToggle>
+
+            {/* Full Leaderboard */}
+            <LeaderboardTab
+              leaderboard={leaderboardData?.leaderboard ?? []}
+              totalParticipants={leaderboardData?.totalParticipants ?? 0}
+              currentUserName={formData.name}
+              currentUserRank={userRank}
+              currentUserPoints={userPoints}
+              isLoading={isLoading}
+              onRefresh={refreshLeaderboard}
             />
           </div>
         </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-cream/30 text-xs uppercase tracking-widest">
+            Bovenkamer Winterproef • Alumni Junior Kamer Venray
+          </p>
+        </div>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* Desktop Footer */}
-      <div className="hidden md:block mt-8 text-center">
-        <p className="text-cream/30 text-xs uppercase tracking-widest">
-          Bovenkamer Winterproef • Alumni Junior Kamer Venray
-        </p>
-      </div>
-    </main>
-  );
-}
-
-// Desktop version with full layout
-function DesktopDashboard({
-  formData,
-  aiAssignment,
-  userPoints,
-  userRank,
-  isLoading,
-  predictionsSubmitted,
-  leaderboardData,
-  profileCompletion,
-}: {
-  formData: any;
-  aiAssignment: any;
-  userPoints: number;
-  userRank: number | string;
-  isLoading: boolean;
-  predictionsSubmitted: boolean;
-  leaderboardData: LeaderboardData | null;
-  profileCompletion: { percentage: number; points: number; completedSections: string[] };
-}) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Row 1: Home Tab Content */}
-      <div className="md:col-span-2">
-        <HomeTab
-          formData={formData}
-          aiAssignment={aiAssignment}
-          userPoints={userPoints}
-          userRank={userRank}
-          isLoading={isLoading}
-          predictionsSubmitted={predictionsSubmitted}
-          profileCompletion={profileCompletion}
-        />
-      </div>
-
-      {/* Row 2: Predictions & Leaderboard */}
-      <PredictionsTab predictionsSubmitted={predictionsSubmitted} />
-      <LeaderboardTab
-        leaderboard={leaderboardData?.leaderboard ?? []}
-        totalParticipants={leaderboardData?.totalParticipants ?? 0}
-        currentUserName={formData.name}
-        currentUserRank={userRank}
-        currentUserPoints={userPoints}
-        isLoading={isLoading}
-      />
-
-      {/* Row 3: Profile */}
-      <div className="md:col-span-2">
-        <ProfileTab formData={formData} />
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

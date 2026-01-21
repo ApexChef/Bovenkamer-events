@@ -96,46 +96,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Features preview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <Link
-            href={isAuthenticated ? "/dashboard" : "/register"}
-            className="group p-6 border border-gold/20 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all duration-300 cursor-pointer"
-          >
-            <div className="text-2xl mb-2">{isAuthenticated ? "🏠" : "📝"}</div>
-            <p className="text-gold font-semibold mb-1 group-hover:text-gold/90">
-              {isAuthenticated ? "Dashboard" : "Registratie"}
-            </p>
-            <p className="text-cream/50 group-hover:text-cream/70">
-              {isAuthenticated ? "Bekijk uw status" : "Meld u aan voor het festijn"}
-            </p>
-            <span className="inline-block mt-3 text-gold/60 text-xs uppercase tracking-wider group-hover:text-gold transition-colors">
-              {isAuthenticated ? "Open →" : "Start →"}
-            </span>
-          </Link>
-          <Link
-            href="/predictions"
-            className="group p-6 border border-gold/20 rounded-lg hover:border-gold/60 hover:bg-gold/5 transition-all duration-300 cursor-pointer"
-          >
-            <div className="text-2xl mb-2">🔮</div>
-            <p className="text-gold font-semibold mb-1 group-hover:text-gold/90">Voorspellingen</p>
-            <p className="text-cream/50 group-hover:text-cream/70">Waag uw gok</p>
-            <span className="inline-block mt-3 text-gold/60 text-xs uppercase tracking-wider group-hover:text-gold transition-colors">
-              Voorspel →
-            </span>
-          </Link>
-          <div
-            className="group p-6 border border-gold/10 rounded-lg bg-dark-wood/30 opacity-60 cursor-not-allowed"
-          >
-            <div className="text-2xl mb-2">🎯</div>
-            <p className="text-gold/70 font-semibold mb-1">Live Quiz</p>
-            <p className="text-cream/40">Bewijs uw kennis</p>
-            <span className="inline-block mt-3 text-cream/30 text-xs uppercase tracking-wider">
-              Beschikbaar op 31 jan
-            </span>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-gold/10">
           <p className="text-cream/30 text-xs uppercase tracking-widest">

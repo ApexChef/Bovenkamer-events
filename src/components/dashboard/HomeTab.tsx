@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -19,7 +19,8 @@ import {
   Trophy
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
-import { TOTAL_PROFILE_POINTS, useRegistrationStore } from '@/lib/store';
+import { TOTAL_PROFILE_POINTS, useRegistrationStore, useAuthStore } from '@/lib/store';
+import { FeatureToggle } from '@/components/FeatureToggle';
 
 interface AIAssignment {
   officialTitle: string;
@@ -96,9 +97,42 @@ export function HomeTab({
   profileCompletion,
 }: HomeTabProps) {
   const { attendance, setAttendance } = useRegistrationStore();
+  const { currentUser } = useAuthStore();
   const [isEditingAttendance, setIsEditingAttendance] = useState(false);
+  const [showPlusOneConfirmation, setShowPlusOneConfirmation] = useState(false);
+  const [isSavingAttendance, setIsSavingAttendance] = useState(false);
+
+  // NOTE: We no longer auto-sync attendance from formData
+  // Attendance is managed independently - user must explicitly choose in the form
+  // The login flow handles restoring attendance for returning users who already answered
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
   const isProfileComplete = profileCompletion.percentage === 100;
+
+  // Save attendance to database
+  const saveAttendanceToDb = useCallback(async () => {
+    if (!currentUser?.email || isSavingAttendance) return;
+
+    setIsSavingAttendance(true);
+    try {
+      await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: currentUser.email,
+          section: 'attendance',
+          data: {
+            attendanceConfirmed: attendance.confirmed,
+            hasPartner: attendance.bringingPlusOne,
+            partnerName: attendance.plusOneName || null,
+          },
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+    } finally {
+      setIsSavingAttendance(false);
+    }
+  }, [currentUser?.email, attendance.confirmed, attendance.bringingPlusOne, attendance.plusOneName, isSavingAttendance]);
 
   const totalCost = attendance.bringingPlusOne ? 100 : 50;
 
@@ -111,8 +145,17 @@ export function HomeTab({
   }, []);
 
   // Check if attendance step is complete
-  const isAttendanceComplete = attendance.confirmed !== null &&
-    (attendance.confirmed === false || attendance.bringingPlusOne !== null);
+  // - If not coming: just need confirmed = false
+  // - If coming alone: need confirmed = true AND bringingPlusOne = false
+  // - If coming with +1: need confirmed = true AND bringingPlusOne = true AND plusOneName filled
+  const isAttendanceComplete = attendance.confirmed !== null && (
+    attendance.confirmed === false ||
+    (attendance.bringingPlusOne === false) ||
+    (attendance.bringingPlusOne === true && attendance.plusOneName.trim() !== '')
+  );
+
+  // Get first name for personalized greeting
+  const firstName = formData.name?.split(' ')[0] || 'daar';
 
   const handleAttendanceChange = (confirmed: boolean) => {
     setAttendance({ confirmed });
@@ -131,99 +174,6 @@ export function HomeTab({
 
   return (
     <div className="space-y-4">
-      {/* Welcome & Status */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="text-center py-2">
-          <h2 className="font-display text-xl text-gold">
-            Welkom, {formData.name}!
-          </h2>
-          <p className="text-cream/60 text-sm">
-            {isProfileComplete
-              ? 'Je profiel is compleet'
-              : `Profiel ${profileCompletion.percentage}% compleet`
-            }
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Countdown Timer */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-      >
-        <Card className="border-gold/30 bg-gradient-to-br from-gold/5 to-transparent">
-          <CardContent className="py-4">
-            <p className="text-center text-sm text-cream/60 mb-3">
-              Nog tot de Winterproef
-            </p>
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="bg-dark-wood/50 rounded-lg p-3">
-                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.days}</p>
-                <p className="text-xs text-cream/50">dagen</p>
-              </div>
-              <div className="bg-dark-wood/50 rounded-lg p-3">
-                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.hours}</p>
-                <p className="text-xs text-cream/50">uren</p>
-              </div>
-              <div className="bg-dark-wood/50 rounded-lg p-3">
-                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.minutes}</p>
-                <p className="text-xs text-cream/50">min</p>
-              </div>
-              <div className="bg-dark-wood/50 rounded-lg p-3">
-                <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.seconds}</p>
-                <p className="text-xs text-cream/50">sec</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Burger Stack Game CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-      >
-        <Link href="/game">
-          <Card className="border-orange-500/40 bg-gradient-to-br from-orange-500/10 via-yellow-500/5 to-transparent hover:border-orange-500/60 transition-all cursor-pointer group overflow-hidden">
-            <CardContent className="py-4 relative">
-              {/* Background burger emoji decoration */}
-              <div className="absolute -right-4 -top-4 text-6xl opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
-                🍔
-              </div>
-
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="text-3xl">🍔</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-display text-lg text-orange-400 group-hover:text-orange-300 transition-colors">
-                      Burger Stack
-                    </p>
-                    <span className="text-xs bg-orange-500/30 text-orange-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Trophy className="w-3 h-3" />
-                      Verdien punten!
-                    </span>
-                  </div>
-                  <p className="text-xs text-cream/60 mt-1">
-                    Stapel de perfecte burger en scoor de hoogste punten
-                  </p>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <Gamepad2 className="w-6 h-6 text-orange-400/70 group-hover:text-orange-400 transition-colors" />
-                  <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </motion.div>
-
       {/* Attendance Summary - Show when complete and not editing */}
       {isAttendanceComplete && !isEditingAttendance && (
         <motion.div
@@ -246,18 +196,18 @@ export function HomeTab({
                   </div>
                   <div>
                     <p className={`font-medium ${attendance.confirmed ? 'text-success-green' : 'text-warm-red'}`}>
-                      {attendance.confirmed ? 'Je komt naar het feest!' : 'Je komt helaas niet'}
+                      {attendance.confirmed
+                        ? attendance.bringingPlusOne
+                          ? `Jij en ${attendance.plusOneName || 'je +1'} komen naar de Winterproef!`
+                          : `Je komt naar de Winterproef!`
+                        : 'Je komt helaas niet'
+                      }
                     </p>
                     <p className="text-xs text-cream/60">
-                      {attendance.confirmed ? (
-                        attendance.bringingPlusOne ? (
-                          attendance.plusOneName ? `Met ${attendance.plusOneName}` : 'Met +1'
-                        ) : (
-                          'Alleen'
-                        )
-                      ) : (
-                        DECLINE_REASONS.find(r => r.id === attendance.declineReason)?.label || 'Geen reden opgegeven'
-                      )}
+                      {attendance.confirmed
+                        ? `Totaal: €${attendance.bringingPlusOne ? '100' : '50'}`
+                        : DECLINE_REASONS.find(r => r.id === attendance.declineReason)?.label || ''
+                      }
                     </p>
                   </div>
                 </div>
@@ -344,7 +294,7 @@ export function HomeTab({
               {/* Attendance question */}
               <div className="pt-2 border-t border-gold/20">
                 <p className="text-sm text-cream mb-3 font-medium">
-                  Kom je naar het feest?
+                  Hey {firstName}, kom je ook naar het feest?
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -380,7 +330,7 @@ export function HomeTab({
                   className="pt-3 border-t border-gold/20"
                 >
                   <p className="text-sm text-cream mb-3 font-medium">
-                    Kom je alleen of met iemand?
+                    Neem je iemand mee?
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -431,12 +381,12 @@ export function HomeTab({
                 </motion.div>
               )}
 
-              {/* Done button when attending and selection made */}
-              {attendance.confirmed === true && attendance.bringingPlusOne !== null && (
+              {/* Summary and save button when attending and selection made */}
+              {attendance.confirmed === true && attendance.bringingPlusOne !== null && !showPlusOneConfirmation && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="space-y-3"
+                  className="space-y-3 pt-3 border-t border-gold/20"
                 >
                   <div className="bg-dark-wood/50 rounded-lg p-3 text-center">
                     <p className="text-sm text-cream/70">
@@ -448,14 +398,64 @@ export function HomeTab({
                       )}
                     </p>
                   </div>
-                  {isEditingAttendance && (
-                    <button
-                      onClick={() => setIsEditingAttendance(false)}
-                      className="w-full py-2.5 bg-gold/20 border border-gold/30 rounded-lg text-gold font-medium hover:bg-gold/30 transition-colors"
-                    >
-                      Opslaan
-                    </button>
+                  <button
+                    onClick={() => {
+                      if (attendance.bringingPlusOne && attendance.plusOneName.trim()) {
+                        // Show confirmation for +1
+                        setShowPlusOneConfirmation(true);
+                      } else {
+                        // Coming alone - save to database
+                        setIsEditingAttendance(false);
+                        saveAttendanceToDb();
+                      }
+                    }}
+                    disabled={attendance.bringingPlusOne && !attendance.plusOneName.trim()}
+                    className="w-full py-2.5 bg-gold/20 border border-gold/30 rounded-lg text-gold font-medium hover:bg-gold/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Opslaan
+                  </button>
+                  {attendance.bringingPlusOne && !attendance.plusOneName.trim() && (
+                    <p className="text-xs text-cream/50 text-center">
+                      Vul eerst de naam van je +1 in
+                    </p>
                   )}
+                </motion.div>
+              )}
+
+              {/* Sarcastic confirmation dialog for +1 */}
+              {showPlusOneConfirmation && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="pt-3 border-t border-gold/20"
+                >
+                  <div className="bg-dark-wood/70 rounded-lg p-4 space-y-4">
+                    <p className="text-cream text-sm">
+                      Hé {firstName}, wil je echt <span className="text-gold font-medium">{attendance.plusOneName}</span> meenemen?
+                      Het hoeft niet per se hè. Je mag ook iemand anders meenemen.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          setShowPlusOneConfirmation(false);
+                          setIsEditingAttendance(false);
+                          saveAttendanceToDb();
+                        }}
+                        className="py-2.5 bg-success-green/20 border border-success-green/30 rounded-lg text-success-green font-medium hover:bg-success-green/30 transition-colors text-sm"
+                      >
+                        Ja, toch wel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowPlusOneConfirmation(false);
+                          setAttendance({ plusOneName: '' });
+                        }}
+                        className="py-2.5 bg-warm-red/20 border border-warm-red/30 rounded-lg text-warm-red font-medium hover:bg-warm-red/30 transition-colors text-sm"
+                      >
+                        Nee, iemand anders
+                      </button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -514,7 +514,10 @@ export function HomeTab({
                       </motion.p>
                       {isEditingAttendance && (
                         <button
-                          onClick={() => setIsEditingAttendance(false)}
+                          onClick={() => {
+                            setIsEditingAttendance(false);
+                            saveAttendanceToDb();
+                          }}
                           className="w-full mt-3 py-2.5 bg-warm-red/20 border border-warm-red/30 rounded-lg text-warm-red font-medium hover:bg-warm-red/30 transition-colors"
                         >
                           Opslaan
@@ -528,6 +531,41 @@ export function HomeTab({
           </Card>
         </motion.div>
       )}
+
+      {/* Countdown Timer */}
+      <FeatureToggle feature="show_countdown">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card className="border-gold/30 bg-gradient-to-br from-gold/5 to-transparent">
+            <CardContent className="py-4">
+              <p className="text-center text-sm text-cream/60 mb-3">
+                Nog tot de Winterproef
+              </p>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-dark-wood/50 rounded-lg p-3">
+                  <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.days}</p>
+                  <p className="text-xs text-cream/50">dagen</p>
+                </div>
+                <div className="bg-dark-wood/50 rounded-lg p-3">
+                  <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.hours}</p>
+                  <p className="text-xs text-cream/50">uren</p>
+                </div>
+                <div className="bg-dark-wood/50 rounded-lg p-3">
+                  <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.minutes}</p>
+                  <p className="text-xs text-cream/50">min</p>
+                </div>
+                <div className="bg-dark-wood/50 rounded-lg p-3">
+                  <p className="text-2xl sm:text-3xl font-bold text-gold">{timeLeft.seconds}</p>
+                  <p className="text-xs text-cream/50">sec</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </FeatureToggle>
 
       {/* Profile Completion CTA */}
       {!isProfileComplete && (
@@ -588,77 +626,123 @@ export function HomeTab({
         </motion.div>
       )}
 
-      {/* AI Assignment - Only show if profile is complete */}
-      {isProfileComplete && aiAssignment && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="border-gold/30 overflow-hidden">
-            <CardHeader className="pb-2 bg-gradient-to-r from-gold/10 to-transparent">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-gold" />
-                  <CardTitle className="text-lg">Uw Officiële Toewijzing</CardTitle>
+      {/* AI Assignment - Only show if profile is complete and feature enabled */}
+      <FeatureToggle feature="show_ai_assignment">
+        {isProfileComplete && aiAssignment && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="border-gold/30 overflow-hidden">
+              <CardHeader className="pb-2 bg-gradient-to-r from-gold/10 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-gold" />
+                    <CardTitle className="text-lg">Uw Officiële Toewijzing</CardTitle>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-bold text-dark-wood ${
+                      WARNING_COLORS[aiAssignment.warningLevel]
+                    }`}
+                  >
+                    {aiAssignment.warningLevel}
+                  </span>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-bold text-dark-wood ${
-                    WARNING_COLORS[aiAssignment.warningLevel]
-                  }`}
-                >
-                  {aiAssignment.warningLevel}
-                </span>
-              </div>
-              <CardDescription className="text-xs">Namens de commissie</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="text-center py-4 bg-dark-wood/50 rounded-lg border border-gold/20">
-                <p className="text-cream/50 text-xs uppercase tracking-wider mb-1">
-                  Officiële Titel
+                <CardDescription className="text-xs">Namens de commissie</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="text-center py-4 bg-dark-wood/50 rounded-lg border border-gold/20">
+                  <p className="text-cream/50 text-xs uppercase tracking-wider mb-1">
+                    Officiële Titel
+                  </p>
+                  <h2 className="font-display text-2xl text-gold">
+                    {aiAssignment.officialTitle}
+                  </h2>
+                </div>
+                <div className="bg-gold/10 rounded-lg p-4 border border-gold/20">
+                  <p className="text-gold text-xs uppercase tracking-wider mb-2 font-semibold">
+                    Uw Taak
+                  </p>
+                  <p className="text-cream">{aiAssignment.task}</p>
+                </div>
+                <p className="text-cream/70 italic text-sm px-2">
+                  &ldquo;{aiAssignment.reasoning}&rdquo;
                 </p>
-                <h2 className="font-display text-2xl text-gold">
-                  {aiAssignment.officialTitle}
-                </h2>
-              </div>
-              <div className="bg-gold/10 rounded-lg p-4 border border-gold/20">
-                <p className="text-gold text-xs uppercase tracking-wider mb-2 font-semibold">
-                  Uw Taak
-                </p>
-                <p className="text-cream">{aiAssignment.task}</p>
-              </div>
-              <p className="text-cream/70 italic text-sm px-2">
-                &ldquo;{aiAssignment.reasoning}&rdquo;
-              </p>
-              <div className="flex items-center gap-2 text-sm bg-dark-wood/30 rounded-lg p-3">
-                <span className="text-cream/50">Speciaal privilege:</span>
-                <span className="text-gold font-medium">{aiAssignment.specialPrivilege}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+                <div className="flex items-center gap-2 text-sm bg-dark-wood/30 rounded-lg p-3">
+                  <span className="text-cream/50">Speciaal privilege:</span>
+                  <span className="text-gold font-medium">{aiAssignment.specialPrivilege}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-      {/* Placeholder when profile not complete but would show assignment */}
-      {!isProfileComplete && (
+        {/* Placeholder when profile not complete but would show assignment */}
+        {!isProfileComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="border-dashed border-cream/20 bg-dark-wood/20">
+              <CardContent className="py-8 text-center">
+                <Sparkles className="w-8 h-8 text-cream/30 mx-auto mb-3" />
+                <p className="text-cream/50 text-sm font-medium">
+                  Jouw officiële toewijzing
+                </p>
+                <p className="text-cream/30 text-xs mt-1">
+                  Vul eerst je profiel aan om je toewijzing te ontvangen
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </FeatureToggle>
+
+      {/* Burger Stack Game CTA - Lower priority, fun engagement */}
+      <FeatureToggle feature="show_burger_game">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.35 }}
         >
-          <Card className="border-dashed border-cream/20 bg-dark-wood/20">
-            <CardContent className="py-8 text-center">
-              <Sparkles className="w-8 h-8 text-cream/30 mx-auto mb-3" />
-              <p className="text-cream/50 text-sm font-medium">
-                Jouw officiële toewijzing
-              </p>
-              <p className="text-cream/30 text-xs mt-1">
-                Vul eerst je profiel aan om je toewijzing te ontvangen
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/game">
+            <Card className="border-orange-500/40 bg-gradient-to-br from-orange-500/10 via-yellow-500/5 to-transparent hover:border-orange-500/60 transition-all cursor-pointer group overflow-hidden">
+              <CardContent className="py-4 relative">
+                {/* Background burger emoji decoration */}
+                <div className="absolute -right-4 -top-4 text-6xl opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
+                  🍔
+                </div>
+
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <span className="text-3xl">🍔</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-display text-lg text-orange-400 group-hover:text-orange-300 transition-colors">
+                        Burger Stack
+                      </p>
+                      <span className="text-xs bg-orange-500/30 text-orange-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Trophy className="w-3 h-3" />
+                        Verdien punten!
+                      </span>
+                    </div>
+                    <p className="text-xs text-cream/60 mt-1">
+                      Stapel de perfecte burger en scoor de hoogste punten
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <Gamepad2 className="w-6 h-6 text-orange-400/70 group-hover:text-orange-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </motion.div>
-      )}
+      </FeatureToggle>
     </div>
   );
 }

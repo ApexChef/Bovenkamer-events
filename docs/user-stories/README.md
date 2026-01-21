@@ -16,7 +16,8 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 | ~~US-004~~ | Taaktoewijzing | - | ❌ Uitgesteld | - | - |
 | [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | URGENT | 🔧 IN PROGRESS | - | Bug fix: profiel laadt niet na login |
 | [US-010](./US-010-mobile-pin-keyboard/) | Mobiel PIN Toetsenbord | Medium | ✅ DONE | [#20](https://github.com/ApexChef/Bovenkamer-events/pull/20) | Numeriek toetsenbord voor laatste 2 PIN cijfers |
-| [US-011](./US-011-desktop-login-hang/) | Desktop Login/Dashboard Issues | URGENT | 🔧 IN PROGRESS | - | Dashboard loading, profiel sync bug fix |
+| [US-011](./US-011-desktop-login-hang/) | Desktop Login/Dashboard Issues | URGENT | ✅ DONE | [#21](https://github.com/ApexChef/Bovenkamer-events/pull/21) | Dashboard loading, profiel sync bug fix |
+| [US-012](./US-012-desktop-nav-feature-toggles/) | Desktop Nav & Feature Toggles | High | 🔧 IN PROGRESS | - | Desktop header nav, admin feature toggles |
 
 ## Dependency Graph
 
