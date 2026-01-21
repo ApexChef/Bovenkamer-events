@@ -9,7 +9,9 @@
     "lint": "next lint",
     "reset": "node --env-file=.env.local --import=tsx scripts/reset-app.ts",
     "reset:dry": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --dry-run",
-    "reset:confirm": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --confirm"
+    "reset:confirm": "node --env-file=.env.local --import=tsx scripts/reset-app.ts --confirm",
+    "seed:users": "node --env-file=.env.local --import=tsx scripts/seed-test-users.ts",
+    "seed:users:dry": "node --env-file=.env.local --import=tsx scripts/seed-test-users.ts --dry-run"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
