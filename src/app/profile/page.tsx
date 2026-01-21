@@ -239,20 +239,9 @@ export default function ProfilePage() {
     }
   }, [registrationHydrated, authHydrated, formData, attendance]);
 
-  if (!registrationHydrated || !authHydrated) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
-      </main>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
   // Calculate points directly from Zustand's completedSections (which is synced from DB)
   // Using completedSections directly ensures React re-renders when values change
+  // NOTE: This hook must be called unconditionally (before any early returns)
   const points = useMemo(() => {
     let pts = 0;
     if (completedSections.basic) pts += SECTION_POINTS.basic;
@@ -265,9 +254,32 @@ export default function ProfilePage() {
     return pts;
   }, [completedSections]);
 
+  // Validate birth date when it changes
+  // NOTE: This hook must be called unconditionally (before any early returns)
+  useEffect(() => {
+    if (birthDate) {
+      const validation = validateBirthDate(birthDate);
+      setBirthDateWarning(validation.warning || '');
+    } else {
+      setBirthDateWarning('');
+    }
+  }, [birthDate]);
+
   const percentage = Math.round((points / TOTAL_PROFILE_POINTS) * 100);
 
-  const toggleSection = (sectionId: SectionId) => {
+  if (!registrationHydrated || !authHydrated) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
+      </main>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+const toggleSection = (sectionId: SectionId) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
   };
 
@@ -394,17 +406,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Validate birth date when it changes
-  useEffect(() => {
-    if (birthDate) {
-      const validation = validateBirthDate(birthDate);
-      setBirthDateWarning(validation.warning || '');
-    } else {
-      setBirthDateWarning('');
-    }
-  }, [birthDate]);
-
-  const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid;
+const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid;
   // All 8 skill categories must be selected
   const isSkillsValid = Object.values(skills).every(skill => skill !== '');
   const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
