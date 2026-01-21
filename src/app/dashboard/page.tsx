@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRegistrationStore, usePredictionsStore, useAuthStore } from '@/lib/store';
 import { BottomNav, HamburgerMenu } from '@/components/ui';
@@ -24,17 +24,33 @@ export default function DashboardPage() {
   const router = useRouter();
   const { formData, aiAssignment, isComplete, _hasHydrated, getProfileCompletion } = useRegistrationStore();
   const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
-  const { logout } = useAuthStore();
+  const { logout, isAuthenticated, currentUser } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Redirect if not registered (only after hydration)
+  // Track client-side mount
   useEffect(() => {
-    if (_hasHydrated && !isComplete) {
+    setIsMounted(true);
+  }, []);
+
+  // Redirect if not authenticated or not registered (only after mount and hydration)
+  useEffect(() => {
+    // Wait for client-side mount and hydration before checking
+    if (!isMounted || !_hasHydrated) return;
+
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/dashboard');
+      return;
+    }
+
+    // If authenticated but registration not complete, redirect to register
+    if (!isComplete) {
       router.push('/register');
     }
-  }, [_hasHydrated, isComplete, router]);
+  }, [isMounted, _hasHydrated, isComplete, isAuthenticated, router]);
 
   // Fetch leaderboard data
   useEffect(() => {
@@ -55,8 +71,18 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  // Show loading while hydrating or if not complete
-  if (!_hasHydrated || !isComplete) {
+  // Show loading while waiting for client-side mount and hydration
+  if (!isMounted || !_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-deep-green flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // After hydration, check if we should show the dashboard
+  // If not authenticated or not complete, the useEffect will redirect
+  if (!isAuthenticated || !isComplete) {
     return (
       <div className="min-h-screen bg-deep-green flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin" />
