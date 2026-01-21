@@ -151,6 +151,7 @@ export const PINInput = forwardRef<PINInputRef, PINInputProps>(
               <input
                 ref={inputRefs[index]}
                 type="text"
+                inputMode={index < 2 ? 'text' : 'numeric'}
                 maxLength={1}
                 value={pin}
                 onChange={(e) => handleChange(index, e.target.value)}
