@@ -44,7 +44,7 @@ export function DesktopHeader({ userName, onLogout }: DesktopHeaderProps) {
   };
 
   return (
-    <header className="hidden md:block sticky top-0 z-50 bg-dark-wood/95 backdrop-blur-lg border-b border-gold/20">
+    <header className="hidden md:block sticky top-0 z-50 bg-dark-wood/95 backdrop-blur-lg border-b border-gold/20 mt-4 mx-4 rounded-xl">
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

@@ -6,7 +6,8 @@ export type FeatureKey =
   | 'show_ai_assignment'
   | 'show_leaderboard_preview'
   | 'show_burger_game'
-  | 'show_predictions';
+  | 'show_predictions'
+  | 'show_live_ranking';
 
 export interface FeatureToggle {
   feature_key: FeatureKey;
@@ -22,6 +23,7 @@ export interface FeatureFlags {
   show_leaderboard_preview: boolean;
   show_burger_game: boolean;
   show_predictions: boolean;
+  show_live_ranking: boolean;
 }
 
 export const DEFAULT_FEATURES: FeatureFlags = {
@@ -30,6 +32,7 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   show_leaderboard_preview: true,
   show_burger_game: false, // Hidden by default - enable closer to event
   show_predictions: true,
+  show_live_ranking: false, // Hidden by default - enable when event starts
 };
 
 export interface User {

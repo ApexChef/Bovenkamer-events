@@ -8,14 +8,16 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PINInput, PINInputRef } from '@/components/ui/PINInput';
-import { useAuthStore, useRegistrationStore } from '@/lib/store';
+import { useAuthStore, useRegistrationStore, usePredictionsStore } from '@/lib/store';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
+  const prefillEmail = searchParams.get('un'); // Pre-fill email from query param
   const { login } = useAuthStore();
-  const { setComplete, setFormData, setAIAssignment, markSectionComplete } = useRegistrationStore();
+  const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance } = useRegistrationStore();
+  const { reset: resetPredictions } = usePredictionsStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
   const [email, setEmail] = useState('');
@@ -26,15 +28,24 @@ function LoginForm() {
   const [pinError, setPinError] = useState('');
   const [rememberEmail, setRememberEmail] = useState(true);
 
-  // Load remembered email from localStorage on mount
+  // Load email from query param or localStorage on mount
   useEffect(() => {
+    // Query param takes precedence
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+      // Focus on PIN input if email is pre-filled
+      setTimeout(() => pinInputRef.current?.focus(), 100);
+      return;
+    }
+
+    // Otherwise check localStorage
     const savedEmail = localStorage.getItem('bovenkamer_remembered_email');
     if (savedEmail) {
       setEmail(savedEmail);
       // Focus on PIN input if email is pre-filled
       setTimeout(() => pinInputRef.current?.focus(), 100);
     }
-  }, []);
+  }, [prefillEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +106,11 @@ function LoginForm() {
         localStorage.removeItem('bovenkamer_remembered_email');
       }
 
+      // IMPORTANT: Reset all stores BEFORE loading new user data
+      // This clears any data from a previous user session
+      resetRegistration();
+      resetPredictions();
+
       // Compute PIN hash for cache
       const encoder = new TextEncoder();
       const pinData = encoder.encode(pin);
@@ -122,6 +138,7 @@ function LoginForm() {
         setFormData({
           email: data.user.email,
           name: data.user.name,
+          birthDate: reg.birthDate || '',
           birthYear: reg.birthYear,
           hasPartner: reg.hasPartner,
           partnerName: reg.partnerName || '',
@@ -138,50 +155,53 @@ function LoginForm() {
           borrelPlanning2026: reg.borrelPlanning2026 || 0,
         });
 
+        // Only sync attendance if user has explicitly answered (check if personal section is complete)
+        // A user who filled the personal section will have birthYear set
+        if (reg.birthYear && reg.hasPartner !== undefined && reg.hasPartner !== null) {
+          setAttendance({
+            confirmed: true,
+            bringingPlusOne: reg.hasPartner,
+            plusOneName: reg.partnerName || '',
+          });
+        }
+        // Otherwise leave attendance as null so the dashboard shows the question
+
         if (reg.aiAssignment) {
           setAIAssignment(reg.aiAssignment);
         }
-
-        // Restore completedSections based on data presence
-        // basic: always true when logged in with registration
-        markSectionComplete('basic');
-
-        // personal: check if birthYear is present
-        if (reg.birthYear) {
-          markSectionComplete('personal');
-        }
-
-        // skills: check if skills object has any filled values
-        if (reg.skills && Object.values(reg.skills).some((v) => v !== '')) {
-          markSectionComplete('skills');
-        }
-
-        // music: check if decade or genre is present
-        if (reg.musicDecade || reg.musicGenre) {
-          markSectionComplete('music');
-        }
-
-        // jkvHistorie: check if any JKV year is present
-        if (reg.jkvJoinYear || reg.jkvExitYear || reg.bovenkamerJoinYear) {
-          markSectionComplete('jkvHistorie');
-        }
-
-        // borrelStats: check if borrel data is present (> 0 or array with items)
-        const hasBorrelCount = reg.borrelCount2025 && reg.borrelCount2025 > 0;
-        const hasBorrelPlanning = reg.borrelPlanning2026 &&
-          (typeof reg.borrelPlanning2026 === 'number' ? reg.borrelPlanning2026 > 0 :
-           Array.isArray(reg.borrelPlanning2026) ? reg.borrelPlanning2026.length > 0 : false);
-        if (hasBorrelCount || hasBorrelPlanning) {
-          markSectionComplete('borrelStats');
-        }
-
-        // quiz: check if quizAnswers has any entries
-        if (reg.quizAnswers && Object.keys(reg.quizAnswers).length > 0) {
-          markSectionComplete('quiz');
-        }
       } else {
         setFormData({ email: data.user.email, name: data.user.name });
-        markSectionComplete('basic');
+      }
+
+      // Fetch completedSections and attendance from profile API
+      try {
+        const profileResponse = await fetch(`/api/profile?email=${encodeURIComponent(data.user.email)}`);
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.completedSections) {
+            setCompletedSections({
+              basic: !!profileData.completedSections.basic,
+              personal: !!profileData.completedSections.personal,
+              skills: !!profileData.completedSections.skills,
+              music: !!profileData.completedSections.music,
+              jkvHistorie: !!profileData.completedSections.jkvHistorie,
+              borrelStats: !!profileData.completedSections.borrelStats,
+              quiz: !!profileData.completedSections.quiz,
+            });
+          }
+          // Restore attendance from database if it was explicitly set
+          if (profileData.profile?.attendanceConfirmed !== undefined && profileData.profile?.attendanceConfirmed !== null) {
+            setAttendance({
+              confirmed: profileData.profile.attendanceConfirmed,
+              bringingPlusOne: profileData.profile.hasPartner ?? null,
+              plusOneName: profileData.profile.partnerName || '',
+            });
+          }
+        }
+      } catch (profileError) {
+        console.error('Error fetching profile for completedSections:', profileError);
+        // Fallback: at least mark basic as complete
+        setCompletedSections({ basic: true });
       }
       setComplete(true);
 
