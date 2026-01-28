@@ -20,8 +20,7 @@ export async function GET() {
     const participants: { value: string; label: string }[] = [];
 
     for (const reg of registrations || []) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const user = reg.users as any;
+      const user = reg.users as unknown as { id: string; name: string } | null;
       if (!user?.name) continue;
       const firstName = user.name.split(' ')[0];
 

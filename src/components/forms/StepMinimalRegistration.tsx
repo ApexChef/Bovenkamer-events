@@ -14,12 +14,13 @@ export function StepMinimalRegistration() {
   const pinInputRef = useRef<PINInputRef>(null);
   const confirmPinInputRef = useRef<PINInputRef>(null);
 
-  const [name, setName] = useState(formData.name || '');
+  const [firstName, setFirstName] = useState(formData.firstName || '');
+  const [lastName, setLastName] = useState(formData.lastName || '');
   const [email, setEmail] = useState(formData.email || '');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
-  const [nameError, setNameError] = useState('');
+  const [firstNameError, setFirstNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [pinError, setPinError] = useState('');
   const [confirmPinError, setConfirmPinError] = useState('');
@@ -30,7 +31,7 @@ export function StepMinimalRegistration() {
     e.preventDefault();
 
     // Reset errors
-    setNameError('');
+    setFirstNameError('');
     setEmailError('');
     setPinError('');
     setConfirmPinError('');
@@ -39,10 +40,12 @@ export function StepMinimalRegistration() {
     // Validation
     let hasError = false;
 
-    if (!name.trim()) {
-      setNameError('Naam is verplicht');
+    if (!firstName.trim()) {
+      setFirstNameError('Voornaam is verplicht');
       hasError = true;
     }
+
+    // Achternaam is optioneel bij registratie
 
     if (!email.trim()) {
       setEmailError('E-mail is verplicht');
@@ -71,11 +74,14 @@ export function StepMinimalRegistration() {
 
     try {
       // Register the user with minimal data
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          name: fullName, // For backward compatibility
           email: email.trim().toLowerCase(),
           pin,
           minimal: true, // Flag for minimal registration
@@ -102,7 +108,13 @@ export function StepMinimalRegistration() {
 
       // Store in auth and registration stores
       await login(data.user, data.token, pinHash);
-      setFormData({ name: name.trim(), email: email.trim().toLowerCase(), pin });
+      setFormData({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
+        email: email.trim().toLowerCase(),
+        pin
+      });
       markSectionComplete('basic');
       setComplete(true);
 
@@ -116,8 +128,9 @@ export function StepMinimalRegistration() {
     }
   };
 
+  // Only firstName is required, lastName is optional
   const isValid =
-    name.trim() !== '' &&
+    firstName.trim() !== '' &&
     email.trim() !== '' &&
     email.includes('@') &&
     pin.length === 4 &&
@@ -151,18 +164,30 @@ export function StepMinimalRegistration() {
               </motion.div>
             )}
 
-            <Input
-              label="Naam"
-              placeholder="Je volledige naam"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setNameError('');
-              }}
-              error={nameError}
-              disabled={isLoading}
-              autoFocus
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Voornaam"
+                placeholder="Je voornaam"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setFirstNameError('');
+                }}
+                error={firstNameError}
+                disabled={isLoading}
+                autoFocus
+              />
+
+              <Input
+                label="Achternaam (optioneel)"
+                placeholder="Je achternaam"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                }}
+                disabled={isLoading}
+              />
+            </div>
 
             <Input
               label="E-mailadres"

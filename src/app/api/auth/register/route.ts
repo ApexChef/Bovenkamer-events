@@ -27,6 +27,8 @@ import { checkCombinedRateLimit, getClientIP, createRateLimitError } from '@/lib
 import { randomUUID } from 'crypto';
 
 interface RegisterRequest {
+  firstName?: string;
+  lastName?: string;
   name: string;
   email: string;
   pin: string;
@@ -38,7 +40,7 @@ interface RegisterRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterRequest = await request.json();
-    const { name, email, pin, pinConfirm, expectedParticipantId, minimal } = body;
+    const { firstName, lastName, name, email, pin, pinConfirm, expectedParticipantId, minimal } = body;
 
     // Input validation - for minimal registration, pinConfirm is handled client-side
     if (!name || !email || !pin) {
@@ -141,12 +143,14 @@ export async function POST(request: NextRequest) {
       .insert({
         email: normalizedEmail,
         name: name.trim(),
+        first_name: firstName?.trim() || name.trim().split(' ')[0],
+        last_name: lastName?.trim() || name.trim().split(' ').slice(1).join(' '),
         role: 'participant',
         email_verified: minimal ? true : false, // Skip email verification for minimal
         registration_status: minimal ? 'approved' : 'pending', // Auto-approve for minimal
         profile_completion: minimal ? 10 : 0, // Track profile completion (10 = basic info)
       })
-      .select('id, email, name, registration_status, profile_completion')
+      .select('id, email, name, first_name, last_name, registration_status, profile_completion')
       .single();
 
     if (createUserError || !newUser) {
@@ -227,6 +231,28 @@ export async function POST(request: NextRequest) {
 
     // For minimal registration, return user object and token for immediate login
     if (minimal) {
+      // Create a registration record with basic info
+      const { error: regError } = await supabase.from('registrations').insert({
+        user_id: newUser.id,
+        name: name.trim(),
+        first_name: firstName?.trim() || name.trim().split(' ')[0],
+        last_name: lastName?.trim() || name.trim().split(' ').slice(1).join(' '),
+        status: 'approved',
+      });
+
+      if (regError) {
+        console.error('Error creating registration:', regError);
+        // Continue anyway - the profile can be created later
+      }
+
+      // Award basic points for completing registration
+      await supabase.from('points_ledger').insert({
+        user_id: newUser.id,
+        source: 'registration',
+        points: 10, // SECTION_POINTS.basic
+        description: 'profile_basic',
+      });
+
       // Generate a simple session token
       const sessionToken = randomUUID();
 
@@ -237,6 +263,8 @@ export async function POST(request: NextRequest) {
             id: newUser.id,
             email: newUser.email,
             name: newUser.name,
+            firstName: newUser.first_name,
+            lastName: newUser.last_name,
             registrationStatus: newUser.registration_status,
             profileCompletion: newUser.profile_completion,
           },

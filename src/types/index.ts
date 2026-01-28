@@ -220,13 +220,45 @@ export interface Rating {
   created_at: string;
 }
 
+// Food & Drink preferences
+export interface FoodPreferences {
+  // Vlees (per soort)
+  pork: number;       // 0-5: varkensvlees
+  beef: number;       // 0-5: rundvlees
+  chicken: number;    // 0-5: kip
+  game: number;       // 0-5: wild
+  // Overig eten
+  fish: number;       // 0-5: vis & schaaldieren
+  veggies: number;    // 0-5: groentes & salades
+  sauces: number;     // 0-5: mayo/ketchup → chimichurri
+  // Drinken
+  softDrinks: number; // 0-5: frisdrank
+  wine: number;       // 0-5: wijn
+  beer: number;       // 0-5: bier
+}
+
+export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
+  pork: 3,
+  beef: 3,
+  chicken: 3,
+  game: 2,
+  fish: 2,
+  veggies: 3,
+  sauces: 3,
+  softDrinks: 2,
+  wine: 3,
+  beer: 3,
+};
+
 // Form state types
 export interface RegistrationFormData {
   // Step 0 (Auth)
   pin?: string;
 
   // Basic (minimal registration)
-  name: string;
+  firstName: string;
+  lastName: string;
+  name: string; // Computed: firstName + lastName (for backward compatibility)
   email: string;
 
   // Personal section
@@ -235,8 +267,14 @@ export interface RegistrationFormData {
   gender: string;
   selfConfidence: number; // 1-10
   hasPartner: boolean;
-  partnerName: string;
+  partnerFirstName: string;
+  partnerLastName: string;
+  partnerName: string; // Computed: partnerFirstName + partnerLastName (for backward compatibility)
+
+  // Food & Drinks section
   dietaryRequirements: string;
+  partnerDietaryRequirements: string;
+  foodPreferences: FoodPreferences;
 
   // Skills section (8 categories)
   skills: SkillSelections;
@@ -413,10 +451,10 @@ export const GENDER_OPTIONS = [
 // Members must be 40+ to join Bovenkamer, so earliest realistic join year is ~1980
 export const JKV_JOIN_YEARS = Array.from({ length: 15 }, (_, i) => 2005 + i) as readonly number[];
 
-// JKV Exit years (2000-2023)
+// JKV Exit years (2020-2025)
 // Bovenkamer exists since 2023, so all members must have exited JKV by then
-// Minimum exit year is 2000 (realistic), maximum is 2023
-export const JKV_EXIT_YEARS = Array.from({ length: 6 }, (_, i) => 2000 + i) as readonly number[];
+// Minimum exit year is 2020 (realistic for this age group), maximum is 2025
+export const JKV_EXIT_YEARS = Array.from({ length: 6 }, (_, i) => 2020 + i) as readonly number[];
 
 // Borrel dates 2025 (past - "geweest" tracking)
 export const BORRELS_2025 = [
