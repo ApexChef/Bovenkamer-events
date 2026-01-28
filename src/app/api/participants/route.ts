@@ -5,60 +5,48 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('role', 'participant')
-      .order('name');
+    // Get registrations with user info - only users who registered (are coming)
+    const { data: registrations, error: regError } = await supabase
+      .from('registrations')
+      .select('user_id, has_partner, partner_name, users!inner(id, name)')
+      .order('users(name)');
 
-    if (error) {
-      console.error('Error fetching participants:', error);
-      // Return fallback list if database not configured
-      return NextResponse.json([
-        { value: 'alwin', label: 'Alwin' },
-        { value: 'boy', label: 'Boy Boom' },
-        { value: 'peter', label: 'Peter' },
-        { value: 'jan', label: 'Jan' },
-        { value: 'marco', label: 'Marco' },
-        { value: 'henk', label: 'Henk' },
-        { value: 'erik', label: 'Erik' },
-        { value: 'bas', label: 'Bas' },
-        { value: 'rob', label: 'Rob' },
-        { value: 'kees', label: 'Kees' },
-        { value: 'wim', label: 'Wim' },
-      ]);
+    if (regError) {
+      console.error('Error fetching registrations:', regError);
+      return NextResponse.json([]);
     }
 
-    // Transform to dropdown format
-    const participants = data.map((user) => ({
-      value: user.id,
-      label: user.name,
-    }));
+    // Build participants list
+    const participants: { value: string; label: string }[] = [];
 
-    // If no participants yet, return fallback
-    if (participants.length === 0) {
-      return NextResponse.json([
-        { value: 'alwin', label: 'Alwin' },
-        { value: 'boy', label: 'Boy Boom' },
-        { value: 'peter', label: 'Peter' },
-        { value: 'jan', label: 'Jan' },
-        { value: 'marco', label: 'Marco' },
-        { value: 'henk', label: 'Henk' },
-        { value: 'erik', label: 'Erik' },
-        { value: 'bas', label: 'Bas' },
-        { value: 'rob', label: 'Rob' },
-        { value: 'kees', label: 'Kees' },
-        { value: 'wim', label: 'Wim' },
-      ]);
+    for (const reg of registrations || []) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = reg.users as any;
+      if (!user?.name) continue;
+      const firstName = user.name.split(' ')[0];
+
+      // Add the registered user
+      participants.push({
+        value: user.id,
+        label: firstName,
+      });
+
+      // Add partner if exists: "Tamar (Alwin)"
+      if (reg.has_partner && reg.partner_name) {
+        const partnerFirstName = reg.partner_name.split(' ')[0];
+        participants.push({
+          value: `partner-${user.id}`,
+          label: `${partnerFirstName} (${firstName})`,
+        });
+      }
     }
+
+    // Sort alphabetically by label
+    participants.sort((a, b) => a.label.localeCompare(b.label, 'nl'));
 
     return NextResponse.json(participants);
   } catch (error) {
     console.error('Participants API error:', error);
-    // Return fallback on error
-    return NextResponse.json([
-      { value: 'alwin', label: 'Alwin' },
-      { value: 'boy', label: 'Boy Boom' },
-    ]);
+    return NextResponse.json([]);
   }
 }
