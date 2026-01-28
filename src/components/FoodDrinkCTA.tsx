@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UtensilsCrossed, AlertCircle, Check, ChevronRight } from 'lucide-react';
+import { UtensilsCrossed, AlertCircle, Check, ChevronRight, Star } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
+
+// Points for completing food/drink preferences (must match food-drinks API)
+const FOOD_DRINK_POINTS = 40;
 
 interface CTAProps {
   variant?: 'card' | 'banner';
@@ -81,8 +84,8 @@ export function FoodDrinkCTA({ variant = 'card' }: CTAProps) {
               </h3>
               <p className="text-sm text-cream/60">
                 {isComplete
-                  ? 'Voorkeuren compleet!'
-                  : `${totalComplete}/${totalRequired} ingevuld`}
+                  ? `+${FOOD_DRINK_POINTS} punten verdiend!`
+                  : `Verdien ${FOOD_DRINK_POINTS} punten`}
               </p>
             </div>
           </div>
@@ -106,20 +109,20 @@ export function FoodDrinkCTA({ variant = 'card' }: CTAProps) {
           {isComplete ? (
             <Check className="text-success-green" size={28} />
           ) : (
-            <AlertCircle className="text-gold" size={28} />
+            <Star className="text-gold" size={28} />
           )}
         </div>
         <div className="flex-1">
           <h3 className={`text-lg font-bold ${isComplete ? 'text-success-green' : 'text-gold'}`}>
-            {isComplete ? 'Voorkeuren compleet!' : 'Vul je eetvoorkeuren in'}
+            {isComplete ? 'Voorkeuren compleet!' : `Verdien ${FOOD_DRINK_POINTS} punten!`}
           </h3>
           <p className="text-sm text-cream/70 mt-1">
             {isComplete
-              ? 'Bedankt! We hebben alle info voor de BBQ.'
-              : 'Help ons de perfecte BBQ voor te bereiden.'}
+              ? `+${FOOD_DRINK_POINTS} punten verdiend voor je BBQ voorkeuren.`
+              : 'Vul je eet- en drinkvoorkeuren in voor de BBQ.'}
           </p>
 
-          {!isComplete && (
+          {!isComplete && status.hasPartner && (
             <>
               {/* Progress bar */}
               <div className="mt-3 h-2 bg-deep-green/50 rounded-full overflow-hidden">

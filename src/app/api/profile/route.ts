@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
 // Points per profile section (must match SECTION_POINTS in store.ts)
+// Note: foodDrinks removed - now handled separately at /eten-drinken (40 points via food-drinks API)
 const SECTION_POINTS: Record<string, number> = {
   basic: 10,
   personal: 50,
-  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -20,9 +20,7 @@ function isSectionDataValid(section: string, data: Record<string, unknown>): boo
       // Require at least birth year to be set
       return !!(data.birthYear || data.birthDate);
 
-    case 'foodDrinks':
-      // Food preferences are always valid (sliders have default values)
-      return true;
+    // Note: foodDrinks removed - now handled separately at /eten-drinken
 
     case 'skills':
       // Require at least one skill to have a non-empty value
@@ -156,10 +154,10 @@ export async function GET(request: NextRequest) {
     );
 
     // Sections are "complete" only if points have been awarded (user explicitly saved)
+    // Note: foodDrinks is now tracked separately via food_drink_preferences table
     const completedSections: Record<string, boolean> = {
       basic: hasBasicPoints, // True if any basic points awarded
       personal: awardedSections.has('personal'),
-      foodDrinks: awardedSections.has('foodDrinks'),
       skills: awardedSections.has('skills'),
       music: awardedSections.has('music'),
       jkvHistorie: awardedSections.has('jkvHistorie'),

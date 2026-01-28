@@ -85,6 +85,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Points for completing food/drink preferences (awarded once)
+const FOOD_DRINK_POINTS = 40;
+
 // POST/PUT food/drink preferences
 export async function POST(request: NextRequest) {
   try {
@@ -143,9 +146,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save preferences' }, { status: 500 });
     }
 
+    // Award points for completing food/drink preferences (first time only, for 'self')
+    let pointsAwarded = 0;
+    if (personType === 'self') {
+      const pointsDescription = 'food_drink_preferences';
+
+      // Check if points were already awarded
+      const { data: existingPoints } = await supabase
+        .from('points_ledger')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('description', pointsDescription)
+        .single();
+
+      if (!existingPoints) {
+        // Award points
+        const { error: pointsError } = await supabase
+          .from('points_ledger')
+          .insert({
+            user_id: user.id,
+            source: 'registration',
+            points: FOOD_DRINK_POINTS,
+            description: pointsDescription,
+          });
+
+        if (pointsError) {
+          console.error('Error awarding points:', pointsError);
+        } else {
+          pointsAwarded = FOOD_DRINK_POINTS;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `${personType === 'self' ? 'Jouw' : 'Partner'} voorkeuren opgeslagen`,
+      pointsAwarded,
     });
   } catch (error) {
     console.error('Food-drinks POST error:', error);
