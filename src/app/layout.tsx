@@ -3,6 +3,7 @@ import './globals.css'
 import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://bovenkamer.netlify.app'),
   title: 'Bovenkamer Winterproef 2026',
   description: 'De officiële registratie voor de Bovenkamer Nieuwjaars BBQ - Ter beoordeling van Kandidaat Boy Boom',
   keywords: ['Bovenkamer', 'Winterproef', 'Junior Kamer', 'Venray', 'BBQ'],
