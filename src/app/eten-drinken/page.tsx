@@ -351,154 +351,167 @@ export default function EtenDrinkenPage() {
             setPrefs,
             values as unknown as DrinkDistribution
           )}
-        />
-
-        {/* Conditional: soft drink or water preference */}
-        {prefs.drinkDistribution.softDrinks > 10 ? (
-          <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
-            <h5 className="text-sm text-gold">Welke frisdrank?</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Cola', emoji: '🥤' },
-                { value: 1, label: 'Sinas', emoji: '🍊' },
-                { value: 2, label: 'Spa Rood', emoji: '💧' },
-                { value: 3, label: 'Overige', emoji: '📝' },
-              ]}
-              value={
-                prefs.softDrinkPreference === 'cola' ? 0 :
-                prefs.softDrinkPreference === 'sinas' ? 1 :
-                prefs.softDrinkPreference === 'spa_rood' ? 2 :
-                prefs.softDrinkPreference === 'overige' ? 3 : -1
+          renderAfterSlider={(key, values) => {
+            // Frisdrank: show water or soft drink preference
+            if (key === 'softDrinks') {
+              if (values.softDrinks > 10) {
+                return (
+                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
+                    <h5 className="text-sm text-gold">Welke frisdrank?</h5>
+                    <SegmentedControl
+                      label=""
+                      options={[
+                        { value: 0, label: 'Cola', emoji: '🥤' },
+                        { value: 1, label: 'Sinas', emoji: '🍊' },
+                        { value: 2, label: 'Spa Rood', emoji: '💧' },
+                        { value: 3, label: 'Overige', emoji: '📝' },
+                      ]}
+                      value={
+                        prefs.softDrinkPreference === 'cola' ? 0 :
+                        prefs.softDrinkPreference === 'sinas' ? 1 :
+                        prefs.softDrinkPreference === 'spa_rood' ? 2 :
+                        prefs.softDrinkPreference === 'overige' ? 3 : -1
+                      }
+                      onChange={(val) => {
+                        const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
+                        setPrefs({
+                          ...prefs,
+                          softDrinkPreference: pref,
+                          softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
+                        });
+                      }}
+                    />
+                    {prefs.softDrinkPreference === 'overige' && (
+                      <Input
+                        label="Welke frisdrank?"
+                        value={prefs.softDrinkOther}
+                        onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
+                        placeholder="Bijv. Ice Tea, Cassis..."
+                      />
+                    )}
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
+                    <h5 className="text-sm text-gold">Water voorkeur</h5>
+                    <SegmentedControl
+                      label=""
+                      options={[
+                        { value: 0, label: 'Plat', emoji: '💧' },
+                        { value: 1, label: 'Bruisend', emoji: '🫧' },
+                      ]}
+                      value={prefs.waterPreference === 'flat' ? 0 : prefs.waterPreference === 'sparkling' ? 1 : -1}
+                      onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
+                    />
+                  </div>
+                );
               }
-              onChange={(val) => {
-                const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
-                setPrefs({
-                  ...prefs,
-                  softDrinkPreference: pref,
-                  softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
-                });
-              }}
-            />
-            {prefs.softDrinkPreference === 'overige' && (
-              <Input
-                label="Welke frisdrank?"
-                value={prefs.softDrinkOther}
-                onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
-                placeholder="Bijv. Ice Tea, Cassis..."
-              />
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
-            <h5 className="text-sm text-gold">Water voorkeur</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Plat', emoji: '💧' },
-                { value: 1, label: 'Bruisend', emoji: '🫧' },
-              ]}
-              value={prefs.waterPreference === 'flat' ? 0 : prefs.waterPreference === 'sparkling' ? 1 : -1}
-              onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
-            />
-          </div>
-        )}
+            }
 
-        {/* Conditional: wine preference (red/white) */}
-        {prefs.drinkDistribution.wine > 10 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
-          >
-            <div className="text-gold text-sm font-medium flex items-center gap-2">
-              <span>🍷</span>
-              <span>Zo, jij houdt van wijn!</span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-cream/70">100% Rood</span>
-                <span className="text-cream/70">100% Wit</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={prefs.winePreference ?? 50}
-                onChange={(e) => setPrefs({
-                  ...prefs,
-                  winePreference: parseInt(e.target.value)
-                })}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer
-                  bg-gradient-to-r from-[#722F37] to-[#F5F5DC]
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-5
-                  [&::-webkit-slider-thumb]:h-5
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-gold
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-webkit-slider-thumb]:shadow-lg
-                  [&::-moz-range-thumb]:w-5
-                  [&::-moz-range-thumb]:h-5
-                  [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-gold
-                  [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="text-center text-gold text-sm font-medium">
-                {prefs.winePreference === null || prefs.winePreference === 50
-                  ? '50/50 Mix'
-                  : prefs.winePreference < 33
-                    ? '🍷 Vooral Rood'
-                    : prefs.winePreference < 50
-                      ? 'Meer Rood'
-                      : prefs.winePreference < 67
-                        ? 'Meer Wit'
-                        : '🤍 Vooral Wit'
-                }
-              </div>
-            </div>
-          </motion.div>
-        )}
+            // Wijn: show red/white preference when > 10%
+            if (key === 'wine' && values.wine > 10) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3"
+                >
+                  <div className="text-gold text-sm font-medium flex items-center gap-2">
+                    <span>🍷</span>
+                    <span>Zo, jij houdt van wijn!</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-cream/70">100% Rood</span>
+                      <span className="text-cream/70">100% Wit</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={prefs.winePreference ?? 50}
+                      onChange={(e) => setPrefs({
+                        ...prefs,
+                        winePreference: parseInt(e.target.value)
+                      })}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer
+                        bg-gradient-to-r from-[#722F37] to-[#F5F5DC]
+                        [&::-webkit-slider-thumb]:appearance-none
+                        [&::-webkit-slider-thumb]:w-5
+                        [&::-webkit-slider-thumb]:h-5
+                        [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:bg-gold
+                        [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:shadow-lg
+                        [&::-moz-range-thumb]:w-5
+                        [&::-moz-range-thumb]:h-5
+                        [&::-moz-range-thumb]:rounded-full
+                        [&::-moz-range-thumb]:bg-gold
+                        [&::-moz-range-thumb]:border-0
+                        [&::-moz-range-thumb]:cursor-pointer"
+                    />
+                    <div className="text-center text-gold text-sm font-medium">
+                      {prefs.winePreference === null || prefs.winePreference === 50
+                        ? '50/50 Mix'
+                        : prefs.winePreference < 33
+                          ? '🍷 Vooral Rood'
+                          : prefs.winePreference < 50
+                            ? 'Meer Rood'
+                            : prefs.winePreference < 67
+                              ? 'Meer Wit'
+                              : '🤍 Vooral Wit'
+                      }
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            }
 
-        {/* Conditional: beer type selection */}
-        {prefs.drinkDistribution.beer > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
-          >
-            <h5 className="text-sm text-gold">Welk bier?</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Pils', emoji: '🍺' },
-                { value: 1, label: 'Speciaal Bier', emoji: '🍻' },
-              ]}
-              value={prefs.beerType === 'pils' ? 0 : prefs.beerType === 'speciaal' ? 1 : -1}
-              onChange={(val) => setPrefs({
-                ...prefs,
-                beerType: val === 0 ? 'pils' : 'speciaal'
-              })}
-            />
-            {prefs.beerType === 'speciaal' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className="p-3 bg-warm-red/20 border border-warm-red/40 rounded-lg"
-              >
-                <p className="text-cream text-sm italic text-center font-medium">
-                  &quot;Dit is een BBQ, geen Beer Craft festival!&quot;
-                </p>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
+            // Bier: show pils/speciaal choice when > 0%
+            if (key === 'beer' && values.beer > 0) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3"
+                >
+                  <h5 className="text-sm text-gold">Welk bier?</h5>
+                  <SegmentedControl
+                    label=""
+                    options={[
+                      { value: 0, label: 'Pils', emoji: '🍺' },
+                      { value: 1, label: 'Speciaal Bier', emoji: '🍻' },
+                    ]}
+                    value={prefs.beerType === 'pils' ? 0 : prefs.beerType === 'speciaal' ? 1 : -1}
+                    onChange={(val) => setPrefs({
+                      ...prefs,
+                      beerType: val === 0 ? 'pils' : 'speciaal'
+                    })}
+                  />
+                  {prefs.beerType === 'speciaal' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-3 bg-warm-red/20 border border-warm-red/40 rounded-lg"
+                    >
+                      <p className="text-cream text-sm italic text-center font-medium">
+                        &quot;Dit is een BBQ, geen Beer Craft festival!&quot;
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              );
+            }
+
+            return null;
+          }}
+        />
       </div>
 
       <Button
