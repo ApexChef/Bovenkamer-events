@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
 // Points per profile section (must match SECTION_POINTS in store.ts)
+// Note: foodDrinks removed - now handled separately at /eten-drinken (40 points via food-drinks API)
 const SECTION_POINTS: Record<string, number> = {
   basic: 10,
   personal: 50,
-  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -20,9 +20,7 @@ function isSectionDataValid(section: string, data: Record<string, unknown>): boo
       // Require at least birth year to be set
       return !!(data.birthYear || data.birthDate);
 
-    case 'foodDrinks':
-      // Food preferences are always valid (sliders have default values)
-      return true;
+    // Note: foodDrinks removed - now handled separately at /eten-drinken
 
     case 'skills':
       // Require at least one skill to have a non-empty value
@@ -110,7 +108,14 @@ export async function GET(request: NextRequest) {
       partnerName: registration.partner_name,
       dietaryRequirements: registration.dietary_requirements,
       partnerDietaryRequirements: registration.partner_dietary_requirements || '',
+      meatDistribution: registration.meat_distribution || null,
+      drinkDistribution: registration.drink_distribution || null,
       foodPreferences: registration.food_preferences || null,
+      startsWithBubbles: registration.starts_with_bubbles ?? null,
+      bubbleType: registration.bubble_type || null,
+      softDrinkPreference: registration.soft_drink_preference || null,
+      softDrinkOther: registration.soft_drink_other || '',
+      waterPreference: registration.water_preference || null,
       skills: registration.skills || {},
       additionalSkills: registration.additional_skills,
       musicDecade: registration.music_decade,
@@ -149,10 +154,10 @@ export async function GET(request: NextRequest) {
     );
 
     // Sections are "complete" only if points have been awarded (user explicitly saved)
+    // Note: foodDrinks is now tracked separately via food_drink_preferences table
     const completedSections: Record<string, boolean> = {
       basic: hasBasicPoints, // True if any basic points awarded
       personal: awardedSections.has('personal'),
-      foodDrinks: awardedSections.has('foodDrinks'),
       skills: awardedSections.has('skills'),
       music: awardedSections.has('music'),
       jkvHistorie: awardedSections.has('jkvHistorie'),
@@ -234,7 +239,14 @@ export async function POST(request: NextRequest) {
           ...updateData,
           dietary_requirements: data.dietaryRequirements || null,
           partner_dietary_requirements: data.partnerDietaryRequirements || null,
+          meat_distribution: data.meatDistribution || null,
+          drink_distribution: data.drinkDistribution || null,
           food_preferences: data.foodPreferences || null,
+          starts_with_bubbles: data.startsWithBubbles ?? null,
+          bubble_type: data.bubbleType || null,
+          soft_drink_preference: data.softDrinkPreference || null,
+          soft_drink_other: data.softDrinkOther || null,
+          water_preference: data.waterPreference || null,
         };
         break;
 

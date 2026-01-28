@@ -11,6 +11,7 @@ import {
   Flame,
   Gamepad2,
   Settings,
+  UtensilsCrossed,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -42,6 +43,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Home', icon: Home },
+  { href: '/eten-drinken', label: 'Eten & Drinken', icon: UtensilsCrossed },
   { href: '/predictions', label: 'Voorspellingen', icon: BarChart3, featureKey: 'show_predictions' },
   { href: '/leaderboard', label: 'Ranking', icon: Trophy, featureKey: 'show_live_ranking' },
   { href: '/game', label: 'Burger Game', icon: Gamepad2, featureKey: 'show_burger_game' },

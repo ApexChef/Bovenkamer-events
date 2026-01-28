@@ -220,34 +220,89 @@ export interface Rating {
   created_at: string;
 }
 
-// Food & Drink preferences
+// Protein distribution (percentages that sum to 100%)
+// Renamed from "MeatDistribution" as it includes fish and vegetarian options
+export interface MeatDistribution {
+  pork: number;       // percentage: varkensvlees
+  beef: number;       // percentage: rundvlees
+  chicken: number;    // percentage: kip
+  game: number;       // percentage: wild
+  fish: number;       // percentage: vis & schaaldieren
+  vegetarian: number; // percentage: vegetarisch
+}
+
+export const DEFAULT_MEAT_DISTRIBUTION: MeatDistribution = {
+  pork: 20,
+  beef: 20,
+  chicken: 20,
+  game: 10,
+  fish: 15,
+  vegetarian: 15,
+};
+
+// Drink distribution (percentages that sum to 100%)
+export interface DrinkDistribution {
+  softDrinks: number; // percentage
+  wine: number;       // percentage
+  beer: number;       // percentage
+}
+
+export const DEFAULT_DRINK_DISTRIBUTION: DrinkDistribution = {
+  softDrinks: 0,
+  wine: 0,
+  beer: 0,
+};
+
+// Food & Drink preferences (non-percentage items)
 export interface FoodPreferences {
-  // Vlees (per soort)
-  pork: number;       // 0-5: varkensvlees
-  beef: number;       // 0-5: rundvlees
-  chicken: number;    // 0-5: kip
-  game: number;       // 0-5: wild
-  // Overig eten
-  fish: number;       // 0-5: vis & schaaldieren
   veggies: number;    // 0-5: groentes & salades
   sauces: number;     // 0-5: mayo/ketchup → chimichurri
-  // Drinken
-  softDrinks: number; // 0-5: frisdrank
-  wine: number;       // 0-5: wijn
-  beer: number;       // 0-5: bier
 }
 
 export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
-  pork: 3,
-  beef: 3,
-  chicken: 3,
-  game: 2,
-  fish: 2,
   veggies: 3,
   sauces: 3,
-  softDrinks: 2,
-  wine: 3,
-  beer: 3,
+};
+
+// Food & Drink Preferences (separate table)
+export type PersonType = 'self' | 'partner';
+
+export interface FoodDrinkPreference {
+  id?: string;
+  userId: string;
+  personType: PersonType;
+  // Food
+  dietaryRequirements: string;
+  meatDistribution: MeatDistribution;
+  veggiesPreference: number;
+  saucesPreference: number;
+  // Drinks
+  startsWithBubbles: boolean | null;
+  bubbleType: 'champagne' | 'prosecco' | null;
+  drinkDistribution: DrinkDistribution;
+  softDrinkPreference: string | null;
+  softDrinkOther: string;
+  waterPreference: 'sparkling' | 'flat' | null;
+  winePreference: number | null;
+  beerType: 'pils' | 'speciaal' | null;
+  // Timestamps
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const DEFAULT_FOOD_DRINK_PREFERENCE: Omit<FoodDrinkPreference, 'id' | 'userId' | 'personType' | 'createdAt' | 'updatedAt'> = {
+  dietaryRequirements: '',
+  meatDistribution: DEFAULT_MEAT_DISTRIBUTION,
+  veggiesPreference: 3,
+  saucesPreference: 3,
+  startsWithBubbles: null,
+  bubbleType: null,
+  drinkDistribution: DEFAULT_DRINK_DISTRIBUTION,
+  softDrinkPreference: null,
+  softDrinkOther: '',
+  waterPreference: null,
+  winePreference: null,
+  beerType: null,
 };
 
 // Form state types
@@ -274,7 +329,14 @@ export interface RegistrationFormData {
   // Food & Drinks section
   dietaryRequirements: string;
   partnerDietaryRequirements: string;
-  foodPreferences: FoodPreferences;
+  meatDistribution: MeatDistribution;
+  drinkDistribution: DrinkDistribution;
+  foodPreferences: FoodPreferences; // veggies & sauces only
+  startsWithBubbles: boolean | null; // null = not answered, true = yes, false = no
+  bubbleType: 'champagne' | 'prosecco' | null; // if startsWithBubbles is true
+  softDrinkPreference: string | null; // cola, sinas, spa rood, overige
+  softDrinkOther: string; // free text if overige selected
+  waterPreference: 'sparkling' | 'flat' | null; // bruisend of plat
 
   // Skills section (8 categories)
   skills: SkillSelections;

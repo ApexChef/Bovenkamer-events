@@ -15,10 +15,10 @@ export interface ProfileSections {
 }
 
 // Points per section
+// Note: foodDrinks removed - now separate page at /eten-drinken (not part of profile points)
 export const SECTION_POINTS = {
   basic: 10,
   personal: 50,
-  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -108,18 +108,28 @@ const initialFormData: RegistrationFormData = {
   // Food & Drinks
   dietaryRequirements: '',
   partnerDietaryRequirements: '',
+  meatDistribution: {
+    pork: 20,
+    beef: 20,
+    chicken: 20,
+    game: 10,
+    fish: 15,
+    vegetarian: 15,
+  },
+  drinkDistribution: {
+    softDrinks: 20,
+    wine: 40,
+    beer: 40,
+  },
   foodPreferences: {
-    pork: 3,
-    beef: 3,
-    chicken: 3,
-    game: 2,
-    fish: 2,
     veggies: 3,
     sauces: 3,
-    softDrinks: 2,
-    wine: 3,
-    beer: 3,
   },
+  startsWithBubbles: null,
+  bubbleType: null,
+  softDrinkPreference: null,
+  softDrinkOther: '',
+  waterPreference: null,
   // Skills (8 categories)
   skills: initialSkills,
   additionalSkills: '',
@@ -238,10 +248,7 @@ export const useRegistrationStore = create<RegistrationState>()(
           completedSections.push('personal');
           points += SECTION_POINTS.personal;
         }
-        if (completed.foodDrinks) {
-          completedSections.push('foodDrinks');
-          points += SECTION_POINTS.foodDrinks;
-        }
+        // foodDrinks removed - now separate page at /eten-drinken
         if (completed.skills) {
           completedSections.push('skills');
           points += SECTION_POINTS.skills;

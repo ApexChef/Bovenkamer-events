@@ -24,6 +24,8 @@ import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINT
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { Slider } from '@/components/ui/Slider';
+import { PercentageDistribution } from '@/components/ui/PercentageDistribution';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import {
   SKILL_CATEGORIES,
   SkillSelections,
@@ -34,6 +36,10 @@ import {
   JKV_EXIT_YEARS,
   FoodPreferences,
   DEFAULT_FOOD_PREFERENCES,
+  MeatDistribution,
+  DrinkDistribution,
+  DEFAULT_MEAT_DISTRIBUTION,
+  DEFAULT_DRINK_DISTRIBUTION,
 } from '@/types';
 
 // Event date for age calculation
@@ -82,7 +88,7 @@ const DEFAULT_SKILLS: SkillSelections = {
   documentation: '',
 };
 
-type SectionId = 'personal' | 'foodDrinks' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
+type SectionId = 'personal' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
 
 interface Section {
   id: SectionId;
@@ -99,13 +105,6 @@ const sections: Section[] = [
     description: 'Naam, geboortedatum en partner',
     points: SECTION_POINTS.personal,
     icon: User
-  },
-  {
-    id: 'foodDrinks',
-    title: 'Eten & Drinken',
-    description: 'Wat wil jij op je bord en in je glas?',
-    points: SECTION_POINTS.foodDrinks,
-    icon: UtensilsCrossed
   },
   {
     id: 'skills',
@@ -182,7 +181,14 @@ export default function ProfilePage() {
   // Food & Drinks
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
   const [partnerDietaryRequirements, setPartnerDietaryRequirements] = useState(formData.partnerDietaryRequirements || '');
+  const [meatDistribution, setMeatDistribution] = useState<MeatDistribution>(formData.meatDistribution || DEFAULT_MEAT_DISTRIBUTION);
+  const [drinkDistribution, setDrinkDistribution] = useState<DrinkDistribution>(formData.drinkDistribution || DEFAULT_DRINK_DISTRIBUTION);
   const [foodPreferences, setFoodPreferences] = useState<FoodPreferences>(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
+  const [startsWithBubbles, setStartsWithBubbles] = useState<boolean | null>(formData.startsWithBubbles ?? null);
+  const [bubbleType, setBubbleType] = useState<'champagne' | 'prosecco' | null>(formData.bubbleType ?? null);
+  const [softDrinkPreference, setSoftDrinkPreference] = useState<string | null>(formData.softDrinkPreference ?? null);
+  const [softDrinkOther, setSoftDrinkOther] = useState(formData.softDrinkOther || '');
+  const [waterPreference, setWaterPreference] = useState<'sparkling' | 'flat' | null>(formData.waterPreference ?? null);
 
   const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
@@ -254,6 +260,8 @@ export default function ProfilePage() {
       setPartnerLastName(formData.partnerLastName || partnerParts.slice(1).join(' ') || '');
       setDietaryRequirements(formData.dietaryRequirements);
       setPartnerDietaryRequirements(formData.partnerDietaryRequirements || '');
+      setMeatDistribution(formData.meatDistribution || DEFAULT_MEAT_DISTRIBUTION);
+      setDrinkDistribution(formData.drinkDistribution || DEFAULT_DRINK_DISTRIBUTION);
       setFoodPreferences(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
       setSkills(formData.skills || DEFAULT_SKILLS);
       setAdditionalSkills(formData.additionalSkills);
@@ -270,11 +278,11 @@ export default function ProfilePage() {
   // Calculate points directly from Zustand's completedSections (which is synced from DB)
   // Using completedSections directly ensures React re-renders when values change
   // NOTE: This hook must be called unconditionally (before any early returns)
+  // foodDrinks removed - now separate page at /eten-drinken
   const points = useMemo(() => {
     let pts = 0;
     if (completedSections.basic) pts += SECTION_POINTS.basic;
     if (completedSections.personal) pts += SECTION_POINTS.personal;
-    if (completedSections.foodDrinks) pts += SECTION_POINTS.foodDrinks;
     if (completedSections.skills) pts += SECTION_POINTS.skills;
     if (completedSections.music) pts += SECTION_POINTS.music;
     if (completedSections.jkvHistorie) pts += SECTION_POINTS.jkvHistorie;
@@ -362,7 +370,14 @@ const toggleSection = (sectionId: SectionId) => {
       const data = {
         dietaryRequirements,
         partnerDietaryRequirements: hasPartner ? partnerDietaryRequirements : '',
+        meatDistribution,
+        drinkDistribution,
         foodPreferences,
+        startsWithBubbles,
+        bubbleType: startsWithBubbles ? bubbleType : null,
+        softDrinkPreference,
+        softDrinkOther,
+        waterPreference,
       };
       setFormData(data);
       await saveSectionToDb('foodDrinks', data);
@@ -615,188 +630,6 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
               className="w-full"
             >
               Opslaan (+{SECTION_POINTS.personal} punten)
-            </Button>
-          </div>
-        );
-
-      case 'foodDrinks':
-        return (
-          <div className="space-y-6">
-            {/* Dieetwensen */}
-            <Input
-              label="Dieetwensen (optioneel)"
-              value={dietaryRequirements}
-              onChange={(e) => setDietaryRequirements(e.target.value)}
-              placeholder="Vegetarisch, allergieën, etc."
-            />
-
-            {hasPartner && partnerFirstName && (
-              <Input
-                label={`Dieetwensen ${partnerFirstName} (optioneel)`}
-                value={partnerDietaryRequirements}
-                onChange={(e) => setPartnerDietaryRequirements(e.target.value)}
-                placeholder="Vegetarisch, allergieën, etc."
-              />
-            )}
-
-            {/* ETEN */}
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🍖 Vlees
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Van tofu-fan tot T-bone terrorist&quot;</p>
-
-              <Slider
-                label="🐷 Varkensvlees"
-                min={0}
-                max={5}
-                value={foodPreferences.pork}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, pork: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Ja graag!"
-              />
-
-              <Slider
-                label="🐄 Rundvlees"
-                min={0}
-                max={5}
-                value={foodPreferences.beef}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, beef: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Ja graag!"
-              />
-
-              <Slider
-                label="🐔 Kip"
-                min={0}
-                max={5}
-                value={foodPreferences.chicken}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, chicken: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Ja graag!"
-              />
-
-              <Slider
-                label="🦌 Wild"
-                min={0}
-                max={5}
-                value={foodPreferences.game}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, game: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Ja graag!"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🐟 Vis & Meer
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Nemo is óf je vriend, óf je diner&quot;</p>
-
-              <Slider
-                label="🦐 Vis & Schaaldieren"
-                min={0}
-                max={5}
-                value={foodPreferences.fish}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, fish: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Zeemeermin"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🥗 Groentes & Salades
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Groen op je bord: decoratie of doel?&quot;</p>
-
-              <Slider
-                label="🥬 Groentes & Salades"
-                min={0}
-                max={5}
-                value={foodPreferences.veggies}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, veggies: parseInt(e.target.value) })}
-                formatMin="Liever niet"
-                formatMax="Rabbit mode"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🍟 Sauzen
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Van frituurvet tot fine dining&quot;</p>
-
-              <Slider
-                label="Mayo/Ketchup ←→ Chimichurri"
-                min={0}
-                max={5}
-                value={foodPreferences.sauces}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, sauces: parseInt(e.target.value) })}
-                formatMin="🍟 Vet"
-                formatMax="🌿 Fijn"
-              />
-            </div>
-
-            {/* DRINKEN */}
-            <div className="border-t border-cream/20 pt-6 space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🥤 Frisdrank
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Cola is ook een persoonlijkheid&quot;</p>
-
-              <Slider
-                label="Frisdrank"
-                min={0}
-                max={5}
-                value={foodPreferences.softDrinks}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, softDrinks: parseInt(e.target.value) })}
-                formatMin="Nooit"
-                formatMax="Altijd"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🍷 Wijn
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Rood, wit, rosé... ja graag&quot;</p>
-
-              <Slider
-                label="Wijn"
-                min={0}
-                max={5}
-                value={foodPreferences.wine}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, wine: parseInt(e.target.value) })}
-                formatMin="Bah"
-                formatMax="Sommelier"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-gold font-semibold flex items-center gap-2">
-                🍺 Bier
-              </h4>
-              <p className="text-xs text-cream/50 italic">&quot;Pils, speciaalbier, alles is bier&quot;</p>
-
-              <Slider
-                label="Bier"
-                min={0}
-                max={5}
-                value={foodPreferences.beer}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, beer: parseInt(e.target.value) })}
-                formatMin="Nee"
-                formatMax="Proost!"
-              />
-            </div>
-
-            <Button
-              onClick={saveFoodDrinksSection}
-              disabled={isLoading}
-              isLoading={isLoading}
-              className="w-full"
-            >
-              Opslaan (+{SECTION_POINTS.foodDrinks} punten)
             </Button>
           </div>
         );
