@@ -187,8 +187,8 @@ export default function EtenDrinkenPage() {
       drinkDistribution: newDistribution,
     };
 
-    // Reset wine preference if wine drops to 10% or below
-    if (newDistribution.wine <= 10 && prefs.winePreference !== null) {
+    // Reset wine preference if wine drops to 20% or below
+    if (newDistribution.wine <= 20 && prefs.winePreference !== null) {
       updates.winePreference = null;
     }
 
@@ -352,65 +352,48 @@ export default function EtenDrinkenPage() {
             values as unknown as DrinkDistribution
           )}
           renderAfterSlider={(key, values) => {
-            // Frisdrank: show water or soft drink preference
-            if (key === 'softDrinks') {
-              if (values.softDrinks > 10) {
-                return (
-                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
-                    <h5 className="text-sm text-gold">Welke frisdrank?</h5>
-                    <SegmentedControl
-                      label=""
-                      options={[
-                        { value: 0, label: 'Cola', emoji: '🥤' },
-                        { value: 1, label: 'Sinas', emoji: '🍊' },
-                        { value: 2, label: 'Spa Rood', emoji: '💧' },
-                        { value: 3, label: 'Overige', emoji: '📝' },
-                      ]}
-                      value={
-                        prefs.softDrinkPreference === 'cola' ? 0 :
-                        prefs.softDrinkPreference === 'sinas' ? 1 :
-                        prefs.softDrinkPreference === 'spa_rood' ? 2 :
-                        prefs.softDrinkPreference === 'overige' ? 3 : -1
-                      }
-                      onChange={(val) => {
-                        const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
-                        setPrefs({
-                          ...prefs,
-                          softDrinkPreference: pref,
-                          softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
-                        });
-                      }}
+            // Frisdrank: show soft drink preference only when > 10%
+            if (key === 'softDrinks' && values.softDrinks > 10) {
+              return (
+                <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
+                  <h5 className="text-sm text-gold">Welke frisdrank?</h5>
+                  <SegmentedControl
+                    label=""
+                    options={[
+                      { value: 0, label: 'Cola', emoji: '🥤' },
+                      { value: 1, label: 'Sinas', emoji: '🍊' },
+                      { value: 2, label: 'Spa Rood', emoji: '💧' },
+                      { value: 3, label: 'Overige', emoji: '📝' },
+                    ]}
+                    value={
+                      prefs.softDrinkPreference === 'cola' ? 0 :
+                      prefs.softDrinkPreference === 'sinas' ? 1 :
+                      prefs.softDrinkPreference === 'spa_rood' ? 2 :
+                      prefs.softDrinkPreference === 'overige' ? 3 : -1
+                    }
+                    onChange={(val) => {
+                      const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
+                      setPrefs({
+                        ...prefs,
+                        softDrinkPreference: pref,
+                        softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
+                      });
+                    }}
+                  />
+                  {prefs.softDrinkPreference === 'overige' && (
+                    <Input
+                      label="Welke frisdrank?"
+                      value={prefs.softDrinkOther}
+                      onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
+                      placeholder="Bijv. Ice Tea, Cassis..."
                     />
-                    {prefs.softDrinkPreference === 'overige' && (
-                      <Input
-                        label="Welke frisdrank?"
-                        value={prefs.softDrinkOther}
-                        onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
-                        placeholder="Bijv. Ice Tea, Cassis..."
-                      />
-                    )}
-                  </div>
-                );
-              } else {
-                return (
-                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
-                    <h5 className="text-sm text-gold">Water voorkeur</h5>
-                    <SegmentedControl
-                      label=""
-                      options={[
-                        { value: 0, label: 'Plat', emoji: '💧' },
-                        { value: 1, label: 'Bruisend', emoji: '🫧' },
-                      ]}
-                      value={prefs.waterPreference === 'flat' ? 0 : prefs.waterPreference === 'sparkling' ? 1 : -1}
-                      onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
-                    />
-                  </div>
-                );
-              }
+                  )}
+                </div>
+              );
             }
 
-            // Wijn: show red/white preference when > 10%
-            if (key === 'wine' && values.wine > 10) {
+            // Wijn: show red/white preference when > 20%
+            if (key === 'wine' && values.wine > 20) {
               return (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -493,6 +476,18 @@ export default function EtenDrinkenPage() {
                       beerType: val === 0 ? 'pils' : 'speciaal'
                     })}
                   />
+                  {prefs.beerType === 'pils' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-3 bg-success-green/20 border border-success-green/40 rounded-lg"
+                    >
+                      <p className="text-cream text-sm italic text-center font-medium">
+                        &quot;Komt voor elkaar; er is genoeg!&quot;
+                      </p>
+                    </motion.div>
+                  )}
                   {prefs.beerType === 'speciaal' && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
