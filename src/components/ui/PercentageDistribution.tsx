@@ -20,7 +20,7 @@ interface PercentageDistributionProps {
   showChartToggle?: boolean;
 }
 
-// SVG Pie Chart component
+// SVG Pie Chart component with legend
 function PieChart({
   items,
   values,
@@ -72,37 +72,55 @@ function PieChart({
       };
     });
 
+  // Get items with values > 0 for legend
+  const legendItems = items.filter(item => (values[item.key] || 0) > 0);
+
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Pie segments */}
-      {segments.map(({ item, pathData }) => (
-        <path
-          key={item.key}
-          d={pathData}
-          fill={item.color}
-          stroke="rgba(0,0,0,0.2)"
-          strokeWidth="1"
-        />
-      ))}
-      {/* Labels */}
-      {segments.map(({ item, labelX, labelY, percent }) => (
-        percent >= 10 && (
-          <text
-            key={`label-${item.key}`}
-            x={labelX}
-            y={labelY}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="white"
-            fontSize="11"
-            fontWeight="bold"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-          >
-            {percent}%
-          </text>
-        )
-      ))}
-    </svg>
+    <div className="flex flex-col items-center gap-3">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* Pie segments */}
+        {segments.map(({ item, pathData }) => (
+          <path
+            key={item.key}
+            d={pathData}
+            fill={item.color}
+            stroke="rgba(0,0,0,0.2)"
+            strokeWidth="1"
+          />
+        ))}
+        {/* Labels (percentage inside slice) */}
+        {segments.map(({ item, labelX, labelY, percent }) => (
+          percent >= 12 && (
+            <text
+              key={`label-${item.key}`}
+              x={labelX}
+              y={labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="white"
+              fontSize="10"
+              fontWeight="bold"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+            >
+              {percent}%
+            </text>
+          )
+        ))}
+      </svg>
+      {/* Legend below pie chart */}
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 max-w-[200px]">
+        {legendItems.map((item) => (
+          <div key={item.key} className="flex items-center gap-1 text-xs">
+            <div
+              className="w-2.5 h-2.5 rounded-sm shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-cream/80">{item.emoji}</span>
+            <span className="text-cream/60">{values[item.key]}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -298,24 +316,35 @@ export function PercentageDistribution({
             <button
               type="button"
               onClick={() => setChartType('bar')}
-              className={`px-3 py-1 text-xs rounded transition-colors ${
+              className={`p-2 rounded transition-colors ${
                 chartType === 'bar'
-                  ? 'bg-gold text-deep-green font-medium'
+                  ? 'bg-gold text-deep-green'
                   : 'text-cream/60 hover:text-cream'
               }`}
+              title="Staafdiagram"
             >
-              Staaf
+              {/* Bar chart icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="12" width="4" height="9" />
+                <rect x="10" y="6" width="4" height="15" />
+                <rect x="17" y="3" width="4" height="18" />
+              </svg>
             </button>
             <button
               type="button"
               onClick={() => setChartType('pie')}
-              className={`px-3 py-1 text-xs rounded transition-colors ${
+              className={`p-2 rounded transition-colors ${
                 chartType === 'pie'
-                  ? 'bg-gold text-deep-green font-medium'
+                  ? 'bg-gold text-deep-green'
                   : 'text-cream/60 hover:text-cream'
               }`}
+              title="Cirkeldiagram"
             >
-              Cirkel
+              {/* Pie chart icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                <path d="M22 12A10 10 0 0 0 12 2v10z" />
+              </svg>
             </button>
           </div>
         )}
