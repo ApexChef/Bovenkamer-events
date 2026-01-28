@@ -308,7 +308,7 @@ export default function ProfilePage() {
     return null;
   }
 
-  const toggleSection = (sectionId: SectionId) => {
+const toggleSection = (sectionId: SectionId) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
   };
 
@@ -456,7 +456,7 @@ export default function ProfilePage() {
     }
   };
 
-  const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid;
+const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid;
   // All 8 skill categories must be selected
   const isSkillsValid = Object.values(skills).every(skill => skill !== '');
   const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
