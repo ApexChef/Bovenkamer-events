@@ -14,6 +14,8 @@ interface PercentageDistributionProps {
   values: Record<string, number>;
   onChange: (values: Record<string, number>) => void;
   disabled?: boolean;
+  /** Optional render prop to show content below a specific slider */
+  renderAfterSlider?: (key: string, values: Record<string, number>) => React.ReactNode;
 }
 
 // SVG Pie Chart component
@@ -107,6 +109,7 @@ export function PercentageDistribution({
   values,
   onChange,
   disabled = false,
+  renderAfterSlider,
 }: PercentageDistributionProps) {
 
   // Ensure values always sum to 100
@@ -235,6 +238,8 @@ export function PercentageDistribution({
                 background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${localValues[item.key]}%, rgba(255,255,255,0.2) ${localValues[item.key]}%, rgba(255,255,255,0.2) 100%)`,
               }}
             />
+            {/* Render conditional content after this slider */}
+            {renderAfterSlider && renderAfterSlider(item.key, localValues)}
           </div>
         ))}
 

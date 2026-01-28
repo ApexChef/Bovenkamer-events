@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, UtensilsCrossed, Wine, Check, User, Users } from 'lucide-react';
+import { ArrowLeft, UtensilsCrossed, Wine, Check, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
@@ -20,7 +20,7 @@ import {
   DEFAULT_FOOD_DRINK_PREFERENCE,
 } from '@/types';
 
-type TabType = 'eten' | 'drinken';
+type SectionId = 'self-eten' | 'self-drinken' | 'partner-eten' | 'partner-drinken';
 
 // Meat distribution items
 const meatItems = [
@@ -58,8 +58,7 @@ export default function EtenDrinkenPage() {
   const router = useRouter();
   const { currentUser, isAuthenticated, _hasHydrated } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState<TabType>('eten');
-  const [selectedPerson, setSelectedPerson] = useState<'self' | 'partner'>('self');
+  const [expandedSection, setExpandedSection] = useState<SectionId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasPartner, setHasPartner] = useState(false);
@@ -187,8 +186,8 @@ export default function EtenDrinkenPage() {
       drinkDistribution: newDistribution,
     };
 
-    // Reset wine preference if wine drops to 10% or below
-    if (newDistribution.wine <= 10 && prefs.winePreference !== null) {
+    // Reset wine preference if wine drops to 20% or below
+    if (newDistribution.wine <= 20 && prefs.winePreference !== null) {
       updates.winePreference = null;
     }
 
@@ -214,16 +213,9 @@ export default function EtenDrinkenPage() {
     prefs: PersonPreferences,
     setPrefs: React.Dispatch<React.SetStateAction<PersonPreferences>>,
     personType: PersonType,
-    name: string
+    _name: string
   ) => (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-gold">
-        {personType === 'self' ? <User size={20} /> : <Users size={20} />}
-        <h3 className="font-semibold">{name}</h3>
-        {(personType === 'self' ? selfSaved : partnerSaved) && (
-          <Check size={16} className="text-success-green" />
-        )}
-      </div>
 
       {/* Dieetwensen */}
       <Input
@@ -295,16 +287,9 @@ export default function EtenDrinkenPage() {
     prefs: PersonPreferences,
     setPrefs: React.Dispatch<React.SetStateAction<PersonPreferences>>,
     personType: PersonType,
-    name: string
+    _name: string
   ) => (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-gold">
-        {personType === 'self' ? <User size={20} /> : <Users size={20} />}
-        <h3 className="font-semibold">{name}</h3>
-        {(personType === 'self' ? selfSaved : partnerSaved) && (
-          <Check size={16} className="text-success-green" />
-        )}
-      </div>
 
       {/* Bubbels */}
       <div className="space-y-3">
@@ -351,154 +336,182 @@ export default function EtenDrinkenPage() {
             setPrefs,
             values as unknown as DrinkDistribution
           )}
-        />
-
-        {/* Conditional: soft drink or water preference */}
-        {prefs.drinkDistribution.softDrinks > 10 ? (
-          <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
-            <h5 className="text-sm text-gold">Welke frisdrank?</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Cola', emoji: '🥤' },
-                { value: 1, label: 'Sinas', emoji: '🍊' },
-                { value: 2, label: 'Spa Rood', emoji: '💧' },
-                { value: 3, label: 'Overige', emoji: '📝' },
-              ]}
-              value={
-                prefs.softDrinkPreference === 'cola' ? 0 :
-                prefs.softDrinkPreference === 'sinas' ? 1 :
-                prefs.softDrinkPreference === 'spa_rood' ? 2 :
-                prefs.softDrinkPreference === 'overige' ? 3 : -1
+          renderAfterSlider={(key, values) => {
+            // Frisdrank logic:
+            // - 0%: show nothing
+            // - 1-10%: show water preference
+            // - > 10%: show soft drink selection
+            if (key === 'softDrinks') {
+              if (values.softDrinks > 10) {
+                // > 10%: soft drink selection
+                return (
+                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
+                    <h5 className="text-sm text-gold">Welke frisdrank?</h5>
+                    <SegmentedControl
+                      label=""
+                      options={[
+                        { value: 0, label: 'Cola', emoji: '🥤' },
+                        { value: 1, label: 'Sinas', emoji: '🍊' },
+                        { value: 2, label: 'Spa Rood', emoji: '💧' },
+                        { value: 3, label: 'Overige', emoji: '📝' },
+                      ]}
+                      value={
+                        prefs.softDrinkPreference === 'cola' ? 0 :
+                        prefs.softDrinkPreference === 'sinas' ? 1 :
+                        prefs.softDrinkPreference === 'spa_rood' ? 2 :
+                        prefs.softDrinkPreference === 'overige' ? 3 : -1
+                      }
+                      onChange={(val) => {
+                        const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
+                        setPrefs({
+                          ...prefs,
+                          softDrinkPreference: pref,
+                          softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
+                        });
+                      }}
+                    />
+                    {prefs.softDrinkPreference === 'overige' && (
+                      <Input
+                        label="Welke frisdrank?"
+                        value={prefs.softDrinkOther}
+                        onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
+                        placeholder="Bijv. Ice Tea, Cassis..."
+                      />
+                    )}
+                  </div>
+                );
+              } else if (values.softDrinks > 0) {
+                // 1-10%: water preference
+                return (
+                  <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
+                    <h5 className="text-sm text-gold">Water voorkeur</h5>
+                    <SegmentedControl
+                      label=""
+                      options={[
+                        { value: 0, label: 'Plat', emoji: '💧' },
+                        { value: 1, label: 'Bruisend', emoji: '🫧' },
+                      ]}
+                      value={prefs.waterPreference === 'flat' ? 0 : prefs.waterPreference === 'sparkling' ? 1 : -1}
+                      onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
+                    />
+                  </div>
+                );
               }
-              onChange={(val) => {
-                const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
-                setPrefs({
-                  ...prefs,
-                  softDrinkPreference: pref,
-                  softDrinkOther: pref !== 'overige' ? '' : prefs.softDrinkOther,
-                });
-              }}
-            />
-            {prefs.softDrinkPreference === 'overige' && (
-              <Input
-                label="Welke frisdrank?"
-                value={prefs.softDrinkOther}
-                onChange={(e) => setPrefs({ ...prefs, softDrinkOther: e.target.value })}
-                placeholder="Bijv. Ice Tea, Cassis..."
-              />
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
-            <h5 className="text-sm text-gold">Water voorkeur</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Plat', emoji: '💧' },
-                { value: 1, label: 'Bruisend', emoji: '🫧' },
-              ]}
-              value={prefs.waterPreference === 'flat' ? 0 : prefs.waterPreference === 'sparkling' ? 1 : -1}
-              onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
-            />
-          </div>
-        )}
+              // 0%: show nothing
+              return null;
+            }
 
-        {/* Conditional: wine preference (red/white) */}
-        {prefs.drinkDistribution.wine > 10 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
-          >
-            <div className="text-gold text-sm font-medium flex items-center gap-2">
-              <span>🍷</span>
-              <span>Zo, jij houdt van wijn!</span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-cream/70">100% Rood</span>
-                <span className="text-cream/70">100% Wit</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={prefs.winePreference ?? 50}
-                onChange={(e) => setPrefs({
-                  ...prefs,
-                  winePreference: parseInt(e.target.value)
-                })}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer
-                  bg-gradient-to-r from-[#722F37] to-[#F5F5DC]
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-5
-                  [&::-webkit-slider-thumb]:h-5
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-gold
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-webkit-slider-thumb]:shadow-lg
-                  [&::-moz-range-thumb]:w-5
-                  [&::-moz-range-thumb]:h-5
-                  [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-gold
-                  [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="text-center text-gold text-sm font-medium">
-                {prefs.winePreference === null || prefs.winePreference === 50
-                  ? '50/50 Mix'
-                  : prefs.winePreference < 33
-                    ? '🍷 Vooral Rood'
-                    : prefs.winePreference < 50
-                      ? 'Meer Rood'
-                      : prefs.winePreference < 67
-                        ? 'Meer Wit'
-                        : '🤍 Vooral Wit'
-                }
-              </div>
-            </div>
-          </motion.div>
-        )}
+            // Wijn: show red/white preference when > 20%
+            if (key === 'wine' && values.wine > 20) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3"
+                >
+                  <div className="text-gold text-sm font-medium flex items-center gap-2">
+                    <span>🍷</span>
+                    <span>Zo, jij houdt van wijn!</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-cream/70">Rood</span>
+                      <span className="text-cream/70">Wit</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={prefs.winePreference ?? 50}
+                      onChange={(e) => setPrefs({
+                        ...prefs,
+                        winePreference: parseInt(e.target.value)
+                      })}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer
+                        bg-gradient-to-r from-[#722F37] to-[#F5F5DC]
+                        [&::-webkit-slider-thumb]:appearance-none
+                        [&::-webkit-slider-thumb]:w-5
+                        [&::-webkit-slider-thumb]:h-5
+                        [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:bg-gold
+                        [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:shadow-lg
+                        [&::-moz-range-thumb]:w-5
+                        [&::-moz-range-thumb]:h-5
+                        [&::-moz-range-thumb]:rounded-full
+                        [&::-moz-range-thumb]:bg-gold
+                        [&::-moz-range-thumb]:border-0
+                        [&::-moz-range-thumb]:cursor-pointer"
+                    />
+                    <div className="text-center text-gold text-sm font-medium">
+                      {prefs.winePreference === 0
+                        ? '🍷 Uitsluitend Rood'
+                        : prefs.winePreference === 100
+                          ? '🤍 Uitsluitend Wit'
+                          : `${100 - (prefs.winePreference ?? 50)}% Rood / ${prefs.winePreference ?? 50}% Wit`
+                      }
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            }
 
-        {/* Conditional: beer type selection */}
-        {prefs.drinkDistribution.beer > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
-          >
-            <h5 className="text-sm text-gold">Welk bier?</h5>
-            <SegmentedControl
-              label=""
-              options={[
-                { value: 0, label: 'Pils', emoji: '🍺' },
-                { value: 1, label: 'Speciaal Bier', emoji: '🍻' },
-              ]}
-              value={prefs.beerType === 'pils' ? 0 : prefs.beerType === 'speciaal' ? 1 : -1}
-              onChange={(val) => setPrefs({
-                ...prefs,
-                beerType: val === 0 ? 'pils' : 'speciaal'
-              })}
-            />
-            {prefs.beerType === 'speciaal' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className="p-3 bg-warm-red/20 border border-warm-red/40 rounded-lg"
-              >
-                <p className="text-cream text-sm italic text-center font-medium">
-                  &quot;Dit is een BBQ, geen Beer Craft festival!&quot;
-                </p>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
+            // Bier: show pils/speciaal choice when > 0%
+            if (key === 'beer' && values.beer > 0) {
+              return (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3"
+                >
+                  <h5 className="text-sm text-gold">Welk bier?</h5>
+                  <SegmentedControl
+                    label=""
+                    options={[
+                      { value: 0, label: 'Pils', emoji: '🍺' },
+                      { value: 1, label: 'Speciaal Bier', emoji: '🍻' },
+                    ]}
+                    value={prefs.beerType === 'pils' ? 0 : prefs.beerType === 'speciaal' ? 1 : -1}
+                    onChange={(val) => setPrefs({
+                      ...prefs,
+                      beerType: val === 0 ? 'pils' : 'speciaal'
+                    })}
+                  />
+                  {prefs.beerType === 'pils' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-3 bg-success-green/20 border border-success-green/40 rounded-lg"
+                    >
+                      <p className="text-cream text-sm italic text-center font-medium">
+                        &quot;Komt voor elkaar; er is genoeg!&quot;
+                      </p>
+                    </motion.div>
+                  )}
+                  {prefs.beerType === 'speciaal' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-3 bg-warm-red/20 border border-warm-red/40 rounded-lg"
+                    >
+                      <p className="text-cream text-sm italic text-center font-medium">
+                        &quot;Dit is een BBQ, geen Beer Craft festival!&quot;
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              );
+            }
+
+            return null;
+          }}
+        />
       </div>
 
       <Button
@@ -528,106 +541,238 @@ export default function EtenDrinkenPage() {
           {hasPartner && ' Vergeet niet ook de voorkeuren van je partner in te vullen!'}
         </p>
 
-        {/* Tabs */}
-        <div className="flex gap-2 p-1 bg-deep-green/50 rounded-lg">
-          <button
-            onClick={() => setActiveTab('eten')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-colors ${
-              activeTab === 'eten'
-                ? 'bg-gold text-deep-green font-medium'
-                : 'text-cream/70 hover:text-cream'
-            }`}
-          >
-            <UtensilsCrossed size={20} />
-            <span>Eten</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('drinken')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-colors ${
-              activeTab === 'drinken'
-                ? 'bg-gold text-deep-green font-medium'
-                : 'text-cream/70 hover:text-cream'
-            }`}
-          >
-            <Wine size={20} />
-            <span>Drinken</span>
-          </button>
-        </div>
-
-        {/* Sub-tabs for person selection */}
-        {hasPartner && (
-          <div className="flex gap-2 p-1 bg-deep-green/50 rounded-lg">
-            <button
-              onClick={() => setSelectedPerson('self')}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
-                selectedPerson === 'self'
-                  ? 'bg-gold text-deep-green font-medium'
-                  : 'text-cream/70 hover:text-cream'
-              }`}
-            >
-              {userName}
-            </button>
-            <button
-              onClick={() => setSelectedPerson('partner')}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
-                selectedPerson === 'partner'
-                  ? 'bg-gold text-deep-green font-medium'
-                  : 'text-cream/70 hover:text-cream'
-              }`}
-            >
-              {partnerName || 'Partner'}
-            </button>
-          </div>
-        )}
-
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Card>
-              <CardContent className="pt-6">
-                {activeTab === 'eten'
-                  ? renderFoodSection(
-                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
-                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
-                      selectedPerson,
-                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
-                    )
-                  : renderDrinkSection(
-                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
-                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
-                      selectedPerson,
-                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
-                    )
-                }
-              </CardContent>
-            </Card>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Completion status */}
-        <Card className="bg-deep-green/30 border-gold/20">
+        {/* Status overview */}
+        <Card className="bg-dark-wood border-gold/30">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
-              <span className="text-cream/70">Status</span>
+              <span className="text-cream font-medium">Status</span>
               <div className="flex items-center gap-4">
-                <span className={`flex items-center gap-1 ${selfSaved ? 'text-success-green' : 'text-cream/50'}`}>
-                  {selfSaved ? <Check size={16} /> : '○'} {userName}
+                <span className={`flex items-center gap-2 ${selfSaved ? 'text-success-green' : 'text-cream/50'}`}>
+                  {selfSaved ? <Check size={16} /> : <span className="w-4 h-4 rounded-full border border-current" />}
+                  <span>{userName}</span>
                 </span>
                 {hasPartner && (
-                  <span className={`flex items-center gap-1 ${partnerSaved ? 'text-success-green' : 'text-cream/50'}`}>
-                    {partnerSaved ? <Check size={16} /> : '○'} {partnerName || 'Partner'}
+                  <span className={`flex items-center gap-2 ${partnerSaved ? 'text-success-green' : 'text-cream/50'}`}>
+                    {partnerSaved ? <Check size={16} /> : <span className="w-4 h-4 rounded-full border border-current" />}
+                    <span>{partnerName || 'Partner'}</span>
                   </span>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Collapsible Sections */}
+        <div className="space-y-3">
+          {/* Jouw Eten */}
+          <motion.div layout>
+            <Card className={selfSaved
+              ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+              : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+            }>
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'self-eten' ? null : 'self-eten')}
+                className="w-full text-left"
+              >
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selfSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                    }`}>
+                      {selfSaved ? (
+                        <Check className="w-5 h-5 text-success-green" />
+                      ) : (
+                        <UtensilsCrossed className="w-5 h-5 text-gold" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-cream">{userName} - Eten</p>
+                      <p className="text-xs text-cream/60">Vlees, groenten & sauzen</p>
+                    </div>
+                    {expandedSection === 'self-eten' ? (
+                      <ChevronUp className="w-5 h-5 text-cream/40" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-cream/40" />
+                    )}
+                  </div>
+                </CardContent>
+              </button>
+              <AnimatePresence>
+                {expandedSection === 'self-eten' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                      {renderFoodSection(selfPrefs, setSelfPrefs, 'self', userName)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+
+          {/* Jouw Drinken */}
+          <motion.div layout>
+            <Card className={selfSaved
+              ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+              : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+            }>
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'self-drinken' ? null : 'self-drinken')}
+                className="w-full text-left"
+              >
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selfSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                    }`}>
+                      {selfSaved ? (
+                        <Check className="w-5 h-5 text-success-green" />
+                      ) : (
+                        <Wine className="w-5 h-5 text-gold" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-cream">{userName} - Drinken</p>
+                      <p className="text-xs text-cream/60">Bubbels, wijn, bier & frisdrank</p>
+                    </div>
+                    {expandedSection === 'self-drinken' ? (
+                      <ChevronUp className="w-5 h-5 text-cream/40" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-cream/40" />
+                    )}
+                  </div>
+                </CardContent>
+              </button>
+              <AnimatePresence>
+                {expandedSection === 'self-drinken' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                      {renderDrinkSection(selfPrefs, setSelfPrefs, 'self', userName)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+
+          {/* Partner Eten */}
+          {hasPartner && (
+            <motion.div layout>
+              <Card className={partnerSaved
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+                : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+              }>
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'partner-eten' ? null : 'partner-eten')}
+                  className="w-full text-left"
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        partnerSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                      }`}>
+                        {partnerSaved ? (
+                          <Check className="w-5 h-5 text-success-green" />
+                        ) : (
+                          <UtensilsCrossed className="w-5 h-5 text-gold" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-cream">{partnerName || 'Partner'} - Eten</p>
+                        <p className="text-xs text-cream/60">Vlees, groenten & sauzen</p>
+                      </div>
+                      {expandedSection === 'partner-eten' ? (
+                        <ChevronUp className="w-5 h-5 text-cream/40" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-cream/40" />
+                      )}
+                    </div>
+                  </CardContent>
+                </button>
+                <AnimatePresence>
+                  {expandedSection === 'partner-eten' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                        {renderFoodSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Partner Drinken */}
+          {hasPartner && (
+            <motion.div layout>
+              <Card className={partnerSaved
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+                : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+              }>
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'partner-drinken' ? null : 'partner-drinken')}
+                  className="w-full text-left"
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        partnerSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                      }`}>
+                        {partnerSaved ? (
+                          <Check className="w-5 h-5 text-success-green" />
+                        ) : (
+                          <Wine className="w-5 h-5 text-gold" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-cream">{partnerName || 'Partner'} - Drinken</p>
+                        <p className="text-xs text-cream/60">Bubbels, wijn, bier & frisdrank</p>
+                      </div>
+                      {expandedSection === 'partner-drinken' ? (
+                        <ChevronUp className="w-5 h-5 text-cream/40" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-cream/40" />
+                      )}
+                    </div>
+                  </CardContent>
+                </button>
+                <AnimatePresence>
+                  {expandedSection === 'partner-drinken' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                        {renderDrinkSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+
       </div>
     </DashboardLayout>
   );
