@@ -631,13 +631,14 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
         );
 
       case 'foodDrinks':
-        // Define meat distribution items
+        // Define protein/food distribution items (meat, fish, vegetarian)
         const meatItems = [
           { key: 'pork', label: 'Varkensvlees', emoji: '🐷', color: '#e8a0a0' },
           { key: 'beef', label: 'Rundvlees', emoji: '🐄', color: '#8B4513' },
           { key: 'chicken', label: 'Kip', emoji: '🐔', color: '#f5deb3' },
           { key: 'game', label: 'Wild', emoji: '🦌', color: '#654321' },
           { key: 'fish', label: 'Vis & Schaaldieren', emoji: '🐟', color: '#4682B4' },
+          { key: 'vegetarian', label: 'Vegetarisch', emoji: '🥬', color: '#228B22' },
         ];
 
         // Define drink distribution items
@@ -666,13 +667,13 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
               />
             )}
 
-            {/* VLEES VERDELING */}
+            {/* EIWITTEN VERDELING */}
             <div className="space-y-4 p-4 bg-dark-wood/30 rounded-lg border border-cream/10">
               <h4 className="text-gold font-semibold flex items-center gap-2">
-                🍖 Vlees Verdeling
+                🍽️ Eiwitten Verdeling
               </h4>
               <p className="text-xs text-cream/50 italic">
-                Verdeel je voorkeur over de verschillende vleessoorten (totaal 100%)
+                Verdeel je voorkeur over de verschillende eiwitbronnen (totaal 100%)
               </p>
 
               <PercentageDistribution
