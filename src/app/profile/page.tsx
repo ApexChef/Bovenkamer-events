@@ -191,6 +191,11 @@ export default function ProfilePage() {
   const [meatDistribution, setMeatDistribution] = useState<MeatDistribution>(formData.meatDistribution || DEFAULT_MEAT_DISTRIBUTION);
   const [drinkDistribution, setDrinkDistribution] = useState<DrinkDistribution>(formData.drinkDistribution || DEFAULT_DRINK_DISTRIBUTION);
   const [foodPreferences, setFoodPreferences] = useState<FoodPreferences>(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
+  const [startsWithBubbles, setStartsWithBubbles] = useState<boolean | null>(formData.startsWithBubbles ?? null);
+  const [bubbleType, setBubbleType] = useState<'champagne' | 'prosecco' | null>(formData.bubbleType ?? null);
+  const [softDrinkPreference, setSoftDrinkPreference] = useState<string | null>(formData.softDrinkPreference ?? null);
+  const [softDrinkOther, setSoftDrinkOther] = useState(formData.softDrinkOther || '');
+  const [waterPreference, setWaterPreference] = useState<'sparkling' | 'flat' | null>(formData.waterPreference ?? null);
 
   const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
@@ -375,6 +380,11 @@ const toggleSection = (sectionId: SectionId) => {
         meatDistribution,
         drinkDistribution,
         foodPreferences,
+        startsWithBubbles,
+        bubbleType: startsWithBubbles ? bubbleType : null,
+        softDrinkPreference,
+        softDrinkOther,
+        waterPreference,
       };
       setFormData(data);
       await saveSectionToDb('foodDrinks', data);
@@ -731,6 +741,44 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
               />
             </div>
 
+            {/* BUBBELS */}
+            <div className="border-t border-cream/20 pt-6 space-y-3">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🥂 Begin je graag met een bubbel?
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Maakt niet uit als het maar prikt&quot;</p>
+
+              <SegmentedControl
+                label=""
+                options={[
+                  { value: 0, label: 'Nee', emoji: '🚫' },
+                  { value: 1, label: 'Ja!', emoji: '🥂' },
+                ]}
+                value={startsWithBubbles === null ? -1 : (startsWithBubbles ? 1 : 0)}
+                onChange={(val) => {
+                  setStartsWithBubbles(val === 1);
+                  if (val === 0) setBubbleType(null);
+                }}
+                disabled={isLoading}
+              />
+
+              {/* Sub-choice: Champagne or Prosecco/Cava */}
+              {startsWithBubbles && (
+                <div className="ml-4 mt-3">
+                  <SegmentedControl
+                    label="Welke bubbels?"
+                    options={[
+                      { value: 0, label: 'Champagne', emoji: '🍾' },
+                      { value: 1, label: 'Prosecco/Cava', emoji: '🥂' },
+                    ]}
+                    value={bubbleType === 'champagne' ? 0 : bubbleType === 'prosecco' ? 1 : -1}
+                    onChange={(val) => setBubbleType(val === 0 ? 'champagne' : 'prosecco')}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+            </div>
+
             {/* DRINKEN VERDELING */}
             <div className="border-t border-cream/20 pt-6 space-y-4 p-4 bg-dark-wood/30 rounded-lg border border-cream/10">
               <h4 className="text-gold font-semibold flex items-center gap-2">
@@ -746,6 +794,56 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
                 onChange={(values) => setDrinkDistribution(values as DrinkDistribution)}
                 disabled={isLoading}
               />
+
+              {/* Conditional: Soft drink preference if > 10%, water preference if <= 10% */}
+              {drinkDistribution.softDrinks > 10 ? (
+                <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
+                  <h5 className="text-sm text-gold font-medium">Welke frisdrank?</h5>
+                  <SegmentedControl
+                    label=""
+                    options={[
+                      { value: 0, label: 'Cola', emoji: '🥤' },
+                      { value: 1, label: 'Sinas', emoji: '🍊' },
+                      { value: 2, label: 'Spa Rood', emoji: '💧' },
+                      { value: 3, label: 'Overige', emoji: '📝' },
+                    ]}
+                    value={
+                      softDrinkPreference === 'cola' ? 0 :
+                      softDrinkPreference === 'sinas' ? 1 :
+                      softDrinkPreference === 'spa_rood' ? 2 :
+                      softDrinkPreference === 'overige' ? 3 : -1
+                    }
+                    onChange={(val) => {
+                      const pref = val === 0 ? 'cola' : val === 1 ? 'sinas' : val === 2 ? 'spa_rood' : 'overige';
+                      setSoftDrinkPreference(pref);
+                      if (pref !== 'overige') setSoftDrinkOther('');
+                    }}
+                    disabled={isLoading}
+                  />
+                  {softDrinkPreference === 'overige' && (
+                    <Input
+                      label="Welke frisdrank?"
+                      value={softDrinkOther}
+                      onChange={(e) => setSoftDrinkOther(e.target.value)}
+                      placeholder="Bijv. Ice Tea, Cassis..."
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-cream/10 space-y-3">
+                  <h5 className="text-sm text-gold font-medium">Water voorkeur</h5>
+                  <SegmentedControl
+                    label=""
+                    options={[
+                      { value: 0, label: 'Plat', emoji: '💧' },
+                      { value: 1, label: 'Bruisend', emoji: '🫧' },
+                    ]}
+                    value={waterPreference === 'flat' ? 0 : waterPreference === 'sparkling' ? 1 : -1}
+                    onChange={(val) => setWaterPreference(val === 0 ? 'flat' : 'sparkling')}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
             </div>
 
             <Button

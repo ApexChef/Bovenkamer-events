@@ -291,6 +291,11 @@ export interface RegistrationFormData {
   meatDistribution: MeatDistribution;
   drinkDistribution: DrinkDistribution;
   foodPreferences: FoodPreferences; // veggies & sauces only
+  startsWithBubbles: boolean | null; // null = not answered, true = yes, false = no
+  bubbleType: 'champagne' | 'prosecco' | null; // if startsWithBubbles is true
+  softDrinkPreference: string | null; // cola, sinas, spa rood, overige
+  softDrinkOther: string; // free text if overige selected
+  waterPreference: 'sparkling' | 'flat' | null; // bruisend of plat
 
   // Skills section (8 categories)
   skills: SkillSelections;

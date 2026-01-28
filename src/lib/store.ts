@@ -125,6 +125,11 @@ const initialFormData: RegistrationFormData = {
     veggies: 3,
     sauces: 3,
   },
+  startsWithBubbles: null,
+  bubbleType: null,
+  softDrinkPreference: null,
+  softDrinkOther: '',
+  waterPreference: null,
   // Skills (8 categories)
   skills: initialSkills,
   additionalSkills: '',
