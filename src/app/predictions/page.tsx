@@ -46,6 +46,28 @@ export default function PredictionsPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [eventStarted, setEventStarted] = useState(false);
 
+  // Track page visit (runs for all visitors, including unauthorized)
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: '/predictions',
+            email: formData.email || null,
+            referrer: document.referrer || null,
+            userAgent: navigator.userAgent,
+            isRegistered: isComplete,
+          }),
+        });
+      } catch (error) {
+        // Silently fail - tracking is not critical
+      }
+    };
+    trackVisit();
+  }, []); // Run once on mount
+
   // Check if editing is allowed (client-side only to avoid hydration mismatch)
   useEffect(() => {
     setIsLocked(!canEdit());
@@ -72,15 +94,30 @@ export default function PredictionsPage() {
     fetchParticipants();
   }, []);
 
-  // Redirect if not registered
-  useEffect(() => {
-    if (!isComplete) {
-      router.push('/register');
-    }
-  }, [isComplete, router]);
-
+  // Show message if not registered (no redirect)
   if (!isComplete) {
-    return null;
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">🔮</span>
+              </div>
+              <h2 className="font-display text-2xl text-gold mb-2">
+                Voorspellingen
+              </h2>
+              <p className="text-cream/60 mb-6">
+                Deze functie wordt binnenkort geactiveerd. Registreer eerst om toegang te krijgen.
+              </p>
+              <Link href="/register">
+                <Button>Registreren</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const savePredictionsToServer = async () => {
