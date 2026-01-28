@@ -781,3 +781,108 @@ export interface FBExportRow {
   'Frisdrank keuze': string;
   'Water voorkeur': string;
 }
+
+// =============================================================================
+// PREDICTION QUESTION TYPES (US-019)
+// =============================================================================
+
+/**
+ * Question types supported by prediction system
+ */
+export type PredictionQuestionType =
+  | 'slider'
+  | 'select_participant'
+  | 'boolean'
+  | 'time'
+  | 'select_options';
+
+/**
+ * Display categories for grouping questions
+ */
+export type PredictionCategory = 'consumption' | 'social' | 'other';
+
+/**
+ * Base prediction question structure from database
+ */
+export interface PredictionQuestion {
+  id: string;
+  key: string;
+  label: string;
+  type: PredictionQuestionType;
+  category: PredictionCategory;
+  options: PredictionQuestionOptions;
+  points_exact: number;
+  points_close: number;
+  points_direction: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Type-specific options (discriminated union)
+ */
+export type PredictionQuestionOptions =
+  | SliderOptions
+  | SelectParticipantOptions
+  | BooleanOptions
+  | TimeOptions
+  | SelectOptionsOptions;
+
+/**
+ * Options for slider-type questions
+ */
+export interface SliderOptions {
+  type: 'slider';
+  min: number;
+  max: number;
+  unit: string;
+  hint?: string;
+  default?: number;
+}
+
+/**
+ * Options for select_participant type
+ */
+export interface SelectParticipantOptions {
+  type: 'select_participant';
+}
+
+/**
+ * Options for boolean (yes/no) questions
+ */
+export interface BooleanOptions {
+  type: 'boolean';
+  trueLabel?: string;
+  falseLabel?: string;
+  trueEmoji?: string;
+  falseEmoji?: string;
+}
+
+/**
+ * Options for time selection questions
+ */
+export interface TimeOptions {
+  type: 'time';
+  minHour: number;
+  maxHour: number;
+  default?: number;
+}
+
+/**
+ * Options for select with custom choices
+ */
+export interface SelectOptionsOptions {
+  type: 'select_options';
+  choices: SelectChoice[];
+}
+
+/**
+ * Individual choice for select_options type
+ */
+export interface SelectChoice {
+  value: string;
+  label: string;
+  emoji?: string;
+}
