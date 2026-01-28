@@ -264,6 +264,43 @@ export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
   sauces: 3,
 };
 
+// Food & Drink Preferences (separate table)
+export type PersonType = 'self' | 'partner';
+
+export interface FoodDrinkPreference {
+  id?: string;
+  userId: string;
+  personType: PersonType;
+  // Food
+  dietaryRequirements: string;
+  meatDistribution: MeatDistribution;
+  veggiesPreference: number;
+  saucesPreference: number;
+  // Drinks
+  startsWithBubbles: boolean | null;
+  bubbleType: 'champagne' | 'prosecco' | null;
+  drinkDistribution: DrinkDistribution;
+  softDrinkPreference: string | null;
+  softDrinkOther: string;
+  waterPreference: 'sparkling' | 'flat' | null;
+  // Timestamps
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const DEFAULT_FOOD_DRINK_PREFERENCE: Omit<FoodDrinkPreference, 'id' | 'userId' | 'personType' | 'createdAt' | 'updatedAt'> = {
+  dietaryRequirements: '',
+  meatDistribution: DEFAULT_MEAT_DISTRIBUTION,
+  veggiesPreference: 3,
+  saucesPreference: 3,
+  startsWithBubbles: null,
+  bubbleType: null,
+  drinkDistribution: DEFAULT_DRINK_DISTRIBUTION,
+  softDrinkPreference: null,
+  softDrinkOther: '',
+  waterPreference: null,
+};
+
 // Form state types
 export interface RegistrationFormData {
   // Step 0 (Auth)
