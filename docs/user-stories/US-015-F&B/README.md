@@ -1,3 +1,15 @@
+---
+id: US-015
+title: Food & Beverage Preferences
+status: in-progress
+priority: High
+complexity: Medium
+type: Feature
+pr: 50
+created: 2026-01-26
+updated: 2026-01-28
+---
+
 # US-015: Food & Beverage Preferences
 
 ## User Story

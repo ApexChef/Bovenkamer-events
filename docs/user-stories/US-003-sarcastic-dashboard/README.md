@@ -1,12 +1,16 @@
-# US-003: Sarcastisch Dashboard met LLM Analyses
+---
+id: US-003
+title: Sarcastisch Dashboard met LLM Analyses
+status: planning
+priority: 5
+complexity: High
+type: Feature
+pr: null
+created: 2026-01-18
+updated: 2026-01-18
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #5 |
-| **Status** | In Planning |
-| **Complexiteit** | Hoog |
-| **PACT Fase** | Prepare + Architecture |
+# US-003: Sarcastisch Dashboard met LLM Analyses
 
 ## User Story
 > Als bezoeker van het dashboard wil ik een humoristisch overzicht zien van onze Bovenkamer groep, inclusief AI-gegenereerde analyses en scores, zodat we kunnen lachen om onszelf en onze "kwaliteiten".

@@ -1,12 +1,16 @@
-# US-008: Voorspellingen Analytics Dashboard
+---
+id: US-008
+title: Voorspellingen Analytics Dashboard
+status: draft
+priority: Medium
+complexity: Medium
+type: Feature
+pr: null
+created: 2026-01-18
+updated: 2026-01-18
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | Medium |
-| **Status** | Draft |
-| **Complexiteit** | Medium |
-| **PACT Fase** | Prepare |
+# US-008: Voorspellingen Analytics Dashboard
 
 ## User Story
 > Als deelnemer wil ik op het dashboard kunnen zien wat de huidige voorspellingen van alle deelnemers zijn (geanonimiseerd), zodat ik kan vergelijken en de spanning kan opbouwen richting het evenement.

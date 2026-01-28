@@ -1,13 +1,16 @@
-# US-005: Burger Stack Mini-Game
+---
+id: US-005
+title: Burger Stack Mini-Game
+status: done
+priority: 4
+complexity: Very High
+type: Feature
+pr: [4, 16]
+created: 2026-01-18
+updated: 2026-01-20
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #4 |
-| **Status** | ✅ Fase 1 & 2 DONE |
-| **Complexiteit** | Zeer Hoog |
-| **PACT Fase** | Code + Test |
-| **PRs** | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4), [#16](https://github.com/ApexChef/Bovenkamer-events/pull/16) |
+# US-005: Burger Stack Mini-Game
 
 ## User Story
 > Als Bovenkamer-lid wil ik een leuk burger-stapelspel kunnen spelen op mijn telefoon, zodat ik punten kan verdienen en kan strijden om de hoogste score vóór het evenement.

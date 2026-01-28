@@ -1,12 +1,16 @@
-# US-006: Einde-Avond Awards & Persoonlijke Samenvattingen
+---
+id: US-006
+title: Einde-Avond Awards & Persoonlijke Samenvattingen
+status: planning
+priority: 6
+complexity: Very High
+type: Feature
+pr: null
+created: 2026-01-18
+updated: 2026-01-18
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #6 |
-| **Status** | In Planning |
-| **Complexiteit** | Zeer Hoog |
-| **PACT Fase** | Prepare + Architecture |
+# US-006: Einde-Avond Awards & Persoonlijke Samenvattingen
 
 ## User Story
 > Als Bovenkamer-lid wil ik aan het einde van de avond een persoonlijke samenvatting ontvangen op mijn telefoon, gebaseerd op al mijn data, zodat ik kan lachen om mezelf en zelf kan kiezen of ik dit met de groep deel.

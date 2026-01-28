@@ -1,12 +1,16 @@
-# US-012: Desktop Navigatie & Feature Toggles
+---
+id: US-012
+title: Desktop Navigatie & Feature Toggles
+status: testing
+priority: High
+complexity: Medium
+type: Feature
+pr: null
+created: 2026-01-19
+updated: 2026-01-20
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | High |
-| **Status** | Code Complete |
-| **Complexiteit** | Medium |
-| **Type** | Feature |
+# US-012: Desktop Navigatie & Feature Toggles
 
 ## Beschrijving
 
