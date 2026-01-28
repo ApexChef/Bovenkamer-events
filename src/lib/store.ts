@@ -100,6 +100,7 @@ const initialFormData: RegistrationFormData = {
   hasPartner: false,
   partnerName: '',
   dietaryRequirements: '',
+  partnerDietaryRequirements: '',
   // Skills (8 categories)
   skills: initialSkills,
   additionalSkills: '',

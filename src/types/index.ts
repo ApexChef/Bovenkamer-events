@@ -237,6 +237,7 @@ export interface RegistrationFormData {
   hasPartner: boolean;
   partnerName: string;
   dietaryRequirements: string;
+  partnerDietaryRequirements: string;
 
   // Skills section (8 categories)
   skills: SkillSelections;

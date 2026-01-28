@@ -161,6 +161,7 @@ export default function ProfilePage() {
     formData.partnerName || attendance.plusOneName || ''
   );
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
+  const [partnerDietaryRequirements, setPartnerDietaryRequirements] = useState(formData.partnerDietaryRequirements || '');
 
   const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
@@ -226,6 +227,7 @@ export default function ProfilePage() {
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
       setDietaryRequirements(formData.dietaryRequirements);
+      setPartnerDietaryRequirements(formData.partnerDietaryRequirements || '');
       setSkills(formData.skills || DEFAULT_SKILLS);
       setAdditionalSkills(formData.additionalSkills);
       setMusicDecade(formData.musicDecade);
@@ -310,6 +312,7 @@ export default function ProfilePage() {
         hasPartner,
         partnerName,
         dietaryRequirements,
+        partnerDietaryRequirements: hasPartner ? partnerDietaryRequirements : '',
       };
       setFormData(data);
       await saveSectionToDb('personal', data);
@@ -518,6 +521,15 @@ export default function ProfilePage() {
               onChange={(e) => setDietaryRequirements(e.target.value)}
               placeholder="Vegetarisch, allergieën, etc."
             />
+
+            {hasPartner && partnerName && (
+              <Input
+                label={`Dieetwensen ${partnerName.split(' ')[0]} (optioneel)`}
+                value={partnerDietaryRequirements}
+                onChange={(e) => setPartnerDietaryRequirements(e.target.value)}
+                placeholder="Vegetarisch, allergieën, etc."
+              />
+            )}
 
             <Button
               onClick={savePersonalSection}
