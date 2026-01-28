@@ -23,7 +23,25 @@ Berichten voor het uitnodigen van leden om zich te registreren in de app.
 
 ## Bericht 2 - Wat zit er nu in
 *30 minuten later*
+```txt
+**Wat kun je nu al doen in de app?**
 
+✅ Registreren (2 min)
+Alleen een inlog aanmaken is niet voldoende
+✅ Persoonlijke vragen beantwoorden voor de live quiz
+de eerste update is al gedaan
+✅ Je skills aangeven 
+* wie doet de BBQ
+* wie de wijn
+
+
+**Binnenkort:**
+🔮 Voorspellingen (hoeveel wijn gaat er doorheen?)
+🍔 Burger Stack game
+⭐ Boy Boom beoordelen
+
+👉 https://bovenkamer.netlify.app/
+```
 > **Wat kun je nu al doen in de app?**
 >
 > ✅ Registreren (2 min)
@@ -31,7 +49,7 @@ Berichten voor het uitnodigen van leden om zich te registreren in de app.
 > ✅ Je skills aangeven (wie doet de BBQ, wie de wijn?)
 > ✅ Een AI-gegenereerde taak ontvangen
 >
-> Binnenkort:
+> Binnenkort:Kun je dat niet doen?
 > 🔮 Voorspellingen (hoeveel wijn gaat er doorheen?)
 > 🍔 Burger Stack game
 > ⭐ Boy Boom beoordelen
