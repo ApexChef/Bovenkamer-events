@@ -1,16 +1,5 @@
----
-id: US-016
-title: Profile Analytics Report
-status: draft
-priority: Low
-complexity: Medium
-type: Feature
-pr: null
-created: 2026-01-26
-updated: 2026-01-26
----
+# Profile Report
 
-# US-016: Profile Analytics Report
 
 Kijk, op het moment dat er wat meer profielen gevuld zijn, kunnen we alvast een klein reporting dashboard laten zien van waar iedereen van houdt.
 

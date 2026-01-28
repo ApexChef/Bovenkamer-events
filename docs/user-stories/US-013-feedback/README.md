@@ -11,6 +11,7 @@ updated: 2026-01-25
 ---
 
 # US-013: In-App Feedback Widget
+# Feedback
 
 Ik zou graag binnen de app een soort button willen hebben die op elke pagina geladen kan worden om feedback te geven.
 
