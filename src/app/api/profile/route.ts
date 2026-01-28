@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 const SECTION_POINTS: Record<string, number> = {
   basic: 10,
   personal: 50,
+  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -18,6 +19,10 @@ function isSectionDataValid(section: string, data: Record<string, unknown>): boo
     case 'personal':
       // Require at least birth year to be set
       return !!(data.birthYear || data.birthDate);
+
+    case 'foodDrinks':
+      // Food preferences are always valid (sliders have default values)
+      return true;
 
     case 'skills':
       // Require at least one skill to have a non-empty value
@@ -86,14 +91,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Map database fields to frontend format
+    // Extract firstName/lastName from registration or fallback to splitting user.name
+    const firstName = registration.first_name || user.name?.split(' ')[0] || '';
+    const lastName = registration.last_name || user.name?.split(' ').slice(1).join(' ') || '';
+    const partnerFirstName = registration.partner_first_name || registration.partner_name?.split(' ')[0] || '';
+    const partnerLastName = registration.partner_last_name || registration.partner_name?.split(' ').slice(1).join(' ') || '';
+
     const profile = {
+      firstName,
+      lastName,
       name: user.name,
       email: user.email,
       birthDate: registration.birth_date || '',
       birthYear: registration.birth_year,
       hasPartner: registration.has_partner,
+      partnerFirstName,
+      partnerLastName,
       partnerName: registration.partner_name,
       dietaryRequirements: registration.dietary_requirements,
+      partnerDietaryRequirements: registration.partner_dietary_requirements || '',
+      foodPreferences: registration.food_preferences || null,
       skills: registration.skills || {},
       additionalSkills: registration.additional_skills,
       musicDecade: registration.music_decade,
@@ -135,6 +152,7 @@ export async function GET(request: NextRequest) {
     const completedSections: Record<string, boolean> = {
       basic: hasBasicPoints, // True if any basic points awarded
       personal: awardedSections.has('personal'),
+      foodDrinks: awardedSections.has('foodDrinks'),
       skills: awardedSections.has('skills'),
       music: awardedSections.has('music'),
       jkvHistorie: awardedSections.has('jkvHistorie'),
@@ -199,11 +217,24 @@ export async function POST(request: NextRequest) {
       case 'personal':
         updateData = {
           ...updateData,
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          name: data.name || null, // Full name for backward compatibility
           birth_date: data.birthDate || null,
           birth_year: data.birthYear || (data.birthDate ? new Date(data.birthDate).getFullYear() : null),
           has_partner: data.hasPartner,
-          partner_name: data.partnerName || null,
+          partner_first_name: data.partnerFirstName || null,
+          partner_last_name: data.partnerLastName || null,
+          partner_name: data.partnerName || null, // Full name for backward compatibility
+        };
+        break;
+
+      case 'foodDrinks':
+        updateData = {
+          ...updateData,
           dietary_requirements: data.dietaryRequirements || null,
+          partner_dietary_requirements: data.partnerDietaryRequirements || null,
+          food_preferences: data.foodPreferences || null,
         };
         break;
 

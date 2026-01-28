@@ -17,7 +17,8 @@ import {
   Music,
   HelpCircle,
   Award,
-  Beer
+  Beer,
+  UtensilsCrossed
 } from 'lucide-react';
 import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
@@ -31,6 +32,8 @@ import {
   MUSIC_GENRES,
   JKV_JOIN_YEARS,
   JKV_EXIT_YEARS,
+  FoodPreferences,
+  DEFAULT_FOOD_PREFERENCES,
 } from '@/types';
 
 // Event date for age calculation
@@ -79,7 +82,7 @@ const DEFAULT_SKILLS: SkillSelections = {
   documentation: '',
 };
 
-type SectionId = 'personal' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
+type SectionId = 'personal' | 'foodDrinks' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
 
 interface Section {
   id: SectionId;
@@ -93,9 +96,16 @@ const sections: Section[] = [
   {
     id: 'personal',
     title: 'Persoonlijke Gegevens',
-    description: 'Geboortejaar, partner en dieetwensen',
+    description: 'Naam, geboortedatum en partner',
     points: SECTION_POINTS.personal,
-    icon: Calendar
+    icon: User
+  },
+  {
+    id: 'foodDrinks',
+    title: 'Eten & Drinken',
+    description: 'Wat wil jij op je bord en in je glas?',
+    points: SECTION_POINTS.foodDrinks,
+    icon: UtensilsCrossed
   },
   {
     id: 'skills',
@@ -151,16 +161,28 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state for each section
+  // Name fields
+  const [firstName, setFirstName] = useState(formData.firstName || '');
+  const [lastName, setLastName] = useState(formData.lastName || '');
+
   // Pre-fill partner info from attendance if available
   const [birthDate, setBirthDate] = useState<string>(formData.birthDate || '');
   const [birthDateWarning, setBirthDateWarning] = useState<string>('');
   const [hasPartner, setHasPartner] = useState(
     formData.hasPartner || attendance.bringingPlusOne === true
   );
-  const [partnerName, setPartnerName] = useState(
-    formData.partnerName || attendance.plusOneName || ''
+  // Split partnerName from attendance into first/last
+  const attendancePartnerParts = (attendance.plusOneName || '').split(' ');
+  const [partnerFirstName, setPartnerFirstName] = useState(
+    formData.partnerFirstName || attendancePartnerParts[0] || ''
   );
+  const [partnerLastName, setPartnerLastName] = useState(
+    formData.partnerLastName || attendancePartnerParts.slice(1).join(' ') || ''
+  );
+  // Food & Drinks
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
+  const [partnerDietaryRequirements, setPartnerDietaryRequirements] = useState(formData.partnerDietaryRequirements || '');
+  const [foodPreferences, setFoodPreferences] = useState<FoodPreferences>(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
 
   const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
@@ -202,6 +224,7 @@ export default function ProfilePage() {
               setCompletedSections({
                 basic: !!data.completedSections.basic,
                 personal: !!data.completedSections.personal,
+                foodDrinks: !!data.completedSections.foodDrinks,
                 skills: !!data.completedSections.skills,
                 music: !!data.completedSections.music,
                 jkvHistorie: !!data.completedSections.jkvHistorie,
@@ -222,10 +245,16 @@ export default function ProfilePage() {
   // Sync local state with store after hydration
   useEffect(() => {
     if (registrationHydrated && authHydrated) {
+      setFirstName(formData.firstName || '');
+      setLastName(formData.lastName || '');
       setBirthDate(formData.birthDate || '');
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
-      setPartnerName(formData.partnerName || attendance.plusOneName || '');
+      const partnerParts = (formData.partnerName || attendance.plusOneName || '').split(' ');
+      setPartnerFirstName(formData.partnerFirstName || partnerParts[0] || '');
+      setPartnerLastName(formData.partnerLastName || partnerParts.slice(1).join(' ') || '');
       setDietaryRequirements(formData.dietaryRequirements);
+      setPartnerDietaryRequirements(formData.partnerDietaryRequirements || '');
+      setFoodPreferences(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
       setSkills(formData.skills || DEFAULT_SKILLS);
       setAdditionalSkills(formData.additionalSkills);
       setMusicDecade(formData.musicDecade);
@@ -245,6 +274,7 @@ export default function ProfilePage() {
     let pts = 0;
     if (completedSections.basic) pts += SECTION_POINTS.basic;
     if (completedSections.personal) pts += SECTION_POINTS.personal;
+    if (completedSections.foodDrinks) pts += SECTION_POINTS.foodDrinks;
     if (completedSections.skills) pts += SECTION_POINTS.skills;
     if (completedSections.music) pts += SECTION_POINTS.music;
     if (completedSections.jkvHistorie) pts += SECTION_POINTS.jkvHistorie;
@@ -304,16 +334,39 @@ export default function ProfilePage() {
     try {
       // Extract year from birthDate for backward compatibility
       const birthYear = birthDate ? new Date(birthDate).getFullYear() : null;
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const partnerFullName = hasPartner ? `${partnerFirstName.trim()} ${partnerLastName.trim()}`.trim() : '';
       const data = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
         birthDate,
         birthYear,
         hasPartner,
-        partnerName,
-        dietaryRequirements,
+        partnerFirstName: hasPartner ? partnerFirstName.trim() : '',
+        partnerLastName: hasPartner ? partnerLastName.trim() : '',
+        partnerName: partnerFullName,
       };
       setFormData(data);
       await saveSectionToDb('personal', data);
       markSectionComplete('personal');
+      setExpandedSection(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveFoodDrinksSection = async () => {
+    setIsLoading(true);
+    try {
+      const data = {
+        dietaryRequirements,
+        partnerDietaryRequirements: hasPartner ? partnerDietaryRequirements : '',
+        foodPreferences,
+      };
+      setFormData(data);
+      await saveSectionToDb('foodDrinks', data);
+      markSectionComplete('foodDrinks');
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -420,9 +473,34 @@ export default function ProfilePage() {
       case 'personal':
         // Check if partner info comes from attendance (pre-filled)
         const hasPartnerFromAttendance = attendance.bringingPlusOne === true;
+        const currentPartnerFullName = `${partnerFirstName} ${partnerLastName}`.trim();
 
         return (
           <div className="space-y-4">
+            {/* Name fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Voornaam"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Je voornaam"
+              />
+              <Input
+                label="Achternaam"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Je achternaam"
+              />
+            </div>
+
+            {/* Email - readonly */}
+            <Input
+              label="E-mailadres"
+              value={formData.email}
+              disabled
+              className="opacity-60"
+            />
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-cream">
                 Geboortedatum
@@ -450,18 +528,29 @@ export default function ProfilePage() {
                   </div>
                   <span className="text-xs text-cream/50">(via aanmelding)</span>
                 </div>
-                {partnerName && (
-                  <p className="text-gold font-medium">{partnerName}</p>
+                {currentPartnerFullName && (
+                  <p className="text-gold font-medium">{currentPartnerFullName}</p>
                 )}
-                <Input
-                  label="Naam partner/+1 aanpassen"
-                  value={partnerName}
-                  onChange={(e) => {
-                    setPartnerName(e.target.value);
-                    setHasPartner(true);
-                  }}
-                  placeholder="Naam van je partner/+1"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Voornaam partner"
+                    value={partnerFirstName}
+                    onChange={(e) => {
+                      setPartnerFirstName(e.target.value);
+                      setHasPartner(true);
+                    }}
+                    placeholder="Voornaam"
+                  />
+                  <Input
+                    label="Achternaam partner"
+                    value={partnerLastName}
+                    onChange={(e) => {
+                      setPartnerLastName(e.target.value);
+                      setHasPartner(true);
+                    }}
+                    placeholder="Achternaam"
+                  />
+                </div>
               </div>
             ) : (
               <>
@@ -500,24 +589,24 @@ export default function ProfilePage() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
+                    className="grid grid-cols-2 gap-4"
                   >
                     <Input
-                      label="Naam partner"
-                      value={partnerName}
-                      onChange={(e) => setPartnerName(e.target.value)}
-                      placeholder="Naam van je partner"
+                      label="Voornaam partner"
+                      value={partnerFirstName}
+                      onChange={(e) => setPartnerFirstName(e.target.value)}
+                      placeholder="Voornaam"
+                    />
+                    <Input
+                      label="Achternaam partner"
+                      value={partnerLastName}
+                      onChange={(e) => setPartnerLastName(e.target.value)}
+                      placeholder="Achternaam"
                     />
                   </motion.div>
                 )}
               </>
             )}
-
-            <Input
-              label="Dieetwensen (optioneel)"
-              value={dietaryRequirements}
-              onChange={(e) => setDietaryRequirements(e.target.value)}
-              placeholder="Vegetarisch, allergieën, etc."
-            />
 
             <Button
               onClick={savePersonalSection}
@@ -526,6 +615,188 @@ export default function ProfilePage() {
               className="w-full"
             >
               Opslaan (+{SECTION_POINTS.personal} punten)
+            </Button>
+          </div>
+        );
+
+      case 'foodDrinks':
+        return (
+          <div className="space-y-6">
+            {/* Dieetwensen */}
+            <Input
+              label="Dieetwensen (optioneel)"
+              value={dietaryRequirements}
+              onChange={(e) => setDietaryRequirements(e.target.value)}
+              placeholder="Vegetarisch, allergieën, etc."
+            />
+
+            {hasPartner && partnerFirstName && (
+              <Input
+                label={`Dieetwensen ${partnerFirstName} (optioneel)`}
+                value={partnerDietaryRequirements}
+                onChange={(e) => setPartnerDietaryRequirements(e.target.value)}
+                placeholder="Vegetarisch, allergieën, etc."
+              />
+            )}
+
+            {/* ETEN */}
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍖 Vlees
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Van tofu-fan tot T-bone terrorist&quot;</p>
+
+              <Slider
+                label="🐷 Varkensvlees"
+                min={0}
+                max={5}
+                value={foodPreferences.pork}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, pork: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🐄 Rundvlees"
+                min={0}
+                max={5}
+                value={foodPreferences.beef}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, beef: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🐔 Kip"
+                min={0}
+                max={5}
+                value={foodPreferences.chicken}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, chicken: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🦌 Wild"
+                min={0}
+                max={5}
+                value={foodPreferences.game}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, game: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🐟 Vis & Meer
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Nemo is óf je vriend, óf je diner&quot;</p>
+
+              <Slider
+                label="🦐 Vis & Schaaldieren"
+                min={0}
+                max={5}
+                value={foodPreferences.fish}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, fish: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Zeemeermin"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🥗 Groentes & Salades
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Groen op je bord: decoratie of doel?&quot;</p>
+
+              <Slider
+                label="🥬 Groentes & Salades"
+                min={0}
+                max={5}
+                value={foodPreferences.veggies}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, veggies: parseInt(e.target.value) })}
+                formatMin="Liever niet"
+                formatMax="Rabbit mode"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍟 Sauzen
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Van frituurvet tot fine dining&quot;</p>
+
+              <Slider
+                label="Mayo/Ketchup ←→ Chimichurri"
+                min={0}
+                max={5}
+                value={foodPreferences.sauces}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, sauces: parseInt(e.target.value) })}
+                formatMin="🍟 Vet"
+                formatMax="🌿 Fijn"
+              />
+            </div>
+
+            {/* DRINKEN */}
+            <div className="border-t border-cream/20 pt-6 space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🥤 Frisdrank
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Cola is ook een persoonlijkheid&quot;</p>
+
+              <Slider
+                label="Frisdrank"
+                min={0}
+                max={5}
+                value={foodPreferences.softDrinks}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, softDrinks: parseInt(e.target.value) })}
+                formatMin="Nooit"
+                formatMax="Altijd"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍷 Wijn
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Rood, wit, rosé... ja graag&quot;</p>
+
+              <Slider
+                label="Wijn"
+                min={0}
+                max={5}
+                value={foodPreferences.wine}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, wine: parseInt(e.target.value) })}
+                formatMin="Bah"
+                formatMax="Sommelier"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍺 Bier
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Pils, speciaalbier, alles is bier&quot;</p>
+
+              <Slider
+                label="Bier"
+                min={0}
+                max={5}
+                value={foodPreferences.beer}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, beer: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Proost!"
+              />
+            </div>
+
+            <Button
+              onClick={saveFoodDrinksSection}
+              disabled={isLoading}
+              isLoading={isLoading}
+              className="w-full"
+            >
+              Opslaan (+{SECTION_POINTS.foodDrinks} punten)
             </Button>
           </div>
         );
@@ -976,7 +1247,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Basic Section - Always completed */}
+        {/* Basic Section - Always completed (merged with personal) */}
         <Card className="border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -984,8 +1255,8 @@ export default function ProfilePage() {
                 <Check className="w-5 h-5 text-success-green" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-cream">Basis Gegevens</p>
-                <p className="text-xs text-cream/60">{formData.name} - {formData.email}</p>
+                <p className="font-semibold text-cream">Geregistreerd</p>
+                <p className="text-xs text-cream/60">{formData.firstName || formData.name?.split(' ')[0] || 'Deelnemer'} - {formData.email}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-success-green">+{SECTION_POINTS.basic}</p>

@@ -50,12 +50,14 @@ export async function GET(request: NextRequest) {
 
     if (users) {
       for (const user of users) {
+        // Only show first name on leaderboard
+        const firstName = user.name?.split(' ')[0] || 'Deelnemer';
         if (userPoints[user.id]) {
-          userPoints[user.id].name = user.name;
+          userPoints[user.id].name = firstName;
           userPoints[user.id].email = user.email;
         } else {
           // User exists but has no points yet
-          userPoints[user.id] = { userId: user.id, name: user.name, email: user.email, points: 0 };
+          userPoints[user.id] = { userId: user.id, name: firstName, email: user.email, points: 0 };
         }
       }
     }

@@ -68,6 +68,7 @@ export default function DashboardPage() {
             setCompletedSections({
               basic: !!data.completedSections.basic,
               personal: !!data.completedSections.personal,
+              foodDrinks: !!data.completedSections.foodDrinks,
               skills: !!data.completedSections.skills,
               music: !!data.completedSections.music,
               jkvHistorie: !!data.completedSections.jkvHistorie,
@@ -175,7 +176,7 @@ export default function DashboardPage() {
             <FeatureToggle feature="show_leaderboard_preview">
               <MiniLeaderboard
                 leaderboard={leaderboardData?.leaderboard ?? []}
-                currentUserName={formData.name}
+                currentUserName={formData.firstName || formData.name?.split(' ')[0] || ''}
                 currentUserRank={userRank}
                 currentUserPoints={userPoints}
                 isLoading={isLoading}
@@ -187,7 +188,7 @@ export default function DashboardPage() {
             <LeaderboardTab
               leaderboard={leaderboardData?.leaderboard ?? []}
               totalParticipants={leaderboardData?.totalParticipants ?? 0}
-              currentUserName={formData.name}
+              currentUserName={formData.firstName || formData.name?.split(' ')[0] || ''}
               currentUserRank={userRank}
               currentUserPoints={userPoints}
               isLoading={isLoading}
