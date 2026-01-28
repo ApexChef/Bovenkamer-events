@@ -16,7 +16,7 @@ function LoginForm() {
   const redirectUrl = searchParams.get('redirect');
   const prefillEmail = searchParams.get('un'); // Pre-fill email from query param
   const { login } = useAuthStore();
-  const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance } = useRegistrationStore();
+  const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance, setHasHydrated: setRegistrationHydrated } = useRegistrationStore();
   const { reset: resetPredictions } = usePredictionsStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
@@ -204,6 +204,11 @@ function LoginForm() {
         setCompletedSections({ basic: true });
       }
       setComplete(true);
+
+      // Explicitly set hydration flag to true - this is needed because after
+      // resetRegistration(), the onRehydrateStorage callback won't be called again
+      // during client-side navigation, leaving _hasHydrated in an undefined state
+      setRegistrationHydrated(true);
 
       // Wait for Zustand persist middleware to save state to localStorage
       // We poll localStorage to ensure the data is actually persisted before redirecting

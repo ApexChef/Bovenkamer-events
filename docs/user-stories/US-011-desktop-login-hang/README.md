@@ -4,7 +4,7 @@
 | Aspect | Waarde |
 |--------|--------|
 | **Prioriteit** | URGENT (Bug Fix) |
-| **Status** | Code Complete |
+| **Status** | Verified |
 | **Complexiteit** | Medium |
 | **Type** | Bug Fix |
 
@@ -138,6 +138,20 @@ router.push('/dashboard');
 - Polling verifieert dat de state ECHT is gepersisteerd voordat we redirecten
 - Checkt BEIDE stores (registration + auth) met correcte user email
 - Heeft een max timeout van 2 seconden als fallback
+
+### Fix 4: Explicit hydration flag after login (FINAL FIX)
+```typescript
+// src/app/login/page.tsx
+const { setHasHydrated: setRegistrationHydrated, ... } = useRegistrationStore();
+
+// After all state updates:
+setComplete(true);
+setRegistrationHydrated(true);  // <-- Dit was de ontbrekende stap!
+```
+
+**Root cause:** De `_hasHydrated` flag wordt alleen gezet via `onRehydrateStorage` callback bij de initiële store hydration. Na `resetRegistration()` en client-side navigatie naar het dashboard, wordt deze callback NIET opnieuw aangeroepen. Het dashboard blijft dan wachten op `registrationHydrated: true` die nooit komt.
+
+**Oplossing:** Expliciet `setHasHydrated(true)` aanroepen na alle login state updates.
 
 ## Bestanden Gewijzigd
 
