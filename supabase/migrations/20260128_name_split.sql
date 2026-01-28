@@ -14,25 +14,41 @@ ADD COLUMN IF NOT EXISTS last_name TEXT,
 ADD COLUMN IF NOT EXISTS partner_first_name TEXT,
 ADD COLUMN IF NOT EXISTS partner_last_name TEXT;
 
--- Populate first_name and last_name from existing name field (if name exists)
+-- Populate first_name and last_name from existing name field in users table
 UPDATE users
 SET
   first_name = SPLIT_PART(name, ' ', 1),
   last_name = TRIM(SUBSTRING(name FROM POSITION(' ' IN name) + 1))
-WHERE name IS NOT NULL AND first_name IS NULL;
+WHERE name IS NOT NULL AND name != '' AND first_name IS NULL;
 
-UPDATE registrations
+-- Populate first_name and last_name in registrations from users table (via user_id join)
+-- This handles cases where registrations.name doesn't exist
+UPDATE registrations r
 SET
-  first_name = SPLIT_PART(name, ' ', 1),
-  last_name = TRIM(SUBSTRING(name FROM POSITION(' ' IN name) + 1))
-WHERE name IS NOT NULL AND first_name IS NULL;
+  first_name = SPLIT_PART(u.name, ' ', 1),
+  last_name = TRIM(SUBSTRING(u.name FROM POSITION(' ' IN u.name) + 1))
+FROM users u
+WHERE r.user_id = u.id
+  AND u.name IS NOT NULL
+  AND u.name != ''
+  AND r.first_name IS NULL;
 
--- Populate partner first/last name from partner_name
-UPDATE registrations
-SET
-  partner_first_name = SPLIT_PART(partner_name, ' ', 1),
-  partner_last_name = TRIM(SUBSTRING(partner_name FROM POSITION(' ' IN partner_name) + 1))
-WHERE partner_name IS NOT NULL AND partner_first_name IS NULL;
+-- Populate partner first/last name from partner_name (if that column exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'registrations' AND column_name = 'partner_name'
+  ) THEN
+    EXECUTE '
+      UPDATE registrations
+      SET
+        partner_first_name = SPLIT_PART(partner_name, '' '', 1),
+        partner_last_name = TRIM(SUBSTRING(partner_name FROM POSITION('' '' IN partner_name) + 1))
+      WHERE partner_name IS NOT NULL AND partner_name != '''' AND partner_first_name IS NULL
+    ';
+  END IF;
+END $$;
 
 -- Add comments for documentation
 COMMENT ON COLUMN users.first_name IS 'First name of the user';
