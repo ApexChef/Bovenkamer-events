@@ -16,6 +16,10 @@ Als administrator wil ik prediction vragen kunnen beheren via een admin interfac
 | `time` | Tijdstip selectie | "Hoe laat vertrekt de laatste gast?" |
 | `select_options` | Dropdown met vaste opties | "Wat wordt het populairste vlees?" |
 
+
+te gebruiken voor de type boolean en select_options.
+![img.png](img.png)
+
 ### Database Schema
 
 ```sql
