@@ -42,7 +42,8 @@
       "Bash(gh pr list:*)",
       "Bash(open http://localhost:3000/profile)",
       "Bash(npx shadcn@latest add sidebar:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm run reset:*)"
     ]
   }
 }

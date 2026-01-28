@@ -31,7 +31,6 @@ import {
   MUSIC_GENRES,
   JKV_JOIN_YEARS,
   JKV_EXIT_YEARS,
-  JKV_STILL_ACTIVE
 } from '@/types';
 
 // Event date for age calculation
@@ -356,10 +355,8 @@ export default function ProfilePage() {
   const saveJkvHistorieSection = async () => {
     setIsLoading(true);
     try {
-      // Calculate bovenkamerJoinYear from jkvExitYear
-      const bovenkamerJoinYear = jkvExitYear === JKV_STILL_ACTIVE
-        ? new Date().getFullYear()
-        : typeof jkvExitYear === 'number' ? jkvExitYear : null;
+      // bovenkamerJoinYear is the same as jkvExitYear (when you leave JKV, you join Bovenkamer)
+      const bovenkamerJoinYear = typeof jkvExitYear === 'number' ? jkvExitYear : null;
 
       const data = {
         jkvJoinYear,
@@ -411,7 +408,10 @@ export default function ProfilePage() {
   const isSkillsValid = Object.values(skills).every(skill => skill !== '');
   const filledSkillsCount = Object.values(skills).filter(skill => skill !== '').length;
   const isMusicValid = musicDecade !== '' && musicGenre !== '';
-  const isJkvHistorieValid = jkvJoinYear !== null && jkvExitYear !== null;
+  // JKV Historie is valid when both years are set and exit year >= join year
+  const isJkvHistorieValid = jkvJoinYear !== null &&
+    typeof jkvExitYear === 'number' &&
+    jkvExitYear >= jkvJoinYear;
   const isBorrelStatsValid = true; // Sliders always have valid values
   const isQuizValid = Object.keys(quizAnswers).length >= 3; // At least 3 answers for closed questions
 
@@ -645,7 +645,7 @@ export default function ProfilePage() {
         return (
           <div className="space-y-4">
             <p className="text-sm text-cream/70">
-              Vertel ons over je Junior Kamer Venray historie.
+              Vertel ons over je Junior Kamer Venray historie. Alle Bovenkamer-leden zijn oud-JKV&apos;ers (sinds 2023).
             </p>
 
             <Select
@@ -656,54 +656,26 @@ export default function ProfilePage() {
               placeholder="Selecteer jaar"
             />
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-cream">
-                Wanneer ben je gestopt bij JKV?
-              </label>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setJkvExitYear(JKV_STILL_ACTIVE)}
-                  className={`px-4 py-3 rounded-lg border transition-all ${
-                    jkvExitYear === JKV_STILL_ACTIVE
-                      ? 'border-gold bg-gold/20 text-gold'
-                      : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                  }`}
-                >
-                  Nog actief! 🎉
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setJkvExitYear(null)}
-                  className={`px-4 py-3 rounded-lg border transition-all ${
-                    jkvExitYear !== JKV_STILL_ACTIVE && jkvExitYear !== null
-                      ? 'border-gold bg-gold/20 text-gold'
-                      : jkvExitYear === null
-                        ? 'border-cream/20 text-cream/60 hover:border-cream/40'
-                        : 'border-cream/20 text-cream/60 hover:border-cream/40'
-                  }`}
-                >
-                  Gestopt in...
-                </button>
-              </div>
-              {jkvExitYear !== JKV_STILL_ACTIVE && (
-                <Select
-                  value={typeof jkvExitYear === 'number' ? jkvExitYear.toString() : ''}
-                  onChange={(e) => setJkvExitYear(e.target.value ? parseInt(e.target.value) : null)}
-                  options={JKV_EXIT_YEARS.map(year => ({ value: year.toString(), label: year.toString() }))}
-                  placeholder="Selecteer jaar"
-                />
-              )}
-            </div>
+            <Select
+              label="Wanneer ben je gestopt bij JKV?"
+              value={typeof jkvExitYear === 'number' ? jkvExitYear.toString() : ''}
+              onChange={(e) => setJkvExitYear(e.target.value ? parseInt(e.target.value) : null)}
+              options={JKV_EXIT_YEARS.map(year => ({ value: year.toString(), label: year.toString() }))}
+              placeholder="Selecteer jaar"
+            />
 
-            {jkvJoinYear && jkvExitYear && (
+            {jkvJoinYear && typeof jkvExitYear === 'number' && jkvExitYear >= jkvJoinYear && (
               <div className="p-3 bg-gold/10 rounded-lg border border-gold/20">
                 <p className="text-sm text-cream/70">
-                  {jkvExitYear === JKV_STILL_ACTIVE ? (
-                    <>Je bent al <span className="text-gold font-bold">{new Date().getFullYear() - jkvJoinYear} jaar</span> lid van JKV! 💪</>
-                  ) : (
-                    <>Je was <span className="text-gold font-bold">{(jkvExitYear as number) - jkvJoinYear} jaar</span> lid van JKV</>
-                  )}
+                  Je was <span className="text-gold font-bold">{jkvExitYear - jkvJoinYear} jaar</span> lid van JKV
+                </p>
+              </div>
+            )}
+
+            {jkvJoinYear && typeof jkvExitYear === 'number' && jkvExitYear < jkvJoinYear && (
+              <div className="p-3 bg-warm-red/10 rounded-lg border border-warm-red/20">
+                <p className="text-sm text-warm-red">
+                  Stopjaar kan niet eerder zijn dan startjaar
                 </p>
               </div>
             )}
