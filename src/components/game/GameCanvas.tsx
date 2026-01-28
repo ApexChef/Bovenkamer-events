@@ -21,6 +21,7 @@ export function GameCanvas() {
   const animationFrameRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
   const lastTapTimeRef = useRef<number>(0);
+  const touchUsedRef = useRef<boolean>(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
 
   const { gameState, config, update, drop, lastDropResult } = useGameStore();
@@ -442,15 +443,32 @@ export function GameCanvas() {
     };
   }, [gameLoop]);
 
-  // Handle tap/click with debounce to prevent double-tap on mobile
-  // Mobile browsers can fire both touchstart and click events, causing double drops
-  const handleTap = useCallback(() => {
+  // Handle tap/click with proper touch vs click separation
+  // Mobile browsers fire both touchstart AND click events for a single tap
+  // We use a flag to prevent the click event from firing after touchstart
+  const handleTap = useCallback((isTouch: boolean = false) => {
     const now = Date.now();
-    // Debounce: ignore taps within 100ms of the last tap
-    if (now - lastTapTimeRef.current < 100) {
+
+    // If this is a click event but we recently had a touch, ignore it
+    // This prevents double-firing on mobile where touch + click both occur
+    if (!isTouch && touchUsedRef.current) {
+      return;
+    }
+
+    // Debounce: ignore taps within 50ms of the last tap (for rapid tapping)
+    if (now - lastTapTimeRef.current < 50) {
       return;
     }
     lastTapTimeRef.current = now;
+
+    // Mark that we used touch input
+    if (isTouch) {
+      touchUsedRef.current = true;
+      // Reset after 400ms to allow click events again (for desktop)
+      setTimeout(() => {
+        touchUsedRef.current = false;
+      }, 400);
+    }
 
     if (gameState.status === 'idle') {
       useGameStore.getState().start();
@@ -466,7 +484,7 @@ export function GameCanvas() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
-        handleTap();
+        handleTap(false); // Keyboard is not touch
       }
     };
 
@@ -479,10 +497,10 @@ export function GameCanvas() {
       ref={canvasRef}
       width={config.canvasWidth}
       height={config.canvasHeight}
-      onClick={handleTap}
+      onClick={() => handleTap(false)}
       onTouchStart={(e) => {
         e.preventDefault();
-        handleTap();
+        handleTap(true);
       }}
       className="touch-none select-none rounded-xl shadow-2xl cursor-pointer border-2 border-gold/20"
       style={{ maxWidth: '100%', height: 'auto' }}
