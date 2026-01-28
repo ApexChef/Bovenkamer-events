@@ -97,8 +97,8 @@ export function FoodDrinkCTA({ variant = 'card' }: CTAProps) {
     <div
       className={`p-5 rounded-xl border-2 ${
         isComplete
-          ? 'bg-success-green/5 border-success-green/20'
-          : 'bg-gold/5 border-gold/30 animate-pulse-subtle'
+          ? 'bg-dark-wood border-success-green/40'
+          : 'bg-dark-wood border-gold/40'
       }`}
     >
       <div className="flex items-start gap-4">

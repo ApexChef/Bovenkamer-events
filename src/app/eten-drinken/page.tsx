@@ -58,7 +58,7 @@ export default function EtenDrinkenPage() {
   const router = useRouter();
   const { currentUser, isAuthenticated, _hasHydrated } = useAuthStore();
 
-  const [expandedSection, setExpandedSection] = useState<SectionId | null>('self-eten');
+  const [expandedSection, setExpandedSection] = useState<SectionId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasPartner, setHasPartner] = useState(false);
@@ -535,6 +535,27 @@ export default function EtenDrinkenPage() {
           {hasPartner && ' Vergeet niet ook de voorkeuren van je partner in te vullen!'}
         </p>
 
+        {/* Status overview */}
+        <Card className="bg-dark-wood border-gold/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-cream font-medium">Status</span>
+              <div className="flex items-center gap-4">
+                <span className={`flex items-center gap-2 ${selfSaved ? 'text-success-green' : 'text-cream/50'}`}>
+                  {selfSaved ? <Check size={16} /> : <span className="w-4 h-4 rounded-full border border-current" />}
+                  <span>{userName}</span>
+                </span>
+                {hasPartner && (
+                  <span className={`flex items-center gap-2 ${partnerSaved ? 'text-success-green' : 'text-cream/50'}`}>
+                    {partnerSaved ? <Check size={16} /> : <span className="w-4 h-4 rounded-full border border-current" />}
+                    <span>{partnerName || 'Partner'}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Collapsible Sections */}
         <div className="space-y-3">
           {/* Jouw Eten */}
@@ -746,24 +767,6 @@ export default function EtenDrinkenPage() {
           )}
         </div>
 
-        {/* Completion status */}
-        <Card className="bg-deep-green/30 border-gold/20">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <span className="text-cream/70">Status</span>
-              <div className="flex items-center gap-4">
-                <span className={`flex items-center gap-1 ${selfSaved ? 'text-success-green' : 'text-cream/50'}`}>
-                  {selfSaved ? <Check size={16} /> : '○'} {userName}
-                </span>
-                {hasPartner && (
-                  <span className={`flex items-center gap-1 ${partnerSaved ? 'text-success-green' : 'text-cream/50'}`}>
-                    {partnerSaved ? <Check size={16} /> : '○'} {partnerName || 'Partner'}
-                  </span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
