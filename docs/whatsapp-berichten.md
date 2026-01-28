@@ -84,6 +84,47 @@ de eerste update is al gedaan
 
 ---
 
+## Bericht 5 - Eten & Drinken Voorkeuren (URGENT)
+*Woensdag 29 januari - Dag voor boodschappen*
+
+```
+🍖🍷 Eet- en drinkvoorkeuren!**
+
+Morgen worden de boodschappen gedaan voor de BBQ.
+
+Wil jij zeker weten dat er genoeg van jouw favoriete vlees, wijn of bier is? Vul dan NU je voorkeuren in!
+
+✅ Hoeveel varken/rund/kip/vis wil je?
+✅ Wijn rood of wit?
+✅ Pils of speciaal bier?
+✅ Vegetarische opties
+
+Het duurt 2 minuten en je verdient er 40 punten mee.
+
+👉 https://bovenkamer.netlify.app/eten-drinken
+
+⏰ Deadline: donderdag 29 januari om 17:00!
+```
+
+---
+
+## Bericht 5b - Eten & Drinken (Korte versie)
+*Alternatief - korter en directer*
+
+```
+🚨 **Morgen = boodschappen doen**
+
+Heb je al je eetvoorkeuren ingevuld?
+
+Geen voorkeuren = we kiezen voor je. 😈
+
+👉 https://bovenkamer.netlify.app/eten-drinken
+
+2 min + 40 punten
+```
+
+---
+
 ## Tips voor versturen
 
 1. **Timing**: Verstuur bericht 1 op een moment dat mensen actief zijn (lunch of avond)
