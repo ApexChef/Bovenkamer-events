@@ -74,12 +74,12 @@ CREATE TABLE prediction_questions (
 **Route:** `/admin/predictions/questions`
 
 #### Functionaliteiten:
-- [ ] Lijst van alle vragen met drag & drop sortering
-- [ ] Vraag toevoegen met formulier per type
-- [ ] Vraag bewerken (label, opties, punten)
-- [ ] Vraag activeren/deactiveren
-- [ ] Vraag verwijderen (soft delete)
-- [ ] Preview van hoe de vraag eruitziet
+- [x] Lijst van alle vragen met drag & drop sortering
+- [x] Vraag toevoegen met formulier per type
+- [x] Vraag bewerken (label, opties, punten)
+- [x] Vraag activeren/deactiveren
+- [x] Vraag verwijderen (soft delete)
+- [x] Preview van hoe de vraag eruitziet
 
 ### API Endpoints
 
@@ -110,12 +110,12 @@ CREATE TABLE prediction_questions (
 
 ## Acceptatiecriteria
 
-- [ ] Admin kan nieuwe vragen toevoegen
-- [ ] Admin kan vragen bewerken
-- [ ] Admin kan vragen activeren/deactiveren
-- [ ] Admin kan volgorde van vragen aanpassen
-- [ ] Predictions pagina toont dynamische vragen
-- [ ] Bestaande voorspellingen blijven werken
+- [x] Admin kan nieuwe vragen toevoegen
+- [x] Admin kan vragen bewerken
+- [x] Admin kan vragen activeren/deactiveren
+- [x] Admin kan volgorde van vragen aanpassen
+- [x] Predictions pagina toont dynamische vragen
+- [x] Bestaande voorspellingen blijven werken
 - [ ] Puntenberekening werkt met dynamische configuratie
 
 ## UI Schets
