@@ -409,12 +409,14 @@ export const GENDER_OPTIONS = [
   { value: 'zeg_ik_niet', label: 'Zeg ik niet' },
 ] as const;
 
-// JKV Join years (1990-2025)
-export const JKV_JOIN_YEARS = Array.from({ length: 36 }, (_, i) => 1990 + i) as readonly number[];
+// JKV Join years (1980-2023)
+// Members must be 40+ to join Bovenkamer, so earliest realistic join year is ~1980
+export const JKV_JOIN_YEARS = Array.from({ length: 44 }, (_, i) => 1980 + i) as readonly number[];
 
-// JKV Exit years (2000-2030 + "Nog actief")
-export const JKV_EXIT_YEARS = Array.from({ length: 31 }, (_, i) => 2000 + i) as readonly number[];
-export const JKV_STILL_ACTIVE = 'nog_actief' as const;
+// JKV Exit years (2000-2023)
+// Bovenkamer exists since 2023, so all members must have exited JKV by then
+// Minimum exit year is 2000 (realistic), maximum is 2023
+export const JKV_EXIT_YEARS = Array.from({ length: 24 }, (_, i) => 2000 + i) as readonly number[];
 
 // Borrel dates 2025 (past - "geweest" tracking)
 export const BORRELS_2025 = [
