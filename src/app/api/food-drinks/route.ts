@@ -58,6 +58,8 @@ export async function GET(request: NextRequest) {
       softDrinkPreference: pref.soft_drink_preference as string | null,
       softDrinkOther: (pref.soft_drink_other as string) || '',
       waterPreference: pref.water_preference as 'sparkling' | 'flat' | null,
+      winePreference: (pref.wine_preference as number) ?? null,
+      beerType: (pref.beer_type as 'pils' | 'speciaal') ?? null,
       createdAt: pref.created_at as string,
       updatedAt: pref.updated_at as string,
     });
@@ -124,6 +126,8 @@ export async function POST(request: NextRequest) {
       soft_drink_preference: data.softDrinkPreference || null,
       soft_drink_other: data.softDrinkOther || null,
       water_preference: data.waterPreference || null,
+      wine_preference: data.winePreference ?? null,
+      beer_type: data.beerType || null,
       updated_at: new Date().toISOString(),
     };
 

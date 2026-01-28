@@ -50,6 +50,8 @@ interface PersonPreferences {
   softDrinkPreference: string | null;
   softDrinkOther: string;
   waterPreference: 'sparkling' | 'flat' | null;
+  winePreference: number | null;
+  beerType: 'pils' | 'speciaal' | null;
 }
 
 export default function EtenDrinkenPage() {
@@ -57,6 +59,7 @@ export default function EtenDrinkenPage() {
   const { currentUser, isAuthenticated, _hasHydrated } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('eten');
+  const [selectedPerson, setSelectedPerson] = useState<'self' | 'partner'>('self');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasPartner, setHasPartner] = useState(false);
@@ -110,6 +113,8 @@ export default function EtenDrinkenPage() {
             softDrinkPreference: data.selfPreference.softDrinkPreference,
             softDrinkOther: data.selfPreference.softDrinkOther || '',
             waterPreference: data.selfPreference.waterPreference,
+            winePreference: data.selfPreference.winePreference ?? null,
+            beerType: data.selfPreference.beerType ?? null,
           });
           setSelfSaved(true);
         }
@@ -126,6 +131,8 @@ export default function EtenDrinkenPage() {
             softDrinkPreference: data.partnerPreference.softDrinkPreference,
             softDrinkOther: data.partnerPreference.softDrinkOther || '',
             waterPreference: data.partnerPreference.waterPreference,
+            winePreference: data.partnerPreference.winePreference ?? null,
+            beerType: data.partnerPreference.beerType ?? null,
           });
           setPartnerSaved(true);
         }
@@ -170,6 +177,29 @@ export default function EtenDrinkenPage() {
     }
   };
 
+  // Handle drink distribution changes with conditional resets
+  const handleDistributionChange = (
+    prefs: PersonPreferences,
+    setPrefs: React.Dispatch<React.SetStateAction<PersonPreferences>>,
+    newDistribution: DrinkDistribution
+  ) => {
+    const updates: Partial<PersonPreferences> = {
+      drinkDistribution: newDistribution,
+    };
+
+    // Reset wine preference if wine drops to 10% or below
+    if (newDistribution.wine <= 10 && prefs.winePreference !== null) {
+      updates.winePreference = null;
+    }
+
+    // Reset beer type if beer drops to 0%
+    if (newDistribution.beer === 0 && prefs.beerType !== null) {
+      updates.beerType = null;
+    }
+
+    setPrefs({ ...prefs, ...updates });
+  };
+
   if (!_hasHydrated || isLoading) {
     return (
       <DashboardLayout>
@@ -209,8 +239,8 @@ export default function EtenDrinkenPage() {
         <p className="text-xs text-cream/50">Verdeel je voorkeur (totaal 100%)</p>
         <PercentageDistribution
           items={meatItems}
-          values={prefs.meatDistribution}
-          onChange={(values) => setPrefs({ ...prefs, meatDistribution: values as MeatDistribution })}
+          values={prefs.meatDistribution as unknown as Record<string, number>}
+          onChange={(values) => setPrefs({ ...prefs, meatDistribution: values as unknown as MeatDistribution })}
         />
       </div>
 
@@ -315,8 +345,12 @@ export default function EtenDrinkenPage() {
         <p className="text-xs text-cream/50">Verdeel je voorkeur (totaal 100%)</p>
         <PercentageDistribution
           items={drinkItems}
-          values={prefs.drinkDistribution}
-          onChange={(values) => setPrefs({ ...prefs, drinkDistribution: values as DrinkDistribution })}
+          values={prefs.drinkDistribution as unknown as Record<string, number>}
+          onChange={(values) => handleDistributionChange(
+            prefs,
+            setPrefs,
+            values as unknown as DrinkDistribution
+          )}
         />
 
         {/* Conditional: soft drink or water preference */}
@@ -368,6 +402,102 @@ export default function EtenDrinkenPage() {
               onChange={(val) => setPrefs({ ...prefs, waterPreference: val === 0 ? 'flat' : 'sparkling' })}
             />
           </div>
+        )}
+
+        {/* Conditional: wine preference (red/white) */}
+        {prefs.drinkDistribution.wine > 10 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
+          >
+            <div className="text-gold text-sm font-medium flex items-center gap-2">
+              <span>🍷</span>
+              <span>Zo, jij houdt van wijn!</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-cream/70">100% Rood</span>
+                <span className="text-cream/70">100% Wit</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={prefs.winePreference ?? 50}
+                onChange={(e) => setPrefs({
+                  ...prefs,
+                  winePreference: parseInt(e.target.value)
+                })}
+                className="w-full h-2 rounded-lg appearance-none cursor-pointer
+                  bg-gradient-to-r from-[#722F37] to-[#F5F5DC]
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-5
+                  [&::-webkit-slider-thumb]:h-5
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:bg-gold
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-webkit-slider-thumb]:shadow-lg
+                  [&::-moz-range-thumb]:w-5
+                  [&::-moz-range-thumb]:h-5
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-gold
+                  [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="text-center text-gold text-sm font-medium">
+                {prefs.winePreference === null || prefs.winePreference === 50
+                  ? '50/50 Mix'
+                  : prefs.winePreference < 33
+                    ? '🍷 Vooral Rood'
+                    : prefs.winePreference < 50
+                      ? 'Meer Rood'
+                      : prefs.winePreference < 67
+                        ? 'Meer Wit'
+                        : '🤍 Vooral Wit'
+                }
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Conditional: beer type selection */}
+        {prefs.drinkDistribution.beer > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-4 pt-4 border-t border-cream/10 space-y-3"
+          >
+            <h5 className="text-sm text-gold">Welk bier?</h5>
+            <SegmentedControl
+              label=""
+              options={[
+                { value: 0, label: 'Pils', emoji: '🍺' },
+                { value: 1, label: 'Speciaal Bier', emoji: '🍻' },
+              ]}
+              value={prefs.beerType === 'pils' ? 0 : prefs.beerType === 'speciaal' ? 1 : -1}
+              onChange={(val) => setPrefs({
+                ...prefs,
+                beerType: val === 0 ? 'pils' : 'speciaal'
+              })}
+            />
+            {prefs.beerType === 'speciaal' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className="p-3 bg-warm-red/20 border border-warm-red/40 rounded-lg"
+              >
+                <p className="text-cream text-sm italic text-center font-medium">
+                  &quot;Dit is een BBQ, geen Beer Craft festival!&quot;
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
         )}
       </div>
 
@@ -424,6 +554,32 @@ export default function EtenDrinkenPage() {
           </button>
         </div>
 
+        {/* Sub-tabs for person selection */}
+        {hasPartner && (
+          <div className="flex gap-2 p-1 bg-deep-green/50 rounded-lg">
+            <button
+              onClick={() => setSelectedPerson('self')}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
+                selectedPerson === 'self'
+                  ? 'bg-gold text-deep-green font-medium'
+                  : 'text-cream/70 hover:text-cream'
+              }`}
+            >
+              {userName}
+            </button>
+            <button
+              onClick={() => setSelectedPerson('partner')}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
+                selectedPerson === 'partner'
+                  ? 'bg-gold text-deep-green font-medium'
+                  : 'text-cream/70 hover:text-cream'
+              }`}
+            >
+              {partnerName || 'Partner'}
+            </button>
+          </div>
+        )}
+
         {/* Tab Content */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -433,43 +589,24 @@ export default function EtenDrinkenPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === 'eten' ? (
-              <div className="space-y-6">
-                {/* Self food preferences */}
-                <Card>
-                  <CardContent className="pt-6">
-                    {renderFoodSection(selfPrefs, setSelfPrefs, 'self', userName)}
-                  </CardContent>
-                </Card>
-
-                {/* Partner food preferences */}
-                {hasPartner && (
-                  <Card>
-                    <CardContent className="pt-6">
-                      {renderFoodSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Self drink preferences */}
-                <Card>
-                  <CardContent className="pt-6">
-                    {renderDrinkSection(selfPrefs, setSelfPrefs, 'self', userName)}
-                  </CardContent>
-                </Card>
-
-                {/* Partner drink preferences */}
-                {hasPartner && (
-                  <Card>
-                    <CardContent className="pt-6">
-                      {renderDrinkSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+            <Card>
+              <CardContent className="pt-6">
+                {activeTab === 'eten'
+                  ? renderFoodSection(
+                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
+                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
+                      selectedPerson,
+                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
+                    )
+                  : renderDrinkSection(
+                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
+                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
+                      selectedPerson,
+                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
+                    )
+                }
+              </CardContent>
+            </Card>
           </motion.div>
         </AnimatePresence>
 
