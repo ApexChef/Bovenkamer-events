@@ -5,7 +5,8 @@ import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser,
 // Profile sections for progressive registration
 export interface ProfileSections {
   basic: boolean;        // Name, email (always true after minimal registration)
-  personal: boolean;     // Birth date, gender, selfConfidence, partner, dietary
+  personal: boolean;     // Birth date, gender, selfConfidence, partner
+  foodDrinks: boolean;   // Dietary requirements, food & drink preferences
   skills: boolean;       // Primary + additional skills
   music: boolean;        // Music decade, genre
   jkvHistorie: boolean;  // JKV join/exit years, Bovenkamer join year
@@ -17,6 +18,7 @@ export interface ProfileSections {
 export const SECTION_POINTS = {
   basic: 10,
   personal: 50,
+  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -99,8 +101,21 @@ const initialFormData: RegistrationFormData = {
   selfConfidence: 5,
   hasPartner: false,
   partnerName: '',
+  // Food & Drinks
   dietaryRequirements: '',
   partnerDietaryRequirements: '',
+  foodPreferences: {
+    pork: 3,
+    beef: 3,
+    chicken: 3,
+    game: 2,
+    fish: 2,
+    veggies: 3,
+    sauces: 3,
+    softDrinks: 2,
+    wine: 3,
+    beer: 3,
+  },
   // Skills (8 categories)
   skills: initialSkills,
   additionalSkills: '',
@@ -121,6 +136,7 @@ const initialFormData: RegistrationFormData = {
 const initialCompletedSections: ProfileSections = {
   basic: false,
   personal: false,
+  foodDrinks: false,
   skills: false,
   music: false,
   jkvHistorie: false,
@@ -217,6 +233,10 @@ export const useRegistrationStore = create<RegistrationState>()(
         if (completed.personal) {
           completedSections.push('personal');
           points += SECTION_POINTS.personal;
+        }
+        if (completed.foodDrinks) {
+          completedSections.push('foodDrinks');
+          points += SECTION_POINTS.foodDrinks;
         }
         if (completed.skills) {
           completedSections.push('skills');

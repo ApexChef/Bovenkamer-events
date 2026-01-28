@@ -220,6 +220,36 @@ export interface Rating {
   created_at: string;
 }
 
+// Food & Drink preferences
+export interface FoodPreferences {
+  // Vlees (per soort)
+  pork: number;       // 0-5: varkensvlees
+  beef: number;       // 0-5: rundvlees
+  chicken: number;    // 0-5: kip
+  game: number;       // 0-5: wild
+  // Overig eten
+  fish: number;       // 0-5: vis & schaaldieren
+  veggies: number;    // 0-5: groentes & salades
+  sauces: number;     // 0-5: mayo/ketchup → chimichurri
+  // Drinken
+  softDrinks: number; // 0-5: frisdrank
+  wine: number;       // 0-5: wijn
+  beer: number;       // 0-5: bier
+}
+
+export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
+  pork: 3,
+  beef: 3,
+  chicken: 3,
+  game: 2,
+  fish: 2,
+  veggies: 3,
+  sauces: 3,
+  softDrinks: 2,
+  wine: 3,
+  beer: 3,
+};
+
 // Form state types
 export interface RegistrationFormData {
   // Step 0 (Auth)
@@ -236,8 +266,11 @@ export interface RegistrationFormData {
   selfConfidence: number; // 1-10
   hasPartner: boolean;
   partnerName: string;
+
+  // Food & Drinks section
   dietaryRequirements: string;
   partnerDietaryRequirements: string;
+  foodPreferences: FoodPreferences;
 
   // Skills section (8 categories)
   skills: SkillSelections;

@@ -17,7 +17,8 @@ import {
   Music,
   HelpCircle,
   Award,
-  Beer
+  Beer,
+  UtensilsCrossed
 } from 'lucide-react';
 import { useRegistrationStore, useAuthStore, SECTION_POINTS, TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
@@ -31,6 +32,8 @@ import {
   MUSIC_GENRES,
   JKV_JOIN_YEARS,
   JKV_EXIT_YEARS,
+  FoodPreferences,
+  DEFAULT_FOOD_PREFERENCES,
 } from '@/types';
 
 // Event date for age calculation
@@ -79,7 +82,7 @@ const DEFAULT_SKILLS: SkillSelections = {
   documentation: '',
 };
 
-type SectionId = 'personal' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
+type SectionId = 'personal' | 'foodDrinks' | 'skills' | 'music' | 'jkvHistorie' | 'borrelStats' | 'quiz';
 
 interface Section {
   id: SectionId;
@@ -93,9 +96,16 @@ const sections: Section[] = [
   {
     id: 'personal',
     title: 'Persoonlijke Gegevens',
-    description: 'Geboortejaar, partner en dieetwensen',
+    description: 'Geboortejaar en partner',
     points: SECTION_POINTS.personal,
     icon: Calendar
+  },
+  {
+    id: 'foodDrinks',
+    title: 'Eten & Drinken',
+    description: 'Wat wil jij op je bord en in je glas?',
+    points: SECTION_POINTS.foodDrinks,
+    icon: UtensilsCrossed
   },
   {
     id: 'skills',
@@ -160,8 +170,10 @@ export default function ProfilePage() {
   const [partnerName, setPartnerName] = useState(
     formData.partnerName || attendance.plusOneName || ''
   );
+  // Food & Drinks
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
   const [partnerDietaryRequirements, setPartnerDietaryRequirements] = useState(formData.partnerDietaryRequirements || '');
+  const [foodPreferences, setFoodPreferences] = useState<FoodPreferences>(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
 
   const [skills, setSkills] = useState<SkillSelections>(formData.skills || DEFAULT_SKILLS);
   const [additionalSkills, setAdditionalSkills] = useState(formData.additionalSkills);
@@ -228,6 +240,7 @@ export default function ProfilePage() {
       setPartnerName(formData.partnerName || attendance.plusOneName || '');
       setDietaryRequirements(formData.dietaryRequirements);
       setPartnerDietaryRequirements(formData.partnerDietaryRequirements || '');
+      setFoodPreferences(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
       setSkills(formData.skills || DEFAULT_SKILLS);
       setAdditionalSkills(formData.additionalSkills);
       setMusicDecade(formData.musicDecade);
@@ -311,12 +324,27 @@ export default function ProfilePage() {
         birthYear,
         hasPartner,
         partnerName,
-        dietaryRequirements,
-        partnerDietaryRequirements: hasPartner ? partnerDietaryRequirements : '',
       };
       setFormData(data);
       await saveSectionToDb('personal', data);
       markSectionComplete('personal');
+      setExpandedSection(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveFoodDrinksSection = async () => {
+    setIsLoading(true);
+    try {
+      const data = {
+        dietaryRequirements,
+        partnerDietaryRequirements: hasPartner ? partnerDietaryRequirements : '',
+        foodPreferences,
+      };
+      setFormData(data);
+      await saveSectionToDb('foodDrinks', data);
+      markSectionComplete('foodDrinks');
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -515,6 +543,21 @@ export default function ProfilePage() {
               </>
             )}
 
+            <Button
+              onClick={savePersonalSection}
+              disabled={!isPersonalValid || isLoading}
+              isLoading={isLoading}
+              className="w-full"
+            >
+              Opslaan (+{SECTION_POINTS.personal} punten)
+            </Button>
+          </div>
+        );
+
+      case 'foodDrinks':
+        return (
+          <div className="space-y-6">
+            {/* Dieetwensen */}
             <Input
               label="Dieetwensen (optioneel)"
               value={dietaryRequirements}
@@ -531,13 +574,164 @@ export default function ProfilePage() {
               />
             )}
 
+            {/* ETEN */}
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍖 Vlees
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Van tofu-fan tot T-bone terrorist&quot;</p>
+
+              <Slider
+                label="🐷 Varkensvlees"
+                min={0}
+                max={5}
+                value={foodPreferences.pork}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, pork: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🐄 Rundvlees"
+                min={0}
+                max={5}
+                value={foodPreferences.beef}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, beef: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🐔 Kip"
+                min={0}
+                max={5}
+                value={foodPreferences.chicken}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, chicken: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+
+              <Slider
+                label="🦌 Wild"
+                min={0}
+                max={5}
+                value={foodPreferences.game}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, game: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Ja graag!"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🐟 Vis & Meer
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Nemo is óf je vriend, óf je diner&quot;</p>
+
+              <Slider
+                label="🦐 Vis & Schaaldieren"
+                min={0}
+                max={5}
+                value={foodPreferences.fish}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, fish: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Zeemeermin"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🥗 Groentes & Salades
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Groen op je bord: decoratie of doel?&quot;</p>
+
+              <Slider
+                label="🥬 Groentes & Salades"
+                min={0}
+                max={5}
+                value={foodPreferences.veggies}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, veggies: parseInt(e.target.value) })}
+                formatMin="Liever niet"
+                formatMax="Rabbit mode"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍟 Sauzen
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Van frituurvet tot fine dining&quot;</p>
+
+              <Slider
+                label="Mayo/Ketchup ←→ Chimichurri"
+                min={0}
+                max={5}
+                value={foodPreferences.sauces}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, sauces: parseInt(e.target.value) })}
+                formatMin="🍟 Vet"
+                formatMax="🌿 Fijn"
+              />
+            </div>
+
+            {/* DRINKEN */}
+            <div className="border-t border-cream/20 pt-6 space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🥤 Frisdrank
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Cola is ook een persoonlijkheid&quot;</p>
+
+              <Slider
+                label="Frisdrank"
+                min={0}
+                max={5}
+                value={foodPreferences.softDrinks}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, softDrinks: parseInt(e.target.value) })}
+                formatMin="Nooit"
+                formatMax="Altijd"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍷 Wijn
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Rood, wit, rosé... ja graag&quot;</p>
+
+              <Slider
+                label="Wijn"
+                min={0}
+                max={5}
+                value={foodPreferences.wine}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, wine: parseInt(e.target.value) })}
+                formatMin="Bah"
+                formatMax="Sommelier"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-gold font-semibold flex items-center gap-2">
+                🍺 Bier
+              </h4>
+              <p className="text-xs text-cream/50 italic">&quot;Pils, speciaalbier, alles is bier&quot;</p>
+
+              <Slider
+                label="Bier"
+                min={0}
+                max={5}
+                value={foodPreferences.beer}
+                onChange={(e) => setFoodPreferences({ ...foodPreferences, beer: parseInt(e.target.value) })}
+                formatMin="Nee"
+                formatMax="Proost!"
+              />
+            </div>
+
             <Button
-              onClick={savePersonalSection}
-              disabled={!isPersonalValid || isLoading}
+              onClick={saveFoodDrinksSection}
+              disabled={isLoading}
               isLoading={isLoading}
               className="w-full"
             >
-              Opslaan (+{SECTION_POINTS.personal} punten)
+              Opslaan (+{SECTION_POINTS.foodDrinks} punten)
             </Button>
           </div>
         );
