@@ -4,6 +4,14 @@
 
 Alle formulierelementen in de applicatie dynamisch maken, zodat ze via de database beheerd kunnen worden in plaats van hardcoded in de code. Dit bouwt voort op het succes van US-019 (dynamische prediction questions).
 
+## Veldnaamgeving
+
+**Belangrijk**: We gebruiken de volgende naamgeving:
+- **`category`**: Hoofdcategorie voor filteren per pagina (bijv. `predictions`, `ratings`, `registration_quiz`)
+- **`section`**: Sub-groepering binnen een category (bijv. `consumption`, `social`, `criteria`, `feedback`)
+
+Dit betekent dat de huidige `prediction_questions.category` veld hernoemd moet worden naar `section`.
+
 ## Huidige Situatie
 
 ### Wat al dynamisch is (US-019)
@@ -12,14 +20,36 @@ Alle formulierelementen in de applicatie dynamisch maken, zodat ze via de databa
   - Admin CRUD interface
   - Punten configuratie per vraag
   - Sorting en activatie toggles
+  - **Let op**: `category` veld bevat nu section-waarden (`consumption`, `social`, `other`)
 
 ### Wat nog hardcoded is
 
-#### 1. Registration Quiz (Step 3) - `src/components/forms/Step3Quiz.tsx`
-**15 open tekstvragen** gegroepeerd in categorieën:
+#### 1. Rating Page - `/src/app/rate/page.tsx` (PRIORITEIT)
 
-| Categorie | Vragen | Keys |
-|-----------|--------|------|
+**Section: `criteria`** - 5 Star Rating vragen:
+| Key | Label | Beschrijving |
+|-----|-------|--------------|
+| location | Locatie | Ruimte, sfeer, faciliteiten |
+| hospitality | Gastvrijheid | Ontvangst, bediening, aandacht |
+| fireQuality | Kwaliteit Vuurvoorziening | BBQ, vuurplaats, warmte |
+| parking | Parkeergelegenheid | Ruimte, bereikbaarheid |
+| overall | Algemene Organisatie | Totaalindruk van de avond |
+
+**Section: `feedback`** - 2 Open tekstvragen:
+- bestAspect: "Wat was het beste aan de locatie?"
+- improvementSuggestion: "Wat kan beter?"
+
+**Section: `verdict`** - 1 Boolean vraag + toelichting:
+- isWorthy: "Is Boy Boom waardig lid van de Bovenkamer?"
+- worthyExplanation: Toelichting
+
+**Opslag**: `ratings` tabel (aparte kolommen)
+
+#### 2. Registration Quiz (Step 3) - `src/components/forms/Step3Quiz.tsx` (LATER)
+**15 open tekstvragen** gegroepeerd in sections:
+
+| Section | Vragen | Keys |
+|---------|--------|------|
 | Muziek | 2 | guiltyPleasureSong, bestConcert |
 | Entertainment | 2 | movieByHeart, secretSeries |
 | Eten | 3 | weirdestFood, signatureDish, foodRefusal |
@@ -30,25 +60,7 @@ Alle formulierelementen in de applicatie dynamisch maken, zodat ze via de databa
 **Opslag**: `registrations.quiz_answers` (JSONB)
 **Validatie**: Minimaal 5 vragen beantwoorden
 
-#### 2. Rating Page - `/src/app/rate/page.tsx`
-**5 Star Rating vragen**:
-| Key | Label | Beschrijving |
-|-----|-------|--------------|
-| location | Locatie | Ruimte, sfeer, faciliteiten |
-| hospitality | Gastvrijheid | Ontvangst, bediening, aandacht |
-| fireQuality | Kwaliteit Vuurvoorziening | BBQ, vuurplaats, warmte |
-| parking | Parkeergelegenheid | Ruimte, bereikbaarheid |
-| overall | Algemene Organisatie | Totaalindruk van de avond |
-
-**2 Open tekstvragen**:
-- bestAspect: "Wat was het beste aan de locatie?"
-- improvementSuggestion: "Wat kan beter?"
-
-**1 Boolean vraag + toelichting**:
-- isWorthy: "Is Boy Boom waardig lid van de Bovenkamer?"
-- worthyExplanation: Toelichting
-
-**Opslag**: `ratings` tabel (aparte kolommen)
+> **Note**: Registration quiz wordt later geïmplementeerd om risico op dataverlies te minimaliseren.
 
 #### 3. Skill Categories - `src/types/index.ts`
 **8 categorieën** met elk 5 opties (40 items totaal):
@@ -87,71 +99,70 @@ export type DynamicQuestionType =
   | 'radio_group'         // Single select radio buttons (styled)
 ```
 
-### Database: `dynamic_questions` tabel
+### Database Aanpassingen
+
+#### Stap 1: Hernoem `category` naar `section` in `prediction_questions`
 
 ```sql
-CREATE TABLE dynamic_questions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- Rename category to section in existing table
+ALTER TABLE prediction_questions RENAME COLUMN category TO section;
 
-  -- Identificatie
-  key VARCHAR(50) UNIQUE NOT NULL,
+-- Add new category column for filtering by page
+ALTER TABLE prediction_questions ADD COLUMN category VARCHAR(30) DEFAULT 'predictions';
 
-  -- Display
-  label TEXT NOT NULL,
-  description TEXT,
-  placeholder TEXT,
-
-  -- Classificatie
-  type VARCHAR(30) NOT NULL,
-  module VARCHAR(30) NOT NULL,  -- 'predictions', 'registration_quiz', 'ratings', 'skills'
-  category VARCHAR(50),          -- Voor groepering binnen module
-
-  -- Type-specifieke opties (JSONB)
-  options JSONB DEFAULT '{}',
-
-  -- Validatie
-  is_required BOOLEAN DEFAULT false,
-  min_selections INTEGER,        -- Voor checkbox_group
-  max_selections INTEGER,
-
-  -- Scoring (voor predictions/quiz)
-  points_exact INTEGER DEFAULT 0,
-  points_close INTEGER DEFAULT 0,
-  points_direction INTEGER DEFAULT 0,
-
-  -- Status & Ordering
-  is_active BOOLEAN DEFAULT true,
-  sort_order INTEGER DEFAULT 0,
-
-  -- Timestamps
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX idx_dynamic_questions_module ON dynamic_questions(module);
-CREATE INDEX idx_dynamic_questions_active ON dynamic_questions(is_active);
-CREATE INDEX idx_dynamic_questions_sort ON dynamic_questions(module, sort_order);
+-- Update indexes
+DROP INDEX IF EXISTS idx_prediction_questions_category;
+CREATE INDEX idx_prediction_questions_section ON prediction_questions(section);
+CREATE INDEX idx_prediction_questions_category ON prediction_questions(category);
 ```
+
+#### Stap 2: Uitbreiden voor nieuwe vraagtypen
+
+De bestaande `prediction_questions` tabel wordt uitgebreid (niet vervangen) om ook ratings te ondersteunen:
+
+```sql
+-- Add new columns for extended functionality
+ALTER TABLE prediction_questions ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE prediction_questions ADD COLUMN IF NOT EXISTS placeholder TEXT;
+ALTER TABLE prediction_questions ADD COLUMN IF NOT EXISTS is_required BOOLEAN DEFAULT false;
+
+-- Add new question types to enum/check constraint
+-- type can now be: slider, select_participant, boolean, time, select_options,
+--                  text_short, text_long, star_rating
+```
+
+#### Nieuwe veldwaarden
+
+| Veld | Waarden | Beschrijving |
+|------|---------|--------------|
+| `category` | `predictions`, `ratings`, `registration_quiz`, `skills` | Hoofdcategorie voor API filtering |
+| `section` | `consumption`, `social`, `other`, `criteria`, `feedback`, `verdict`, etc. | Sub-groepering voor UI |
+| `type` | bestaande + `text_short`, `text_long`, `star_rating` | Vraagtype |
 
 ### Fasering
 
-#### Fase 1: Registration Quiz dynamisch (Quick Win)
-1. Migratie: Quiz vragen toevoegen aan `dynamic_questions`
-2. API: `GET /api/questions?module=registration_quiz`
-3. Component: Generieke `DynamicTextQuestion` component
-4. Admin: Uitbreiden admin panel voor quiz vragen beheer
+#### Fase 1: Rating vragen dynamisch (US-020a)
+1. **Migratie**:
+   - Hernoem `category` → `section` in `prediction_questions`
+   - Voeg `category` kolom toe
+   - Voeg nieuwe vraagtypen toe
+2. **Seed data**: Rating vragen toevoegen met `category='ratings'`
+3. **API**: `GET /api/questions?category=ratings`
+4. **Components**:
+   - `DynamicStarRating` component
+   - `DynamicTextQuestion` component (voor feedback)
+5. **Frontend**: Rating page refactoren naar dynamische vragen
+6. **Admin**: Uitbreiden voor ratings beheer
 
-#### Fase 2: Rating vragen dynamisch
-1. Migratie: Rating criteria naar `dynamic_questions`
-2. Component: `DynamicStarRating` component
-3. API aanpassen om dynamische vragen te laden
-4. Backward compatibility met bestaande `ratings` tabel
-
-#### Fase 3: Skills & Preferences dynamisch
+#### Fase 2: Skills & Preferences dynamisch (LATER)
 1. Migratie: Skill categorieën en opties naar database
 2. Component: `DynamicCheckboxGroup` component
 3. Music preferences configureerbaar maken
+
+#### Fase 3: Registration Quiz dynamisch (LATER - voorzichtig)
+1. Migratie: Quiz vragen toevoegen
+2. Component: Hergebruik `DynamicTextQuestion`
+3. Backward compatibility waarborgen
 
 ### Type Opties per Vraagtype
 
@@ -200,49 +211,58 @@ Uitbreiding van bestaand prediction questions admin panel:
 
 ```
 /admin/questions
-├── ?module=predictions      (bestaand)
-├── ?module=registration_quiz (nieuw)
-├── ?module=ratings          (nieuw)
-└── ?module=skills           (nieuw)
+├── ?category=predictions      (bestaand, hernoemd van module)
+├── ?category=ratings          (nieuw - Fase 1)
+├── ?category=skills           (nieuw - Fase 2)
+└── ?category=registration_quiz (nieuw - Fase 3)
 ```
 
-Features per module:
+Features per category:
 - CRUD vragen
 - Drag-and-drop sortering
 - Preview van vraag rendering
 - Activatie toggles
-- Categorie management
+- Section management (sub-groepering)
 
 ## Migratie Strategie
 
 ### Data Migratie
-1. Seed nieuwe vragen in `dynamic_questions` met exact dezelfde keys
-2. Geen wijzigingen aan opslag (JSONB blijft JSONB)
-3. Bestaande data blijft werken
+1. Hernoem `category` → `section` in bestaande prediction_questions
+2. Voeg `category` kolom toe met default `'predictions'`
+3. Seed rating vragen met `category='ratings'`
+4. Bestaande prediction data en antwoorden blijven intact
 
 ### Code Migratie
-1. Nieuwe generieke `DynamicQuestion` component (uitbreiding van bestaande)
+1. Uitbreiding bestaande `DynamicQuestion` component met nieuwe types
 2. Geleidelijke vervanging van hardcoded vragen
 3. Backward compatibility via fallback naar hardcoded indien DB leeg
 
-## Deliverables
+## Deliverables (Fase 1 - Ratings)
 
-1. **Database**: `dynamic_questions` tabel + migraties
-2. **API Routes**:
-   - `GET /api/questions?module={module}`
-   - `GET/POST/PUT/DELETE /api/admin/questions`
-3. **Components**:
-   - Uitgebreide `DynamicQuestion` component
-   - Nieuwe vraagtype componenten
-4. **Admin UI**: Uitgebreid questions management
-5. **Migraties**: Seed data voor alle huidige hardcoded vragen
+1. **Database Migratie**:
+   - Hernoem `category` → `section`
+   - Voeg `category` kolom toe
+   - Voeg `description`, `placeholder`, `is_required` kolommen toe
+   - Seed data voor 8 rating vragen
+2. **Types**: Uitbreiden met `star_rating`, `text_short`, `text_long`
+3. **API Routes**:
+   - `GET /api/questions?category=ratings`
+   - Uitbreiden admin API voor nieuwe types
+4. **Components**:
+   - `DynamicStarRating` component
+   - `DynamicTextQuestion` component
+   - Uitbreiding `DynamicQuestion` switch
+5. **Frontend**: `/rate` page refactoren
+6. **Admin UI**: Category filter toevoegen
 
-## Acceptatiecriteria
+## Acceptatiecriteria (Fase 1)
 
-- [ ] Alle 15 registration quiz vragen beheerbaar via admin
+- [ ] `category` en `section` velden correct geïmplementeerd
 - [ ] Alle 8 rating vragen beheerbaar via admin
-- [ ] Nieuwe vragen kunnen worden toegevoegd zonder code wijzigingen
+- [ ] Star rating component werkt correct (1-5 sterren)
+- [ ] Tekst vragen (kort en lang) werken correct
+- [ ] Rating page laadt vragen dynamisch uit database
+- [ ] Nieuwe rating vragen kunnen worden toegevoegd zonder code wijzigingen
 - [ ] Vragen kunnen worden gedeactiveerd zonder te verwijderen
 - [ ] Sortering van vragen instelbaar
-- [ ] Preview functionaliteit in admin panel
-- [ ] Backward compatibility met bestaande data
+- [ ] Bestaande prediction questions blijven werken
