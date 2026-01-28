@@ -10,20 +10,6 @@ import { Slider } from '@/components/ui/Slider';
 import { RadioGroup } from '@/components/ui/RadioGroup';
 import { motion } from 'framer-motion';
 
-// Fallback participants
-const FALLBACK_PARTICIPANTS = [
-  { value: 'alwin', label: 'Alwin' },
-  { value: 'boy', label: 'Boy Boom' },
-  { value: 'peter', label: 'Peter' },
-  { value: 'jan', label: 'Jan' },
-  { value: 'marco', label: 'Marco' },
-  { value: 'henk', label: 'Henk' },
-  { value: 'erik', label: 'Erik' },
-  { value: 'bas', label: 'Bas' },
-  { value: 'rob', label: 'Rob' },
-  { value: 'kees', label: 'Kees' },
-  { value: 'wim', label: 'Wim' },
-];
 
 // Time slider: 0=19:00, 22=06:00 (half-hour increments)
 // 19:00 to 00:00 = 10 half-hours (0-10)
@@ -42,9 +28,31 @@ export default function PredictionsPage() {
   const { predictions, setPrediction, isDraft, isSubmitted, saveDraft, submitFinal, canEdit } = usePredictionsStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [participants, setParticipants] = useState(FALLBACK_PARTICIPANTS);
+  const [participants, setParticipants] = useState<{ value: string; label: string }[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [eventStarted, setEventStarted] = useState(false);
+
+  // Track page visit (runs for all visitors, including unauthorized)
+  useEffect(() => {
+    const trackVisit = async () => {
+      try {
+        await fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: '/predictions',
+            email: formData.email || null,
+            referrer: document.referrer || null,
+            userAgent: navigator.userAgent,
+            isRegistered: isComplete,
+          }),
+        });
+      } catch (error) {
+        // Silently fail - tracking is not critical
+      }
+    };
+    trackVisit();
+  }, []); // Run once on mount
 
   // Check if editing is allowed (client-side only to avoid hydration mismatch)
   useEffect(() => {
@@ -52,35 +60,47 @@ export default function PredictionsPage() {
     setEventStarted(new Date() >= EVENT_START);
   }, [canEdit, isSubmitted]);
 
-  // Fetch participants from database
+  // Fetch participants from database (includes partners)
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
         const response = await fetch('/api/participants');
         if (response.ok) {
           const data = await response.json();
-          if (data.length > 0) {
-            setParticipants(data);
-          }
+          setParticipants(data);
         }
       } catch (error) {
         console.error('Error fetching participants:', error);
-        // Keep fallback participants
       }
     };
 
     fetchParticipants();
   }, []);
 
-  // Redirect if not registered
-  useEffect(() => {
-    if (!isComplete) {
-      router.push('/register');
-    }
-  }, [isComplete, router]);
-
+  // Show message if not registered (no redirect)
   if (!isComplete) {
-    return null;
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">🔮</span>
+              </div>
+              <h2 className="font-display text-2xl text-gold mb-2">
+                Voorspellingen
+              </h2>
+              <p className="text-cream/60 mb-6">
+                Deze functie wordt binnenkort geactiveerd. Registreer eerst om toegang te krijgen.
+              </p>
+              <Link href="/register">
+                <Button>Registreren</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const savePredictionsToServer = async () => {
