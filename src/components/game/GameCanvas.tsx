@@ -443,9 +443,16 @@ export function GameCanvas() {
     };
   }, [gameLoop]);
 
+  // Scroll canvas into view when game starts
+  useEffect(() => {
+    if (gameState.status === 'playing' && canvasRef.current) {
+      canvasRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [gameState.status]);
+
   // Handle tap/click with proper touch vs click separation
   // Mobile browsers fire both touchstart AND click events for a single tap
-  // We use a flag to prevent the click event from firing after touchstart
+  // The click event typically fires 200-300ms after touchstart
   const handleTap = useCallback((isTouch: boolean = false) => {
     const now = Date.now();
 
@@ -455,8 +462,10 @@ export function GameCanvas() {
       return;
     }
 
-    // Debounce: ignore taps within 50ms of the last tap (for rapid tapping)
-    if (now - lastTapTimeRef.current < 50) {
+    // Debounce: ignore taps within 250ms of the last tap
+    // This prevents ghost clicks on mobile (which fire ~200-300ms after touch)
+    // and also prevents accidental double-taps
+    if (now - lastTapTimeRef.current < 250) {
       return;
     }
     lastTapTimeRef.current = now;
@@ -464,10 +473,10 @@ export function GameCanvas() {
     // Mark that we used touch input
     if (isTouch) {
       touchUsedRef.current = true;
-      // Reset after 400ms to allow click events again (for desktop)
+      // Reset after 500ms to allow click events again (for switching to mouse)
       setTimeout(() => {
         touchUsedRef.current = false;
-      }, 400);
+      }, 500);
     }
 
     if (gameState.status === 'idle') {

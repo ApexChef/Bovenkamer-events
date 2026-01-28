@@ -5,22 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePredictionsStore, useRegistrationStore, EVENT_START } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select } from '@/components/ui';
-import { Slider } from '@/components/ui/Slider';
-import { RadioGroup } from '@/components/ui/RadioGroup';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
+import { DynamicQuestion } from '@/components/predictions/DynamicQuestion';
 import { motion } from 'framer-motion';
-
-
-// Time slider: 0=19:00, 22=06:00 (half-hour increments)
-// 19:00 to 00:00 = 10 half-hours (0-10)
-// 00:00 to 06:00 = 12 half-hours (10-22)
-const formatTimeSlider = (value: number): string => {
-  // value 0 = 19:00, value 22 = 06:00
-  const totalMinutes = 19 * 60 + value * 30;
-  const hours = Math.floor(totalMinutes / 60) % 24;
-  const minutes = totalMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-};
+import { PredictionQuestion } from '@/types';
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -31,6 +19,8 @@ export default function PredictionsPage() {
   const [participants, setParticipants] = useState<{ value: string; label: string }[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [eventStarted, setEventStarted] = useState(false);
+  const [questions, setQuestions] = useState<PredictionQuestion[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
   // Track page visit (runs for all visitors, including unauthorized)
   useEffect(() => {
@@ -59,6 +49,25 @@ export default function PredictionsPage() {
     setIsLocked(!canEdit());
     setEventStarted(new Date() >= EVENT_START);
   }, [canEdit, isSubmitted]);
+
+  // Fetch dynamic questions from API
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch('/api/prediction-questions');
+        if (response.ok) {
+          const data = await response.json();
+          setQuestions(data.questions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
 
   // Fetch participants from database (includes partners)
   useEffect(() => {
@@ -139,6 +148,36 @@ export default function PredictionsPage() {
     router.push('/dashboard');
   };
 
+  // Group questions by category
+  const consumptionQuestions = questions.filter((q) => q.category === 'consumption');
+  const socialQuestions = questions.filter((q) => q.category === 'social');
+  const otherQuestions = questions.filter((q) => q.category === 'other');
+
+  // Category display configuration
+  const categories = [
+    {
+      key: 'consumption',
+      title: 'Consumptie',
+      description: 'Hoeveel wordt er geconsumeerd?',
+      questions: consumptionQuestions,
+      delay: 0.1,
+    },
+    {
+      key: 'social',
+      title: 'Sociale Voorspellingen',
+      description: 'Wie doet wat?',
+      questions: socialQuestions,
+      delay: 0.2,
+    },
+    {
+      key: 'other',
+      title: 'Overige Voorspellingen',
+      description: 'Diverse gokjes',
+      questions: otherQuestions,
+      delay: 0.3,
+    },
+  ];
+
   // Only lock when event has started (allow editing after submission until event starts)
   if (eventStarted) {
     return (
@@ -194,157 +233,56 @@ export default function PredictionsPage() {
         )}
 
         <form onSubmit={handleSubmitFinal} className="space-y-6">
-          {/* Consumption Predictions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Consumptie</CardTitle>
-                <CardDescription>Hoeveel wordt er geconsumeerd?</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <Slider
-                  label="Flessen wijn"
-                  min={5}
-                  max={30}
-                  value={predictions.wineBottles ?? 15}
-                  onChange={(e) => setPrediction('wineBottles', parseInt(e.target.value))}
-                  unit=" flessen"
-                />
+          {/* Loading state */}
+          {isLoadingQuestions && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-4xl">⏳</span>
+                  </div>
+                  <p className="text-cream/60">Vragen laden...</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-                <Slider
-                  label="Kratten bier"
-                  min={2}
-                  max={10}
-                  value={predictions.beerCrates ?? 5}
-                  onChange={(e) => setPrediction('beerCrates', parseInt(e.target.value))}
-                  unit=" kratten"
-                />
+          {/* Dynamic question categories */}
+          {!isLoadingQuestions && categories.map((category) => {
+            // Only render category if it has questions
+            if (category.questions.length === 0) return null;
 
-                <Slider
-                  label="Kilo's vlees"
-                  min={2}
-                  max={8}
-                  value={predictions.meatKilos ?? 4}
-                  onChange={(e) => setPrediction('meatKilos', parseInt(e.target.value))}
-                  unit=" kg"
-                  hint="~20 personen × 200g = 4kg"
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Social Predictions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Sociale Voorspellingen</CardTitle>
-                <CardDescription>Wie doet wat?</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <Select
-                  label="Wie valt als eerste in slaap?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.firstSleeper ?? ''}
-                  onChange={(e) => setPrediction('firstSleeper', e.target.value)}
-                />
-
-                <Select
-                  label="Wie begint spontaan te zingen?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.spontaneousSinger ?? ''}
-                  onChange={(e) => setPrediction('spontaneousSinger', e.target.value)}
-                />
-
-                <Select
-                  label="Wie vertrekt als eerste?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.firstToLeave ?? ''}
-                  onChange={(e) => setPrediction('firstToLeave', e.target.value)}
-                />
-
-                <Select
-                  label="Wie gaat als laatste naar huis?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.lastToLeave ?? ''}
-                  onChange={(e) => setPrediction('lastToLeave', e.target.value)}
-                />
-
-                <Select
-                  label="Wie is de luidste lacher?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.loudestLaugher ?? ''}
-                  onChange={(e) => setPrediction('loudestLaugher', e.target.value)}
-                />
-
-                <Select
-                  label="Wie vertelt het langste verhaal?"
-                  options={participants}
-                  placeholder="Selecteer een deelnemer"
-                  value={predictions.longestStoryTeller ?? ''}
-                  onChange={(e) => setPrediction('longestStoryTeller', e.target.value)}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Other Predictions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Overige Voorspellingen</CardTitle>
-                <CardDescription>Diverse gokjes</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <RadioGroup
-                  label="Wordt er iets aangebrand?"
-                  name="somethingBurned"
-                  options={[
-                    { value: 'true', label: 'Ja' },
-                    { value: 'false', label: 'Nee' },
-                  ]}
-                  value={predictions.somethingBurned === undefined ? '' : predictions.somethingBurned.toString()}
-                  onChange={(v) => setPrediction('somethingBurned', v === 'true')}
-                />
-
-                <Slider
-                  label="Hoe koud wordt het buiten?"
-                  min={-10}
-                  max={10}
-                  value={predictions.outsideTemp ?? 0}
-                  onChange={(e) => setPrediction('outsideTemp', parseInt(e.target.value))}
-                  unit="°C"
-                />
-
-                <Slider
-                  label="Hoe laat vertrekt de laatste gast?"
-                  min={0}
-                  max={22}
-                  value={predictions.lastGuestTime ?? 10}
-                  onChange={(e) => setPrediction('lastGuestTime', parseInt(e.target.value))}
-                  formatValue={formatTimeSlider}
-                  formatMin="19:00"
-                  formatMax="06:00"
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
+            return (
+              <motion.div
+                key={category.key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: category.delay }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{category.title}</CardTitle>
+                    <CardDescription>{category.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    {category.questions.map((question) => (
+                      <DynamicQuestion
+                        key={question.id}
+                        question={question}
+                        value={predictions[question.key]}
+                        onChange={(value) => setPrediction(question.key, value)}
+                        participants={participants}
+                      />
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
 
           {/* Points Info */}
           <motion.div
