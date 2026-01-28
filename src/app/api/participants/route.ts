@@ -5,60 +5,61 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
+    // Get users with their registration data (including partner names)
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, name')
       .eq('role', 'participant')
       .order('name');
 
-    if (error) {
-      console.error('Error fetching participants:', error);
-      // Return fallback list if database not configured
-      return NextResponse.json([
-        { value: 'alwin', label: 'Alwin' },
-        { value: 'boy', label: 'Boy Boom' },
-        { value: 'peter', label: 'Peter' },
-        { value: 'jan', label: 'Jan' },
-        { value: 'marco', label: 'Marco' },
-        { value: 'henk', label: 'Henk' },
-        { value: 'erik', label: 'Erik' },
-        { value: 'bas', label: 'Bas' },
-        { value: 'rob', label: 'Rob' },
-        { value: 'kees', label: 'Kees' },
-        { value: 'wim', label: 'Wim' },
-      ]);
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return NextResponse.json([]);
     }
 
-    // Transform to dropdown format
-    const participants = data.map((user) => ({
-      value: user.id,
-      label: user.name,
-    }));
+    // Get registrations with partner info
+    const { data: registrations, error: regError } = await supabase
+      .from('registrations')
+      .select('user_id, name, has_partner, partner_name');
 
-    // If no participants yet, return fallback
+    if (regError) {
+      console.error('Error fetching registrations:', regError);
+    }
+
+    // Build participants list
+    const participants: { value: string; label: string }[] = [];
+
+    // Add registered users
+    for (const user of users || []) {
+      // Get first name only for cleaner display
+      const firstName = user.name.split(' ')[0];
+      participants.push({
+        value: user.id,
+        label: firstName,
+      });
+
+      // Check if user has a partner
+      const registration = registrations?.find((r) => r.user_id === user.id);
+      if (registration?.has_partner && registration?.partner_name) {
+        const partnerFirstName = registration.partner_name.split(' ')[0];
+        participants.push({
+          value: `partner-${user.id}`,
+          label: `${partnerFirstName} (partner)`,
+        });
+      }
+    }
+
+    // Sort alphabetically by label
+    participants.sort((a, b) => a.label.localeCompare(b.label, 'nl'));
+
+    // If no participants yet, return empty (no fallback dummy data)
     if (participants.length === 0) {
-      return NextResponse.json([
-        { value: 'alwin', label: 'Alwin' },
-        { value: 'boy', label: 'Boy Boom' },
-        { value: 'peter', label: 'Peter' },
-        { value: 'jan', label: 'Jan' },
-        { value: 'marco', label: 'Marco' },
-        { value: 'henk', label: 'Henk' },
-        { value: 'erik', label: 'Erik' },
-        { value: 'bas', label: 'Bas' },
-        { value: 'rob', label: 'Rob' },
-        { value: 'kees', label: 'Kees' },
-        { value: 'wim', label: 'Wim' },
-      ]);
+      return NextResponse.json([]);
     }
 
     return NextResponse.json(participants);
   } catch (error) {
     console.error('Participants API error:', error);
-    // Return fallback on error
-    return NextResponse.json([
-      { value: 'alwin', label: 'Alwin' },
-      { value: 'boy', label: 'Boy Boom' },
-    ]);
+    return NextResponse.json([]);
   }
 }
