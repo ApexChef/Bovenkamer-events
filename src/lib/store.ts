@@ -452,7 +452,10 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           authToken: null,
         });
+        // Clear all localStorage data
         localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem('bovenkamer-registration');
+        localStorage.removeItem('bovenkamer-predictions');
       },
 
       updateUser: (updates) => {
