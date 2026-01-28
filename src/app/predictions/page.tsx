@@ -139,24 +139,21 @@ export default function PredictionsPage() {
     router.push('/dashboard');
   };
 
-  if (isSubmitted || eventStarted) {
+  // Only lock when event has started (allow editing after submission until event starts)
+  if (eventStarted) {
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardContent className="py-12 text-center">
-              <div className="w-16 h-16 bg-success-green rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="w-16 h-16 bg-warm-red/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">🔒</span>
               </div>
               <h2 className="font-display text-2xl text-gold mb-2">
-                {eventStarted ? 'Voorspellingen Vergrendeld' : 'Voorspellingen Ingediend'}
+                Voorspellingen Vergrendeld
               </h2>
               <p className="text-cream/60 mb-6">
-                {eventStarted
-                  ? 'Het evenement is begonnen. Voorspellingen kunnen niet meer worden aangepast.'
-                  : 'Uw voorspellingen zijn definitief ingediend. Na de BBQ worden de punten toegekend.'}
+                Het evenement is begonnen. Voorspellingen kunnen niet meer worden aangepast.
               </p>
               <Link href="/dashboard">
                 <Button>Terug naar Dashboard</Button>
@@ -178,6 +175,23 @@ export default function PredictionsPage() {
           </h1>
           <p className="text-cream/60">Waag uw gok en verdien punten</p>
         </div>
+
+        {/* Previously submitted banner */}
+        {isSubmitted && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-success-green/20 border border-success-green rounded-lg"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">✓</span>
+              <div>
+                <p className="text-success-green font-medium">Voorspellingen opgeslagen</p>
+                <p className="text-cream/60 text-sm">Je kunt ze nog aanpassen tot het evenement begint.</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmitFinal} className="space-y-6">
           {/* Consumption Predictions */}
