@@ -337,9 +337,13 @@ export default function EtenDrinkenPage() {
             values as unknown as DrinkDistribution
           )}
           renderAfterSlider={(key, values) => {
-            // Frisdrank: show water preference when 0-10%, soft drink choice when > 10%
+            // Frisdrank logic:
+            // - 0%: show nothing
+            // - 1-10%: show water preference
+            // - > 10%: show soft drink selection
             if (key === 'softDrinks') {
               if (values.softDrinks > 10) {
+                // > 10%: soft drink selection
                 return (
                   <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
                     <h5 className="text-sm text-gold">Welke frisdrank?</h5>
@@ -376,8 +380,8 @@ export default function EtenDrinkenPage() {
                     )}
                   </div>
                 );
-              } else {
-                // 0-10% frisdrank: show water preference
+              } else if (values.softDrinks > 0) {
+                // 1-10%: water preference
                 return (
                   <div className="mt-3 ml-4 pl-4 border-l-2 border-cream/20 space-y-3">
                     <h5 className="text-sm text-gold">Water voorkeur</h5>
@@ -393,6 +397,8 @@ export default function EtenDrinkenPage() {
                   </div>
                 );
               }
+              // 0%: show nothing
+              return null;
             }
 
             // Wijn: show red/white preference when > 20%
@@ -411,8 +417,8 @@ export default function EtenDrinkenPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-cream/70">100% Rood</span>
-                      <span className="text-cream/70">100% Wit</span>
+                      <span className="text-cream/70">Rood</span>
+                      <span className="text-cream/70">Wit</span>
                     </div>
                     <input
                       type="range"
