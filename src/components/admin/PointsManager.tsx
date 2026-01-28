@@ -8,11 +8,10 @@ import { User } from '@/types';
 
 interface PointsHistoryEntry {
   id: string;
-  category: 'registration' | 'prediction' | 'quiz' | 'game' | 'manual';
+  source: 'registration' | 'prediction' | 'quiz' | 'game' | 'bonus';
   points: number;
-  reason?: string;
-  created_at: string;
-  created_by?: string;
+  description?: string;
+  createdAt: string;
 }
 
 interface PointsManagerProps {
@@ -63,8 +62,8 @@ export function PointsManager({ user, pointsHistory, onPointsUpdate }: PointsMan
     }
   };
 
-  const getCategoryLabel = (category: PointsHistoryEntry['category']) => {
-    switch (category) {
+  const getSourceLabel = (source: PointsHistoryEntry['source']) => {
+    switch (source) {
       case 'registration':
         return 'Registratie';
       case 'prediction':
@@ -73,15 +72,15 @@ export function PointsManager({ user, pointsHistory, onPointsUpdate }: PointsMan
         return 'Quiz';
       case 'game':
         return 'Spel';
-      case 'manual':
-        return 'Handmatig';
+      case 'bonus':
+        return 'Bonus';
       default:
-        return category;
+        return source;
     }
   };
 
-  const getCategoryColor = (category: PointsHistoryEntry['category']) => {
-    switch (category) {
+  const getSourceColor = (source: PointsHistoryEntry['source']) => {
+    switch (source) {
       case 'registration':
         return 'text-blue-400';
       case 'prediction':
@@ -90,7 +89,7 @@ export function PointsManager({ user, pointsHistory, onPointsUpdate }: PointsMan
         return 'text-gold';
       case 'game':
         return 'text-green-400';
-      case 'manual':
+      case 'bonus':
         return 'text-cream/70';
       default:
         return 'text-cream/70';
@@ -248,18 +247,18 @@ export function PointsManager({ user, pointsHistory, onPointsUpdate }: PointsMan
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold ${getCategoryColor(entry.category)}`}>
-                          {getCategoryLabel(entry.category)}
+                        <span className={`text-xs font-semibold ${getSourceColor(entry.source)}`}>
+                          {getSourceLabel(entry.source)}
                         </span>
                         <span className={`text-sm font-bold ${entry.points > 0 ? 'text-success-green' : 'text-warm-red'}`}>
                           {entry.points > 0 ? '+' : ''}{entry.points}
                         </span>
                       </div>
-                      {entry.reason && (
-                        <p className="text-cream/70 text-xs">{entry.reason}</p>
+                      {entry.description && (
+                        <p className="text-cream/70 text-xs">{entry.description}</p>
                       )}
                       <p className="text-cream/50 text-xs mt-1">
-                        {new Date(entry.created_at).toLocaleDateString('nl-NL', {
+                        {new Date(entry.createdAt).toLocaleDateString('nl-NL', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',

@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { UserCard } from '@/components/admin';
 import { User } from '@/types';
 import Link from 'next/link';
 
@@ -29,9 +28,30 @@ function AdminUsersContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const ITEMS_PER_PAGE = 20;
+
+  // Helper functions for badges
+  const getRoleBadgeColor = (role: User['role']) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-gold/20 text-gold';
+      case 'quizmaster':
+        return 'bg-blue-500/20 text-blue-400';
+      case 'participant':
+      default:
+        return 'bg-cream/10 text-cream/70';
+    }
+  };
+
+  const formatRole = (role: User['role']) => {
+    switch (role) {
+      case 'admin': return 'Admin';
+      case 'quizmaster': return 'Quizmaster';
+      case 'participant': return 'Deelnemer';
+      default: return role;
+    }
+  };
 
   // Debounce search query
   useEffect(() => {
@@ -169,7 +189,7 @@ function AdminUsersContent() {
               </div>
               {debouncedSearch && (
                 <div className="text-cream/50">
-                  Zoekresultaten voor "{debouncedSearch}"
+                  Zoekresultaten voor &ldquo;{debouncedSearch}&rdquo;
                 </div>
               )}
             </div>
@@ -195,28 +215,57 @@ function AdminUsersContent() {
           <Card>
             <CardContent className="p-8 text-center text-cream/50">
               {debouncedSearch
-                ? `Geen gebruikers gevonden voor "${debouncedSearch}"`
+                ? <>Geen gebruikers gevonden voor &ldquo;{debouncedSearch}&rdquo;</>
                 : 'Nog geen gebruikers'}
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="space-y-3 mb-6">
-              {users.map((user, index) => (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                >
-                  <UserCard
-                    user={user}
-                    onClick={() => handleUserClick(user.id)}
-                    isSelected={selectedUserId === user.id}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            {/* Users Table */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-6 overflow-x-auto"
+            >
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gold/20">
+                    <th className="text-left py-3 px-4 text-gold font-semibold text-sm">Naam</th>
+                    <th className="text-left py-3 px-4 text-gold font-semibold text-sm hidden md:table-cell">Email</th>
+                    <th className="text-left py-3 px-4 text-gold font-semibold text-sm">Rol</th>
+                    <th className="text-right py-3 px-4 text-gold font-semibold text-sm">Punten</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, index) => (
+                    <motion.tr
+                      key={user.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      onClick={() => handleUserClick(user.id)}
+                      className="border-b border-gold/10 hover:bg-gold/5 cursor-pointer transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="text-cream font-medium">{user.name}</div>
+                        <div className="text-cream/50 text-xs md:hidden">{user.email}</div>
+                      </td>
+                      <td className="py-3 px-4 text-cream/70 text-sm hidden md:table-cell">
+                        {user.email}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                          {formatRole(user.role)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span className="text-gold font-bold">{user.total_points || 0}</span>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
 
             {/* Pagination */}
             {totalPages > 1 && (

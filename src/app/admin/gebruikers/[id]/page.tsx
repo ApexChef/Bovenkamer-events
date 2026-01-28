@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import {
   RoleSelector,
   PointsManager,
@@ -26,11 +27,10 @@ export default function AdminUserDetailPage() {
 
 interface PointsHistoryEntry {
   id: string;
-  category: 'registration' | 'prediction' | 'quiz' | 'game' | 'manual';
+  source: 'registration' | 'prediction' | 'quiz' | 'game' | 'bonus';
   points: number;
-  reason?: string;
-  created_at: string;
-  created_by?: string;
+  description?: string;
+  createdAt: string;
 }
 
 function AdminUserDetailContent() {
@@ -45,6 +45,12 @@ function AdminUserDetailContent() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showRegistration, setShowRegistration] = useState(false);
+
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const isCurrentUser = currentUser?.id === userId;
 
@@ -77,6 +83,53 @@ function AdminUserDetailContent() {
     }
   };
 
+  const startEditing = () => {
+    if (user) {
+      setEditName(user.name);
+      setEditEmail(user.email);
+      setIsEditing(true);
+    }
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditName('');
+    setEditEmail('');
+  };
+
+  const handleUpdateUser = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/update`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName.trim(),
+          email: editEmail.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser({ ...user, name: editName.trim(), email: editEmail.trim() });
+        setIsEditing(false);
+        setSuccessMessage('Gebruiker succesvol bijgewerkt');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(data.message || 'Fout bij bijwerken gebruiker');
+        setTimeout(() => setError(''), 5000);
+      }
+    } catch (err) {
+      setError('Netwerkfout bij bijwerken gebruiker');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleRoleChange = async (newRole: User['role']) => {
     if (!user) return;
 
@@ -94,7 +147,7 @@ function AdminUserDetailContent() {
         setSuccessMessage('Rol succesvol gewijzigd');
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
-        throw new Error(data.error || 'Fout bij wijzigen rol');
+        throw new Error(data.message || data.error || 'Fout bij wijzigen rol');
       }
     } catch (err) {
       throw err;
@@ -294,8 +347,43 @@ function AdminUserDetailContent() {
           </Link>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-4xl font-serif text-gold mb-2">{user.name}</h1>
-              <p className="text-cream/70 mb-3">{user.email}</p>
+              {isEditing ? (
+                <div className="space-y-3 mb-3">
+                  <Input
+                    label="Naam"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Volledige naam"
+                    disabled={isSaving}
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="email@voorbeeld.nl"
+                    disabled={isSaving}
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={handleUpdateUser} isLoading={isSaving} size="sm">
+                      Opslaan
+                    </Button>
+                    <Button variant="secondary" onClick={cancelEditing} disabled={isSaving} size="sm">
+                      Annuleren
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-4xl font-serif text-gold">{user.name}</h1>
+                    <Button variant="ghost" size="sm" onClick={startEditing} className="text-cream/50 hover:text-cream">
+                      ✏️
+                    </Button>
+                  </div>
+                  <p className="text-cream/70 mb-3">{user.email}</p>
+                </>
+              )}
               <div className="flex flex-wrap gap-2">
                 <span className={`px-3 py-1 text-sm rounded-full border ${getRoleBadgeColor(user.role)}`}>
                   {formatRole(user.role)}
@@ -311,7 +399,7 @@ function AdminUserDetailContent() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-gold font-bold text-4xl">{user.total_points}</div>
+              <div className="text-gold font-bold text-4xl">{user.total_points || 0}</div>
               <div className="text-cream/50 text-sm">totaal punten</div>
             </div>
           </div>
@@ -327,6 +415,20 @@ function AdminUserDetailContent() {
               className="mb-6 p-4 bg-success-green/20 border border-success-green rounded-lg"
             >
               <p className="text-success-green text-sm">{successMessage}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error Message */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-6 p-4 bg-warm-red/20 border border-warm-red rounded-lg"
+            >
+              <p className="text-warm-red text-sm">{error}</p>
             </motion.div>
           )}
         </AnimatePresence>
