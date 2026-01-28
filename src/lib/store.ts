@@ -342,10 +342,10 @@ export const EVENT_START = new Date('2026-01-31T16:00:00');
 
 // Predictions store
 interface PredictionsState {
-  predictions: Predictions;
+  predictions: Record<string, string | number | boolean | undefined>;
   isDraft: boolean;        // true = saved as draft, can still edit
   isSubmitted: boolean;    // true = definitively submitted
-  setPrediction: <K extends keyof Predictions>(key: K, value: Predictions[K]) => void;
+  setPrediction: (key: string, value: string | number | boolean) => void;
   saveDraft: () => void;
   submitFinal: () => void;
   canEdit: () => boolean;  // false after event starts
