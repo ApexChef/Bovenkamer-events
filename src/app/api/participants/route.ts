@@ -5,57 +5,44 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    // Get users with their registration data (including partner names)
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('role', 'participant')
-      .order('name');
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      return NextResponse.json([]);
-    }
-
-    // Get registrations with partner info
+    // Get registrations with user info - only users who registered (are coming)
     const { data: registrations, error: regError } = await supabase
       .from('registrations')
-      .select('user_id, has_partner, partner_name');
+      .select('user_id, has_partner, partner_name, users!inner(id, name)')
+      .order('users(name)');
 
     if (regError) {
       console.error('Error fetching registrations:', regError);
+      return NextResponse.json([]);
     }
 
     // Build participants list
     const participants: { value: string; label: string }[] = [];
 
-    // Add registered users
-    for (const user of users || []) {
-      // Get first name only for cleaner display
+    for (const reg of registrations || []) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = reg.users as any;
+      if (!user?.name) continue;
       const firstName = user.name.split(' ')[0];
+
+      // Add the registered user
       participants.push({
         value: user.id,
         label: firstName,
       });
 
-      // Check if user has a partner
-      const registration = registrations?.find((r) => r.user_id === user.id);
-      if (registration?.has_partner && registration?.partner_name) {
-        const partnerFirstName = registration.partner_name.split(' ')[0];
+      // Add partner if exists: "Tamar (Alwin)"
+      if (reg.has_partner && reg.partner_name) {
+        const partnerFirstName = reg.partner_name.split(' ')[0];
         participants.push({
           value: `partner-${user.id}`,
-          label: `${partnerFirstName} (partner)`,
+          label: `${partnerFirstName} (${firstName})`,
         });
       }
     }
 
     // Sort alphabetically by label
     participants.sort((a, b) => a.label.localeCompare(b.label, 'nl'));
-
-    // If no participants yet, return empty (no fallback dummy data)
-    if (participants.length === 0) {
-      return NextResponse.json([]);
-    }
 
     return NextResponse.json(participants);
   } catch (error) {
