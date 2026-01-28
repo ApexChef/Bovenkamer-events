@@ -113,6 +113,11 @@ export async function GET(request: NextRequest) {
       meatDistribution: registration.meat_distribution || null,
       drinkDistribution: registration.drink_distribution || null,
       foodPreferences: registration.food_preferences || null,
+      startsWithBubbles: registration.starts_with_bubbles ?? null,
+      bubbleType: registration.bubble_type || null,
+      softDrinkPreference: registration.soft_drink_preference || null,
+      softDrinkOther: registration.soft_drink_other || '',
+      waterPreference: registration.water_preference || null,
       skills: registration.skills || {},
       additionalSkills: registration.additional_skills,
       musicDecade: registration.music_decade,
@@ -239,6 +244,11 @@ export async function POST(request: NextRequest) {
           meat_distribution: data.meatDistribution || null,
           drink_distribution: data.drinkDistribution || null,
           food_preferences: data.foodPreferences || null,
+          starts_with_bubbles: data.startsWithBubbles ?? null,
+          bubble_type: data.bubbleType || null,
+          soft_drink_preference: data.softDrinkPreference || null,
+          soft_drink_other: data.softDrinkOther || null,
+          water_preference: data.waterPreference || null,
         };
         break;
 
