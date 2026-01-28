@@ -1,13 +1,16 @@
-# US-009: Profiel Data Sync bij Login
+---
+id: US-009
+title: Profiel Data Sync bij Login
+status: testing
+priority: Urgent
+complexity: Medium
+type: Bug Fix
+pr: null
+created: 2026-01-18
+updated: 2026-01-20
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | URGENT (Bug Fix) |
-| **Status** | Code Complete - Ready for Test |
-| **Complexiteit** | Medium |
-| **PACT Fase** | Code |
-| **Type** | Bug Fix |
+# US-009: Profiel Data Sync bij Login
 
 ## Bug Report
 

@@ -1,4 +1,16 @@
-# Gebruikersbeheer
+---
+id: US-017
+title: Gebruikersbeheer
+status: in-progress
+priority: High
+complexity: Medium
+type: Feature
+pr: null
+created: 2026-01-28
+updated: 2026-01-28
+---
+
+# US-017: Gebruikersbeheer
 
 ## Beschrijving
 

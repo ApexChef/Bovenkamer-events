@@ -1,12 +1,16 @@
-# US-001: Uitgebreide Skill Selectie per Categorie
+---
+id: US-001
+title: Uitgebreide Skill Selectie per Categorie
+status: done
+priority: 2
+complexity: Low-Medium
+type: Feature
+pr: 14
+created: 2026-01-18
+updated: 2026-01-18
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #2 |
-| **Status** | In Planning |
-| **Complexiteit** | Laag-Medium |
-| **PACT Fase** | Prepare + Architecture |
+# US-001: Uitgebreide Skill Selectie per Categorie
 
 ## User Story
 > Als deelnemer wil ik mijn skills kunnen aangeven per categorie (één skill per categorie), zodat de organisatie een compleet beeld heeft van wat ik kan bijdragen aan het evenement.

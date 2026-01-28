@@ -1,12 +1,16 @@
-# US-007: Progressieve Registratie met Punten
+---
+id: US-007
+title: Progressieve Registratie met Punten
+status: done
+priority: 1
+complexity: Medium-High
+type: Feature
+pr: [10, 15]
+created: 2026-01-18
+updated: 2026-01-19
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #1 (Hoogste) |
-| **Status** | In Planning |
-| **Complexiteit** | Medium-Hoog |
-| **PACT Fase** | Prepare + Architecture |
+# US-007: Progressieve Registratie met Punten
 
 ## User Story
 > Als deelnemer wil ik snel kunnen registreren met alleen mijn naam en e-mail, en later mijn profiel verder aanvullen voor extra punten, zodat de drempel laag is maar ik toch gemotiveerd word om alles in te vullen.

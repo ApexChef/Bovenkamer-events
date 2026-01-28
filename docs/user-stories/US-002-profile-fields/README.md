@@ -1,12 +1,16 @@
-# US-002: Uitgebreide Profielvragen voor Rapportage
+---
+id: US-002
+title: Uitgebreide Profielvragen voor Rapportage
+status: done
+priority: 3
+complexity: Medium
+type: Feature
+pr: [12, 15]
+created: 2026-01-18
+updated: 2026-01-19
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | #3 |
-| **Status** | In Planning |
-| **Complexiteit** | Medium |
-| **PACT Fase** | Prepare + Architecture |
+# US-002: Uitgebreide Profielvragen voor Rapportage
 
 ## User Story
 > Als deelnemer wil ik extra informatie over mezelf kunnen invullen, zodat het dashboard grappige analyses kan maken over onze groep.

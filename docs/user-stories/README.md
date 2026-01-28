@@ -8,16 +8,21 @@ Dit document bevat een overzicht van alle user stories, hun onderlinge relaties,
 |----|------|------------|--------|-----|-------------|
 | [US-001](./US-001-skill-categories/) | Skill Categorieën | #2 | ✅ DONE | [#14](https://github.com/ApexChef/Bovenkamer-events/pull/14) | 8 skill categorieën geïmplementeerd |
 | [US-002](./US-002-profile-fields/) | Uitgebreide Profielvelden | #3 | ✅ DONE | [#12](https://github.com/ApexChef/Bovenkamer-events/pull/12), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | JKV historie + borrel stats UI compleet |
-| [US-005](./US-005-burger-stack/) | Burger Stack Mini-Game | #4 | ✅ FASE 1+2 DONE | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4), [#16](https://github.com/ApexChef/Bovenkamer-events/pull/16) | Special items, graphics, feedback, CTA |
-| [US-007](./US-007-progressive-registration/) | Progressieve Registratie | #1 | ✅ DONE | [#10](https://github.com/ApexChef/Bovenkamer-events/pull/10), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | Alle 6 profiel secties met punten |
-| [US-003](./US-003-sarcastic-dashboard/) | Sarcastisch Dashboard | #5 | 🔲 TODO | - | Nog niet gestart |
-| [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 TODO | - | Nog niet gestart |
-| [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | #7 | 📝 DRAFT | - | User story draft aangemaakt |
+| [US-003](./US-003-sarcastic-dashboard/) | Sarcastisch Dashboard | #5 | 🔲 PLANNING | - | Nog niet gestart |
 | ~~US-004~~ | Taaktoewijzing | - | ❌ Uitgesteld | - | - |
-| [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | URGENT | 🔧 IN PROGRESS | - | Bug fix: profiel laadt niet na login |
-| [US-010](./US-010-mobile-pin-keyboard/) | Mobiel PIN Toetsenbord | Medium | ✅ DONE | [#20](https://github.com/ApexChef/Bovenkamer-events/pull/20) | Numeriek toetsenbord voor laatste 2 PIN cijfers |
-| [US-011](./US-011-desktop-login-hang/) | Desktop Login/Dashboard Issues | URGENT | ✅ DONE | [#21](https://github.com/ApexChef/Bovenkamer-events/pull/21) | Dashboard loading, profiel sync bug fix |
-| [US-012](./US-012-desktop-nav-feature-toggles/) | Desktop Nav & Feature Toggles | High | 🔧 IN PROGRESS | - | Desktop header nav, admin feature toggles |
+| [US-005](./US-005-burger-stack/) | Burger Stack Mini-Game | #4 | ✅ DONE | [#4](https://github.com/ApexChef/Bovenkamer-events/pull/4), [#16](https://github.com/ApexChef/Bovenkamer-events/pull/16) | Fase 1+2 compleet |
+| [US-006](./US-006-awards/) | Einde-Avond Awards | #6 | 🔲 PLANNING | - | Nog niet gestart |
+| [US-007](./US-007-progressive-registration/) | Progressieve Registratie | #1 | ✅ DONE | [#10](https://github.com/ApexChef/Bovenkamer-events/pull/10), [#15](https://github.com/ApexChef/Bovenkamer-events/pull/15) | Alle 6 profiel secties met punten |
+| [US-008](./US-008-predictions-analytics/) | Voorspellingen Analytics | Medium | 📝 DRAFT | - | User story draft aangemaakt |
+| [US-009](./US-009-profile-data-sync/) | Profiel Data Sync | Urgent | 🧪 TESTING | - | Bug fix: code complete, testen |
+| [US-010](./US-010-mobile-pin-keyboard/) | Mobiel PIN Toetsenbord | Medium | ✅ DONE | [#20](https://github.com/ApexChef/Bovenkamer-events/pull/20) | Numeriek toetsenbord voor PIN |
+| [US-011](./US-011-desktop-login-hang/) | Desktop Login/Dashboard Issues | Urgent | ✅ DONE | [#21](https://github.com/ApexChef/Bovenkamer-events/pull/21) | Dashboard loading bug fix |
+| [US-012](./US-012-desktop-nav-feature-toggles/) | Desktop Nav & Feature Toggles | High | 🧪 TESTING | - | Code complete, handmatig testen |
+| [US-013](./US-013-feedback/) | In-App Feedback Widget | Low | 📝 DRAFT | - | Feedback knop op elke pagina |
+| [US-014](./US-014-Admin-F&B/) | Admin F&B Rapport | Medium | 📝 DRAFT | - | Boodschappenlijst genereren |
+| [US-015](./US-015-F&B/) | Food & Beverage Preferences | High | 🔧 IN PROGRESS | [#50](https://github.com/ApexChef/Bovenkamer-events/pull/50) | Basis compleet, conditionele opties TODO |
+| [US-016](./US-016-profile-report/) | Profile Analytics Report | Low | 📝 DRAFT | - | Profiel data dashboard |
+| [US-017](./US-017-gebruikersbeheer/) | Gebruikersbeheer | High | 🔧 IN PROGRESS | - | Admin user management |
 
 ## Dependency Graph
 
@@ -209,34 +214,57 @@ docs/user-stories/
 │   └── PACT.md                       # Prepare documentatie
 ├── US-010-mobile-pin-keyboard/
 │   └── README.md                     # UX verbetering mobiel toetsenbord
-└── US-011-desktop-login-hang/
-    └── README.md                     # Bug fix dashboard loading/sync
+├── US-011-desktop-login-hang/
+│   └── README.md                     # Bug fix dashboard loading/sync
+├── US-012-desktop-nav-feature-toggles/
+│   └── README.md                     # Desktop navigatie + feature toggles
+├── US-013-feedback/
+│   └── README.md                     # In-app feedback widget (draft)
+├── US-014-Admin-F&B/
+│   └── README.md                     # Admin F&B rapport (draft)
+├── US-015-F&B/
+│   ├── README.md                     # User F&B voorkeuren
+│   ├── PREPARE.md                    # Research documentatie
+│   └── ARCHITECT.md                  # Architectuur design
+├── US-016-profile-report/
+│   └── README.md                     # Profile analytics dashboard (draft)
+└── US-017-gebruikersbeheer/
+    ├── README.md                     # Admin user management
+    ├── PREPARE.md                    # Research documentatie
+    └── ARCHITECT.md                  # Architectuur design
 ```
 
 ---
 
-*Document laatst bijgewerkt: 2026-01-18*
+*Document laatst bijgewerkt: 2026-01-28*
 
 ## Voortgang Samenvatting
 
 ### Voltooid ✅
 - **US-001**: 8 skill categorieën in profiel pagina
 - **US-002**: JKV historie + borrel stats secties compleet
-- **US-005 Fase 1+2**: Burger Stack game met special items, verbeterde graphics en feedback
-  - Special items: golden steak (3x), slow-mo, extra life, fire
-  - Graphics: gradients, shadows, rounded corners, grid background
-  - Feedback: floating score text, drop guide, target zone highlight
-  - Dashboard CTA met burger thema
-  - Leaderboard toont alleen beste score per user
+- **US-005**: Burger Stack game met special items, graphics en feedback
 - **US-007**: Alle 6 profiel secties met punten systeem (260 totaal)
+- **US-010**: Numeriek mobiel toetsenbord voor PIN invoer
+- **US-011**: Desktop login/dashboard loading bug fix
 
-### Nog Te Doen 🔲
-- **US-005 Fase 3**: Grill Guru LLM commentaar, thema's, statistieken pagina
+### In Progress 🔧
+- **US-015**: Food & Beverage preferences (basis compleet, conditionele opties TODO)
+- **US-017**: Gebruikersbeheer (Prepare + Architect fase compleet)
+
+### Testing 🧪
+- **US-009**: Profiel Data Sync (code complete, ready for test)
+- **US-012**: Desktop Nav & Feature Toggles (code complete)
+
+### Planning/Draft 📝
 - **US-003**: Sarcastisch Dashboard (LLM analyses)
 - **US-006**: Einde-Avond Awards
 - **US-008**: Voorspellingen Analytics Dashboard
+- **US-013**: In-App Feedback Widget
+- **US-014**: Admin F&B Rapport
+- **US-016**: Profile Analytics Report
 
 ### Volgende Stappen
-1. US-005 Fase 3: Grill Guru statische teksten toevoegen
-2. US-003 starten: LLM integratie voor sarcastische analyses
-3. US-006 voorbereiden: Einde-avond awards systeem
+1. US-015 afronden: conditionele drink opties
+2. US-017 implementeren: gebruikersbeheer UI + API
+3. US-009/US-012 testen en mergen
