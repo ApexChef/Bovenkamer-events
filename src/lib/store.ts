@@ -306,7 +306,7 @@ export const useRegistrationStore = create<RegistrationState>()(
 );
 
 // Event start time - predictions are locked after this
-export const EVENT_START = new Date('2026-01-31T14:00:00');
+export const EVENT_START = new Date('2026-01-31T16:00:00');
 
 // Predictions store
 interface PredictionsState {

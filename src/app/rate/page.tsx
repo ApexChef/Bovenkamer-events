@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRegistrationStore } from '@/lib/store';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, TextArea } from '@/components/ui';
-import { RadioGroup } from '@/components/ui/RadioGroup';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, TextArea, Input } from '@/components/ui';
 import { motion } from 'framer-motion';
 
 interface Rating {
+  email: string;
   location: number;
   hospitality: number;
   fireQuality: number;
@@ -19,14 +17,6 @@ interface Rating {
   isWorthy: boolean | null;
   worthyExplanation: string;
 }
-
-const STAR_OPTIONS = [
-  { value: '1', label: '1 ster' },
-  { value: '2', label: '2 sterren' },
-  { value: '3', label: '3 sterren' },
-  { value: '4', label: '4 sterren' },
-  { value: '5', label: '5 sterren' },
-];
 
 function StarRating({
   value,
@@ -66,11 +56,10 @@ function StarRating({
 }
 
 export default function RatePage() {
-  const router = useRouter();
-  const { formData, isComplete } = useRegistrationStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [rating, setRating] = useState<Rating>({
+    email: '',
     location: 0,
     hospitality: 0,
     fireQuality: 0,
@@ -82,28 +71,18 @@ export default function RatePage() {
     worthyExplanation: '',
   });
 
-  // Redirect if not registered
-  useEffect(() => {
-    if (!isComplete) {
-      router.push('/register');
-    }
-  }, [isComplete, router]);
-
-  if (!isComplete) {
-    return null;
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      const { email, ...ratingData } = rating;
       const response = await fetch('/api/rating', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
-          rating,
+          email,
+          rating: ratingData,
         }),
       });
 
@@ -121,6 +100,7 @@ export default function RatePage() {
   };
 
   const isValid =
+    rating.email.trim() !== '' &&
     rating.location > 0 &&
     rating.hospitality > 0 &&
     rating.fireQuality > 0 &&
@@ -143,8 +123,8 @@ export default function RatePage() {
               <p className="text-cream/60 mb-6">
                 Uw stem is geregistreerd. De resultaten worden na de BBQ bekendgemaakt.
               </p>
-              <Link href="/dashboard">
-                <Button>Terug naar Dashboard</Button>
+              <Link href="/">
+                <Button>Terug naar Home</Button>
               </Link>
             </CardContent>
           </Card>
@@ -166,6 +146,29 @@ export default function RatePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email Input */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Uw Email</CardTitle>
+                <CardDescription>Voor identificatie van uw beoordeling</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  type="email"
+                  label="Email"
+                  placeholder="uw@email.nl"
+                  value={rating.email}
+                  onChange={(e) => setRating({ ...rating, email: e.target.value })}
+                  required
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Rating Criteria */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -304,7 +307,7 @@ export default function RatePage() {
 
           {/* Submit */}
           <CardFooter className="flex justify-between px-0">
-            <Link href="/dashboard">
+            <Link href="/">
               <Button type="button" variant="ghost">
                 Terug
               </Button>

@@ -65,8 +65,8 @@ const DECLINE_REASONS = [
   { id: 'serious', label: 'Ik heb echt een goede reden...', emoji: '😢' },
 ];
 
-// Event date: January 31, 2026 at 14:00
-const EVENT_DATE = new Date('2026-01-31T14:00:00');
+// Event date: January 31, 2026 at 16:00
+const EVENT_DATE = new Date('2026-01-31T16:00:00');
 
 interface TimeLeft {
   days: number;
@@ -228,10 +228,10 @@ export function HomeTab({
                 </div>
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  <span>14:00</span>
+                  <span>16:00</span>
                 </div>
                 <a
-                  href="https://maps.google.com/?q=Merseloseweg+158+Venray"
+                  href="https://maps.google.com/?q=Merseloseweg+155+Venray"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 hover:text-gold transition-colors"
@@ -278,16 +278,16 @@ export function HomeTab({
               <div className="flex flex-col gap-2 text-sm">
                 <div className="flex items-center gap-1.5 text-cream/70">
                   <Clock className="w-4 h-4 flex-shrink-0" />
-                  <span>Vanaf 14:00</span>
+                  <span>Vanaf 16:00</span>
                 </div>
                 <a
-                  href="https://maps.google.com/?q=Merseloseweg+158+Venray"
+                  href="https://maps.google.com/?q=Merseloseweg+155+Venray"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-1.5 text-cream/70 hover:text-gold transition-colors"
                 >
                   <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>Merseloseweg 158, Venray</span>
+                  <span>Merseloseweg 155, Venray</span>
                 </a>
               </div>
 

@@ -4,7 +4,7 @@
 | Aspect | Waarde |
 |--------|--------|
 | **Prioriteit** | URGENT (Bug Fix) |
-| **Status** | Code Complete |
+| **Status** | Verified |
 | **Complexiteit** | Medium |
 | **Type** | Bug Fix |
 
@@ -94,16 +94,64 @@ if (!isMounted || !_hasHydrated) { ... }
 if (!isAuthenticated || !isComplete) { ... }
 ```
 
-### Fix 3: Delay redirect for state persistence
+### Fix 3: Poll localStorage before redirect (IMPROVED)
 ```typescript
 // src/app/login/page.tsx
 setComplete(true);
 
-// Wait for persist middleware to save state
-await new Promise(resolve => setTimeout(resolve, 100));
+// Wait for Zustand persist middleware to save state to localStorage
+// We poll localStorage to ensure the data is actually persisted before redirecting
+const maxWaitTime = 2000; // Max 2 seconds
+const pollInterval = 50;  // Check every 50ms
+const startTime = Date.now();
+
+while (Date.now() - startTime < maxWaitTime) {
+  try {
+    const registrationData = localStorage.getItem('bovenkamer-registration');
+    const authData = localStorage.getItem('bovenkamer-auth');
+
+    if (registrationData && authData) {
+      const regParsed = JSON.parse(registrationData);
+      const authParsed = JSON.parse(authData);
+
+      // Check if both stores are properly persisted with correct user data
+      const registrationReady = regParsed.state?.isComplete === true &&
+                                 regParsed.state?.formData?.email === data.user.email;
+      const authReady = authParsed.state?.isAuthenticated === true &&
+                        authParsed.state?.currentUser?.email === data.user.email;
+
+      if (registrationReady && authReady) {
+        break; // Both stores are properly persisted
+      }
+    }
+  } catch {
+    // JSON parse error, continue waiting
+  }
+  await new Promise(resolve => setTimeout(resolve, pollInterval));
+}
 
 router.push('/dashboard');
 ```
+
+**Waarom polling in plaats van fixed delay:**
+- De 100ms delay was niet robuust - Zustand persist kan langer duren afhankelijk van browser/device
+- Polling verifieert dat de state ECHT is gepersisteerd voordat we redirecten
+- Checkt BEIDE stores (registration + auth) met correcte user email
+- Heeft een max timeout van 2 seconden als fallback
+
+### Fix 4: Explicit hydration flag after login (FINAL FIX)
+```typescript
+// src/app/login/page.tsx
+const { setHasHydrated: setRegistrationHydrated, ... } = useRegistrationStore();
+
+// After all state updates:
+setComplete(true);
+setRegistrationHydrated(true);  // <-- Dit was de ontbrekende stap!
+```
+
+**Root cause:** De `_hasHydrated` flag wordt alleen gezet via `onRehydrateStorage` callback bij de initiële store hydration. Na `resetRegistration()` en client-side navigatie naar het dashboard, wordt deze callback NIET opnieuw aangeroepen. Het dashboard blijft dan wachten op `registrationHydrated: true` die nooit komt.
+
+**Oplossing:** Expliciet `setHasHydrated(true)` aanroepen na alle login state updates.
 
 ## Bestanden Gewijzigd
 
@@ -111,7 +159,8 @@ router.push('/dashboard');
 |---------|-----------|
 | `/src/lib/store.ts` | login() niet meer async, localStorage eerst |
 | `/src/app/dashboard/page.tsx` | isMounted state, auth check toegevoegd |
-| `/src/app/login/page.tsx` | await verwijderd, delay voor redirect |
+| `/src/app/login/page.tsx` | Polling localStorage voor redirect i.p.v. fixed delay |
+| `/tsconfig.json` | Test bestanden uitgesloten van build |
 
 ## Acceptatiecriteria
 
