@@ -596,3 +596,188 @@ export const BORRELS_2026 = [
   { date: '2026-11-26', label: '26 november 2026' },
   // december vervalt
 ] as const;
+
+// =============================================================================
+// F&B REPORT TYPES (US-014)
+// =============================================================================
+
+/**
+ * Individual person's food & drink preferences (normalized from database)
+ * Used in F&B report for both participants ('self') and partners
+ */
+export interface PersonPreference {
+  name: string;
+  personType: 'self' | 'partner';
+  userId: string; // For grouping with partner
+
+  // Food preferences
+  dietaryRequirements: string | null;
+  meatDistribution: MeatDistribution;
+  veggiesPreference: number; // 0-5
+  saucesPreference: number; // 0-5
+
+  // Drink preferences
+  startsWithBubbles: boolean | null;
+  bubbleType: 'champagne' | 'prosecco' | null;
+  drinkDistribution: DrinkDistribution;
+  softDrinkPreference: string | null;
+  softDrinkOther: string;
+  waterPreference: 'sparkling' | 'flat' | null;
+  winePreference: number | null; // 0-100 (0=red, 100=white)
+  beerType: 'pils' | 'speciaal' | null;
+}
+
+/**
+ * Complete F&B report data structure returned by API
+ */
+export interface FBReportData {
+  timestamp: string; // ISO 8601 format
+  completionStatus: {
+    completed: number; // Users who filled preferences
+    totalParticipants: number; // Total active participants
+    totalPersons: number; // Participants + partners
+  };
+  persons: PersonPreference[]; // Combined self + partner preferences
+}
+
+/**
+ * Meat category type
+ */
+export type MeatCategory = 'pork' | 'beef' | 'chicken' | 'game' | 'fish' | 'vegetarian';
+
+/**
+ * Statistics for a single meat category
+ */
+export interface MeatCategoryStat {
+  weightedCount: number; // Persons weighted by percentage (e.g., 0.3 + 0.5 = 0.8)
+  percentage: number; // Overall percentage across all persons
+  kg: number; // Estimated kilograms based on portion size
+}
+
+/**
+ * Aggregated meat/fish statistics for entire group
+ */
+export interface MeatStats {
+  totalPersons: number;
+  totalKg: number; // Total kilograms of all meat/fish
+  categories: Record<MeatCategory, MeatCategoryStat>;
+}
+
+/**
+ * Wine statistics
+ */
+export interface WineStats {
+  totalDrinkers: number; // Weighted count of wine drinkers
+  bottles: number; // Total wine bottles needed
+  red: {
+    bottles: number;
+    percentage: number;
+  };
+  white: {
+    bottles: number;
+    percentage: number;
+  };
+}
+
+/**
+ * Beer statistics
+ */
+export interface BeerStats {
+  totalDrinkers: number; // Weighted count of beer drinkers
+  bottles: number; // Total beer bottles needed
+  crates: number; // Number of 24-bottle crates
+  pils: {
+    count: number; // Number of persons preferring pils
+    percentage: number;
+  };
+  speciaal: {
+    count: number; // Number of persons preferring speciaal
+    percentage: number;
+  };
+}
+
+/**
+ * Soft drink statistics
+ */
+export interface SoftDrinkStats {
+  totalDrinkers: number; // Weighted count of soft drink drinkers
+  breakdown: Record<string, number>; // {cola: 5, sinas: 3, ...}
+}
+
+/**
+ * Water preference statistics
+ */
+export interface WaterStats {
+  sparkling: number; // Number preferring sparkling
+  flat: number; // Number preferring flat
+}
+
+/**
+ * Bubbles/Aperitif statistics
+ */
+export interface BubblesStats {
+  total: number; // Total persons starting with bubbles
+  champagne: {
+    count: number; // Number preferring champagne
+    bottles: number; // Champagne bottles needed
+  };
+  prosecco: {
+    count: number; // Number preferring prosecco
+    bottles: number; // Prosecco bottles needed
+  };
+}
+
+/**
+ * Combined drink statistics
+ */
+export interface DrinkStats {
+  wine: WineStats;
+  beer: BeerStats;
+  softDrinks: SoftDrinkStats;
+  water: WaterStats;
+  bubbles: BubblesStats;
+}
+
+/**
+ * Person with dietary requirements
+ */
+export interface DietaryPerson {
+  name: string;
+  isPartner: boolean;
+}
+
+/**
+ * Grouped dietary requirements by category
+ */
+export interface DietaryGroups {
+  allergies: Array<DietaryPerson & { details: string }>;
+  vegetarian: DietaryPerson[];
+  vegan: DietaryPerson[];
+  other: Array<DietaryPerson & { details: string }>;
+}
+
+/**
+ * Excel/CSV export row format (flattened data)
+ */
+export interface FBExportRow {
+  Naam: string;
+  Type: 'Deelnemer' | 'Partner';
+  Dieet: string;
+  'Varkensvlees %': number;
+  'Rundvlees %': number;
+  'Kip %': number;
+  'Wild %': number;
+  'Vis %': number;
+  'Vegetarisch %': number;
+  'Groenten (1-5)': number;
+  'Sauzen (1-5)': number;
+  'Start met bubbels': string;
+  'Bubbel type': string;
+  'Frisdrank %': number;
+  'Wijn %': number;
+  'Bier %': number;
+  'Wijn voorkeur': string;
+  'Bier type': string;
+  'Frisdrank keuze': string;
+  'Water voorkeur': string;
+}
