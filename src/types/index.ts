@@ -451,9 +451,9 @@ export const GENDER_OPTIONS = [
 // Members must be 40+ to join Bovenkamer, so earliest realistic join year is ~1980
 export const JKV_JOIN_YEARS = Array.from({ length: 15 }, (_, i) => 2005 + i) as readonly number[];
 
-// JKV Exit years (2000-2023)
+// JKV Exit years (2020-2025)
 // Bovenkamer exists since 2023, so all members must have exited JKV by then
-// Minimum exit year is 2000 (realistic), maximum is 2023
+// Minimum exit year is 2020 (realistic for this age group), maximum is 2025
 export const JKV_EXIT_YEARS = Array.from({ length: 6 }, (_, i) => 2020 + i) as readonly number[];
 
 // Borrel dates 2025 (past - "geweest" tracking)
