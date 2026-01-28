@@ -110,6 +110,8 @@ export async function GET(request: NextRequest) {
       partnerName: registration.partner_name,
       dietaryRequirements: registration.dietary_requirements,
       partnerDietaryRequirements: registration.partner_dietary_requirements || '',
+      meatDistribution: registration.meat_distribution || null,
+      drinkDistribution: registration.drink_distribution || null,
       foodPreferences: registration.food_preferences || null,
       skills: registration.skills || {},
       additionalSkills: registration.additional_skills,
@@ -234,6 +236,8 @@ export async function POST(request: NextRequest) {
           ...updateData,
           dietary_requirements: data.dietaryRequirements || null,
           partner_dietary_requirements: data.partnerDietaryRequirements || null,
+          meat_distribution: data.meatDistribution || null,
+          drink_distribution: data.drinkDistribution || null,
           food_preferences: data.foodPreferences || null,
         };
         break;

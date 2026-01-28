@@ -220,34 +220,45 @@ export interface Rating {
   created_at: string;
 }
 
-// Food & Drink preferences
+// Meat distribution (percentages that sum to 100%)
+export interface MeatDistribution {
+  pork: number;       // percentage: varkensvlees
+  beef: number;       // percentage: rundvlees
+  chicken: number;    // percentage: kip
+  game: number;       // percentage: wild
+  fish: number;       // percentage: vis & schaaldieren
+}
+
+export const DEFAULT_MEAT_DISTRIBUTION: MeatDistribution = {
+  pork: 25,
+  beef: 25,
+  chicken: 25,
+  game: 15,
+  fish: 10,
+};
+
+// Drink distribution (percentages that sum to 100%)
+export interface DrinkDistribution {
+  softDrinks: number; // percentage
+  wine: number;       // percentage
+  beer: number;       // percentage
+}
+
+export const DEFAULT_DRINK_DISTRIBUTION: DrinkDistribution = {
+  softDrinks: 20,
+  wine: 40,
+  beer: 40,
+};
+
+// Food & Drink preferences (non-percentage items)
 export interface FoodPreferences {
-  // Vlees (per soort)
-  pork: number;       // 0-5: varkensvlees
-  beef: number;       // 0-5: rundvlees
-  chicken: number;    // 0-5: kip
-  game: number;       // 0-5: wild
-  // Overig eten
-  fish: number;       // 0-5: vis & schaaldieren
   veggies: number;    // 0-5: groentes & salades
   sauces: number;     // 0-5: mayo/ketchup → chimichurri
-  // Drinken
-  softDrinks: number; // 0-5: frisdrank
-  wine: number;       // 0-5: wijn
-  beer: number;       // 0-5: bier
 }
 
 export const DEFAULT_FOOD_PREFERENCES: FoodPreferences = {
-  pork: 3,
-  beef: 3,
-  chicken: 3,
-  game: 2,
-  fish: 2,
   veggies: 3,
   sauces: 3,
-  softDrinks: 2,
-  wine: 3,
-  beer: 3,
 };
 
 // Form state types
@@ -274,7 +285,9 @@ export interface RegistrationFormData {
   // Food & Drinks section
   dietaryRequirements: string;
   partnerDietaryRequirements: string;
-  foodPreferences: FoodPreferences;
+  meatDistribution: MeatDistribution;
+  drinkDistribution: DrinkDistribution;
+  foodPreferences: FoodPreferences; // veggies & sauces only
 
   // Skills section (8 categories)
   skills: SkillSelections;
