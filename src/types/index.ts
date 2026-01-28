@@ -248,9 +248,9 @@ export interface DrinkDistribution {
 }
 
 export const DEFAULT_DRINK_DISTRIBUTION: DrinkDistribution = {
-  softDrinks: 20,
-  wine: 40,
-  beer: 40,
+  softDrinks: 0,
+  wine: 0,
+  beer: 0,
 };
 
 // Food & Drink preferences (non-percentage items)
@@ -283,6 +283,8 @@ export interface FoodDrinkPreference {
   softDrinkPreference: string | null;
   softDrinkOther: string;
   waterPreference: 'sparkling' | 'flat' | null;
+  winePreference: number | null;
+  beerType: 'pils' | 'speciaal' | null;
   // Timestamps
   createdAt?: string;
   updatedAt?: string;
@@ -299,6 +301,8 @@ export const DEFAULT_FOOD_DRINK_PREFERENCE: Omit<FoodDrinkPreference, 'id' | 'us
   softDrinkPreference: null,
   softDrinkOther: '',
   waterPreference: null,
+  winePreference: null,
+  beerType: null,
 };
 
 // Form state types
