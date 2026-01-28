@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, UtensilsCrossed, Wine, Check, User, Users } from 'lucide-react';
+import { ArrowLeft, UtensilsCrossed, Wine, Check, User, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
@@ -20,7 +20,7 @@ import {
   DEFAULT_FOOD_DRINK_PREFERENCE,
 } from '@/types';
 
-type TabType = 'eten' | 'drinken';
+type SectionId = 'self-eten' | 'self-drinken' | 'partner-eten' | 'partner-drinken';
 
 // Meat distribution items
 const meatItems = [
@@ -58,8 +58,7 @@ export default function EtenDrinkenPage() {
   const router = useRouter();
   const { currentUser, isAuthenticated, _hasHydrated } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState<TabType>('eten');
-  const [selectedPerson, setSelectedPerson] = useState<'self' | 'partner'>('self');
+  const [expandedSection, setExpandedSection] = useState<SectionId | null>('self-eten');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasPartner, setHasPartner] = useState(false);
@@ -214,16 +213,9 @@ export default function EtenDrinkenPage() {
     prefs: PersonPreferences,
     setPrefs: React.Dispatch<React.SetStateAction<PersonPreferences>>,
     personType: PersonType,
-    name: string
+    _name: string
   ) => (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-gold">
-        {personType === 'self' ? <User size={20} /> : <Users size={20} />}
-        <h3 className="font-semibold">{name}</h3>
-        {(personType === 'self' ? selfSaved : partnerSaved) && (
-          <Check size={16} className="text-success-green" />
-        )}
-      </div>
 
       {/* Dieetwensen */}
       <Input
@@ -295,16 +287,9 @@ export default function EtenDrinkenPage() {
     prefs: PersonPreferences,
     setPrefs: React.Dispatch<React.SetStateAction<PersonPreferences>>,
     personType: PersonType,
-    name: string
+    _name: string
   ) => (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-gold">
-        {personType === 'self' ? <User size={20} /> : <Users size={20} />}
-        <h3 className="font-semibold">{name}</h3>
-        {(personType === 'self' ? selfSaved : partnerSaved) && (
-          <Check size={16} className="text-success-green" />
-        )}
-      </div>
 
       {/* Bubbels */}
       <div className="space-y-3">
@@ -536,87 +521,216 @@ export default function EtenDrinkenPage() {
           {hasPartner && ' Vergeet niet ook de voorkeuren van je partner in te vullen!'}
         </p>
 
-        {/* Tabs */}
-        <div className="flex gap-2 p-1 bg-deep-green/50 rounded-lg">
-          <button
-            onClick={() => setActiveTab('eten')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-colors ${
-              activeTab === 'eten'
-                ? 'bg-gold text-deep-green font-medium'
-                : 'text-cream/70 hover:text-cream'
-            }`}
-          >
-            <UtensilsCrossed size={20} />
-            <span>Eten</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('drinken')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-colors ${
-              activeTab === 'drinken'
-                ? 'bg-gold text-deep-green font-medium'
-                : 'text-cream/70 hover:text-cream'
-            }`}
-          >
-            <Wine size={20} />
-            <span>Drinken</span>
-          </button>
-        </div>
-
-        {/* Sub-tabs for person selection */}
-        {hasPartner && (
-          <div className="flex gap-2 p-1 bg-deep-green/50 rounded-lg">
-            <button
-              onClick={() => setSelectedPerson('self')}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
-                selectedPerson === 'self'
-                  ? 'bg-gold text-deep-green font-medium'
-                  : 'text-cream/70 hover:text-cream'
-              }`}
-            >
-              {userName}
-            </button>
-            <button
-              onClick={() => setSelectedPerson('partner')}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors text-sm ${
-                selectedPerson === 'partner'
-                  ? 'bg-gold text-deep-green font-medium'
-                  : 'text-cream/70 hover:text-cream'
-              }`}
-            >
-              {partnerName || 'Partner'}
-            </button>
-          </div>
-        )}
-
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Card>
-              <CardContent className="pt-6">
-                {activeTab === 'eten'
-                  ? renderFoodSection(
-                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
-                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
-                      selectedPerson,
-                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
-                    )
-                  : renderDrinkSection(
-                      selectedPerson === 'self' ? selfPrefs : partnerPrefs,
-                      selectedPerson === 'self' ? setSelfPrefs : setPartnerPrefs,
-                      selectedPerson,
-                      selectedPerson === 'self' ? userName : (partnerName || 'Partner')
-                    )
-                }
-              </CardContent>
+        {/* Collapsible Sections */}
+        <div className="space-y-3">
+          {/* Jouw Eten */}
+          <motion.div layout>
+            <Card className={selfSaved
+              ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+              : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+            }>
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'self-eten' ? null : 'self-eten')}
+                className="w-full text-left"
+              >
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selfSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                    }`}>
+                      {selfSaved ? (
+                        <Check className="w-5 h-5 text-success-green" />
+                      ) : (
+                        <UtensilsCrossed className="w-5 h-5 text-gold" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-cream">{userName} - Eten</p>
+                      <p className="text-xs text-cream/60">Vlees, groenten & sauzen</p>
+                    </div>
+                    {expandedSection === 'self-eten' ? (
+                      <ChevronUp className="w-5 h-5 text-cream/40" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-cream/40" />
+                    )}
+                  </div>
+                </CardContent>
+              </button>
+              <AnimatePresence>
+                {expandedSection === 'self-eten' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                      {renderFoodSection(selfPrefs, setSelfPrefs, 'self', userName)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
           </motion.div>
-        </AnimatePresence>
+
+          {/* Jouw Drinken */}
+          <motion.div layout>
+            <Card className={selfSaved
+              ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+              : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+            }>
+              <button
+                onClick={() => setExpandedSection(expandedSection === 'self-drinken' ? null : 'self-drinken')}
+                className="w-full text-left"
+              >
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selfSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                    }`}>
+                      {selfSaved ? (
+                        <Check className="w-5 h-5 text-success-green" />
+                      ) : (
+                        <Wine className="w-5 h-5 text-gold" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-cream">{userName} - Drinken</p>
+                      <p className="text-xs text-cream/60">Bubbels, wijn, bier & frisdrank</p>
+                    </div>
+                    {expandedSection === 'self-drinken' ? (
+                      <ChevronUp className="w-5 h-5 text-cream/40" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-cream/40" />
+                    )}
+                  </div>
+                </CardContent>
+              </button>
+              <AnimatePresence>
+                {expandedSection === 'self-drinken' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                      {renderDrinkSection(selfPrefs, setSelfPrefs, 'self', userName)}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+
+          {/* Partner Eten */}
+          {hasPartner && (
+            <motion.div layout>
+              <Card className={partnerSaved
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+                : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+              }>
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'partner-eten' ? null : 'partner-eten')}
+                  className="w-full text-left"
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        partnerSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                      }`}>
+                        {partnerSaved ? (
+                          <Check className="w-5 h-5 text-success-green" />
+                        ) : (
+                          <UtensilsCrossed className="w-5 h-5 text-gold" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-cream">{partnerName || 'Partner'} - Eten</p>
+                        <p className="text-xs text-cream/60">Vlees, groenten & sauzen</p>
+                      </div>
+                      {expandedSection === 'partner-eten' ? (
+                        <ChevronUp className="w-5 h-5 text-cream/40" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-cream/40" />
+                      )}
+                    </div>
+                  </CardContent>
+                </button>
+                <AnimatePresence>
+                  {expandedSection === 'partner-eten' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                        {renderFoodSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Partner Drinken */}
+          {hasPartner && (
+            <motion.div layout>
+              <Card className={partnerSaved
+                ? 'border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80'
+                : 'border-cream/20 bg-dark-wood/50 hover:border-gold/40 transition-colors'
+              }>
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'partner-drinken' ? null : 'partner-drinken')}
+                  className="w-full text-left"
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        partnerSaved ? 'bg-success-green/20' : 'bg-gold/20'
+                      }`}>
+                        {partnerSaved ? (
+                          <Check className="w-5 h-5 text-success-green" />
+                        ) : (
+                          <Wine className="w-5 h-5 text-gold" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-cream">{partnerName || 'Partner'} - Drinken</p>
+                        <p className="text-xs text-cream/60">Bubbels, wijn, bier & frisdrank</p>
+                      </div>
+                      {expandedSection === 'partner-drinken' ? (
+                        <ChevronUp className="w-5 h-5 text-cream/40" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-cream/40" />
+                      )}
+                    </div>
+                  </CardContent>
+                </button>
+                <AnimatePresence>
+                  {expandedSection === 'partner-drinken' && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 pt-2 border-t border-gold/10">
+                        {renderDrinkSection(partnerPrefs, setPartnerPrefs, 'partner', partnerName || 'Partner')}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+            </motion.div>
+          )}
+        </div>
 
         {/* Completion status */}
         <Card className="bg-deep-green/30 border-gold/20">

@@ -48,8 +48,8 @@ export function SegmentedControl({
                 ${isLast ? 'rounded-r-lg' : ''}
               `}
             >
-              <div className="flex flex-col items-center gap-1">
-                {option.emoji && <span className="text-lg">{option.emoji}</span>}
+              <div className="flex items-center justify-center gap-1.5">
+                {option.emoji && <span className="text-base">{option.emoji}</span>}
                 <span className="text-xs whitespace-nowrap">{option.label}</span>
               </div>
             </button>
