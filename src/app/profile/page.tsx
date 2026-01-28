@@ -25,6 +25,7 @@ import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select } from '@/components/ui';
 import { Slider } from '@/components/ui/Slider';
 import { PercentageDistribution } from '@/components/ui/PercentageDistribution';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import {
   SKILL_CATEGORIES,
   SkillSelections,
@@ -685,38 +686,48 @@ const isPersonalValid = birthDate !== '' && validateBirthDate(birthDate).isValid
             </div>
 
             {/* GROENTES */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h4 className="text-gold font-semibold flex items-center gap-2">
                 🥗 Groentes & Salades
               </h4>
               <p className="text-xs text-cream/50 italic">&quot;Groen op je bord: decoratie of doel?&quot;</p>
 
-              <Slider
-                label="🥬 Groentes & Salades"
-                min={0}
-                max={5}
+              <SegmentedControl
+                label=""
+                options={[
+                  { value: 0, label: 'Nee', emoji: '🚫' },
+                  { value: 1, label: 'Beetje', emoji: '🥬' },
+                  { value: 2, label: 'Normaal', emoji: '🥗' },
+                  { value: 3, label: 'Graag', emoji: '🥦' },
+                  { value: 4, label: 'Veel', emoji: '🥕' },
+                  { value: 5, label: 'Rabbit', emoji: '🐰' },
+                ]}
                 value={foodPreferences.veggies}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, veggies: parseInt(e.target.value) })}
-                formatMin="Liever niet"
-                formatMax="Rabbit mode"
+                onChange={(val) => setFoodPreferences({ ...foodPreferences, veggies: val })}
+                disabled={isLoading}
               />
             </div>
 
             {/* SAUZEN */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h4 className="text-gold font-semibold flex items-center gap-2">
                 🍟 Sauzen
               </h4>
               <p className="text-xs text-cream/50 italic">&quot;Van frituurvet tot fine dining&quot;</p>
 
-              <Slider
-                label="Mayo/Ketchup ←→ Chimichurri"
-                min={0}
-                max={5}
+              <SegmentedControl
+                label=""
+                options={[
+                  { value: 0, label: 'Geen', emoji: '🚫' },
+                  { value: 1, label: 'Mayo', emoji: '🍟' },
+                  { value: 2, label: 'Ketchup', emoji: '🍅' },
+                  { value: 3, label: 'BBQ', emoji: '🔥' },
+                  { value: 4, label: 'Pesto', emoji: '🌿' },
+                  { value: 5, label: 'Chimi', emoji: '🌱' },
+                ]}
                 value={foodPreferences.sauces}
-                onChange={(e) => setFoodPreferences({ ...foodPreferences, sauces: parseInt(e.target.value) })}
-                formatMin="🍟 Vet"
-                formatMax="🌿 Fijn"
+                onChange={(val) => setFoodPreferences({ ...foodPreferences, sauces: val })}
+                disabled={isLoading}
               />
             </div>
 
