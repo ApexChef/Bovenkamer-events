@@ -20,7 +20,7 @@ export async function GET() {
     // Get registrations with partner info
     const { data: registrations, error: regError } = await supabase
       .from('registrations')
-      .select('user_id, name, has_partner, partner_name');
+      .select('user_id, has_partner, partner_name');
 
     if (regError) {
       console.error('Error fetching registrations:', regError);
