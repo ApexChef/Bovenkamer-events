@@ -1,4 +1,16 @@
-# Food & Beverage
+---
+id: US-014
+title: Admin Food & Beverage Rapport
+status: draft
+priority: Medium
+complexity: Medium
+type: Feature
+pr: null
+created: 2026-01-25
+updated: 2026-01-25
+---
+
+# US-014: Admin Food & Beverage Rapport
 
 As an admin, I want to be able to manage the food and beverage preferences of all users in the app, so that I can ensure that everyone's dietary needs and preferences are met during events and activities.
 Zo, als alle registraties zijn geweest, wil ik eigenlijk een boodschappenlijst kunnen creëren.

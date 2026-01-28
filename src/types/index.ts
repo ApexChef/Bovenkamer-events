@@ -53,6 +53,10 @@ export interface User {
   prediction_points: number;
   quiz_points: number;
   game_points: number;
+  is_active: boolean;
+  deleted_at?: string;
+  deleted_by?: string;
+  deletion_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +69,49 @@ export interface AuthUser {
   emailVerified: boolean;
   registrationStatus: 'pending' | 'approved' | 'rejected' | 'cancelled';
   blockedFeatures: string[];
+}
+
+// User Management Types (US-017)
+
+export interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+  role: 'participant' | 'admin' | 'quizmaster';
+  registrationStatus: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  emailVerified: boolean;
+  isActive: boolean;
+  totalPoints: number;
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+export interface PointsLedgerEntry {
+  id: string;
+  userId: string;
+  source: 'registration' | 'prediction' | 'quiz' | 'game' | 'bonus';
+  points: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface AdminUserDetail extends User {
+  registrationData?: Registration;
+  pointsHistory: PointsLedgerEntry[];
+  deletedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  pendingUsers: number;
+  approvedUsers: number;
+  adminUsers: number;
 }
 
 export interface AuthCache {

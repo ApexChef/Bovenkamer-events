@@ -1,12 +1,16 @@
-# US-011: Desktop Login/Dashboard Loading Issues
+---
+id: US-011
+title: Desktop Login/Dashboard Loading Issues
+status: done
+priority: Urgent
+complexity: Medium
+type: Bug Fix
+pr: 21
+created: 2026-01-19
+updated: 2026-01-20
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | URGENT (Bug Fix) |
-| **Status** | Verified |
-| **Complexiteit** | Medium |
-| **Type** | Bug Fix |
+# US-011: Desktop Login/Dashboard Loading Issues
 
 ## Bug Report
 

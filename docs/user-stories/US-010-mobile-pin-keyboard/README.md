@@ -1,12 +1,16 @@
-# US-010: Mobiel Toetsenbord voor PIN Invoer
+---
+id: US-010
+title: Mobiel Toetsenbord voor PIN Invoer
+status: done
+priority: Medium
+complexity: Low
+type: Enhancement
+pr: 20
+created: 2026-01-19
+updated: 2026-01-19
+---
 
-## Status
-| Aspect | Waarde |
-|--------|--------|
-| **Prioriteit** | Medium (UX Verbetering) |
-| **Status** | In Progress |
-| **Complexiteit** | Low |
-| **Type** | Enhancement |
+# US-010: Mobiel Toetsenbord voor PIN Invoer
 
 ## Beschrijving
 
