@@ -16,7 +16,7 @@ function LoginForm() {
   const redirectUrl = searchParams.get('redirect');
   const prefillEmail = searchParams.get('un'); // Pre-fill email from query param
   const { login } = useAuthStore();
-  const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance } = useRegistrationStore();
+  const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance, setHasHydrated: setRegistrationHydrated } = useRegistrationStore();
   const { reset: resetPredictions } = usePredictionsStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
@@ -205,9 +205,42 @@ function LoginForm() {
       }
       setComplete(true);
 
-      // Small delay to ensure Zustand persist middleware saves state to localStorage
+      // Explicitly set hydration flag to true - this is needed because after
+      // resetRegistration(), the onRehydrateStorage callback won't be called again
+      // during client-side navigation, leaving _hasHydrated in an undefined state
+      setRegistrationHydrated(true);
+
+      // Wait for Zustand persist middleware to save state to localStorage
+      // We poll localStorage to ensure the data is actually persisted before redirecting
       // This prevents race conditions where the redirect happens before state is persisted
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const maxWaitTime = 2000; // Max 2 seconds
+      const pollInterval = 50;  // Check every 50ms
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxWaitTime) {
+        try {
+          const registrationData = localStorage.getItem('bovenkamer-registration');
+          const authData = localStorage.getItem('bovenkamer-auth');
+
+          if (registrationData && authData) {
+            const regParsed = JSON.parse(registrationData);
+            const authParsed = JSON.parse(authData);
+
+            // Check if both stores are properly persisted with correct user data
+            const registrationReady = regParsed.state?.isComplete === true &&
+                                       regParsed.state?.formData?.email === data.user.email;
+            const authReady = authParsed.state?.isAuthenticated === true &&
+                              authParsed.state?.currentUser?.email === data.user.email;
+
+            if (registrationReady && authReady) {
+              break; // Both stores are properly persisted
+            }
+          }
+        } catch {
+          // JSON parse error, continue waiting
+        }
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      }
 
       // Redirect to intended destination or default based on status
       if (data.user.registrationStatus === 'pending') {
