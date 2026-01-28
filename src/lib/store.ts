@@ -369,13 +369,9 @@ export const usePredictionsStore = create<PredictionsState>()(
       submitFinal: () => set({ isSubmitted: true, isDraft: false }),
 
       canEdit: () => {
-        const state = get();
         const now = new Date();
-        // Cannot edit if event has started or already submitted
-        if (now >= EVENT_START || state.isSubmitted) {
-          return false;
-        }
-        return true;
+        // Can edit until event starts (even after submission)
+        return now < EVENT_START;
       },
 
       reset: () => set({ predictions: {}, isDraft: false, isSubmitted: false }),

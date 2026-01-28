@@ -5,38 +5,61 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    // Get registrations with user info - only users who registered (are coming)
-    const { data: registrations, error: regError } = await supabase
-      .from('registrations')
-      .select('user_id, has_partner, partner_name, users!inner(id, name)')
-      .order('users(name)');
+    // Get all approved users (they are the participants)
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, first_name')
+      .eq('registration_status', 'approved')
+      .eq('is_active', true)
+      .order('name');
 
-    if (regError) {
-      console.error('Error fetching registrations:', regError);
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
       return NextResponse.json([]);
+    }
+
+    // Get registrations for partner info
+    const { data: registrations } = await supabase
+      .from('registrations')
+      .select('user_id, has_partner, partner_name, partner_first_name');
+
+    // Create a map of user_id to registration data
+    const regMap = new Map<string, { has_partner: boolean; partner_name: string | null; partner_first_name: string | null }>();
+    for (const reg of registrations || []) {
+      if (reg.user_id) {
+        regMap.set(reg.user_id, {
+          has_partner: reg.has_partner,
+          partner_name: reg.partner_name,
+          partner_first_name: reg.partner_first_name,
+        });
+      }
     }
 
     // Build participants list
     const participants: { value: string; label: string }[] = [];
 
-    for (const reg of registrations || []) {
-      const user = reg.users as unknown as { id: string; name: string } | null;
-      if (!user?.name) continue;
-      const firstName = user.name.split(' ')[0];
+    for (const user of users || []) {
+      if (!user.name) continue;
 
-      // Add the registered user
+      // Use first_name if available, otherwise extract from name
+      const firstName = user.first_name || user.name.split(' ')[0];
+
+      // Add the user
       participants.push({
         value: user.id,
         label: firstName,
       });
 
-      // Add partner if exists: "Tamar (Alwin)"
-      if (reg.has_partner && reg.partner_name) {
-        const partnerFirstName = reg.partner_name.split(' ')[0];
-        participants.push({
-          value: `partner-${user.id}`,
-          label: `${partnerFirstName} (${firstName})`,
-        });
+      // Add partner if exists
+      const reg = regMap.get(user.id);
+      if (reg?.has_partner && (reg.partner_first_name || reg.partner_name)) {
+        const partnerFirstName = reg.partner_first_name || (reg.partner_name?.split(' ')[0] ?? '');
+        if (partnerFirstName) {
+          participants.push({
+            value: `partner-${user.id}`,
+            label: `${partnerFirstName} (${firstName})`,
+          });
+        }
       }
     }
 
