@@ -15,10 +15,10 @@ export interface ProfileSections {
 }
 
 // Points per section
+// Note: foodDrinks removed - now separate page at /eten-drinken (not part of profile points)
 export const SECTION_POINTS = {
   basic: 10,
   personal: 50,
-  foodDrinks: 20,
   skills: 40,
   music: 20,
   jkvHistorie: 30,
@@ -248,10 +248,7 @@ export const useRegistrationStore = create<RegistrationState>()(
           completedSections.push('personal');
           points += SECTION_POINTS.personal;
         }
-        if (completed.foodDrinks) {
-          completedSections.push('foodDrinks');
-          points += SECTION_POINTS.foodDrinks;
-        }
+        // foodDrinks removed - now separate page at /eten-drinken
         if (completed.skills) {
           completedSections.push('skills');
           points += SECTION_POINTS.skills;

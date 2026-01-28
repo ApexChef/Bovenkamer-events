@@ -278,11 +278,11 @@ export default function ProfilePage() {
   // Calculate points directly from Zustand's completedSections (which is synced from DB)
   // Using completedSections directly ensures React re-renders when values change
   // NOTE: This hook must be called unconditionally (before any early returns)
+  // foodDrinks removed - now separate page at /eten-drinken
   const points = useMemo(() => {
     let pts = 0;
     if (completedSections.basic) pts += SECTION_POINTS.basic;
     if (completedSections.personal) pts += SECTION_POINTS.personal;
-    if (completedSections.foodDrinks) pts += SECTION_POINTS.foodDrinks;
     if (completedSections.skills) pts += SECTION_POINTS.skills;
     if (completedSections.music) pts += SECTION_POINTS.music;
     if (completedSections.jkvHistorie) pts += SECTION_POINTS.jkvHistorie;
