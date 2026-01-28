@@ -116,3 +116,117 @@ h1, h2, h3, h4, h5, h6 {
     @apply border-border;
   }
 }
+
+/* Print Styles for F&B Report */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  /* Preserve colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset background to white for better printing */
+  body {
+    background-color: white !important;
+  }
+
+  /* Hide non-printable elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Avoid page breaks inside sections */
+  .print\\:page-break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force page break before element */
+  .print\\:page-break-before {
+    page-break-before: always;
+    break-before: always;
+  }
+
+  /* Typography adjustments for print */
+  body {
+    font-size: 10pt;
+  }
+
+  h1 {
+    font-size: 18pt;
+  }
+
+  h2 {
+    font-size: 14pt;
+  }
+
+  h3 {
+    font-size: 12pt;
+  }
+
+  /* Hide interactive elements */
+  button:not(.print\\:block),
+  .export-buttons {
+    display: none !important;
+  }
+
+  /* Show always-visible print elements */
+  .print\\:block {
+    display: block !important;
+  }
+
+  /* Expand collapsed sections for print */
+  .collapsible-content {
+    display: block !important;
+    max-height: none !important;
+    height: auto !important;
+    opacity: 1 !important;
+  }
+
+  /* Ensure tables don't overflow */
+  table {
+    width: 100%;
+    font-size: 9pt;
+  }
+
+  /* Progress bars - show with border for print */
+  .progress-bar {
+    border: 1px solid #000;
+  }
+
+  /* Convert colors to print-friendly versions */
+  .print\\:text-black {
+    color: #000 !important;
+  }
+
+  .print\\:border-black {
+    border-color: #000 !important;
+  }
+
+  .print\\:bg-gray-200 {
+    background-color: #e5e5e5 !important;
+  }
+
+  .print\\:bg-gray-400 {
+    background-color: #9ca3af !important;
+  }
+
+  /* Ensure proper spacing */
+  .print\\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\\:p-4 {
+    padding: 1rem !important;
+  }
+
+  /* Remove box shadows for cleaner print */
+  * {
+    box-shadow: none !important;
+  }
+}
