@@ -92,7 +92,9 @@ const initialSkills: SkillSelections = {
 
 const initialFormData: RegistrationFormData = {
   pin: '',
-  name: '',
+  firstName: '',
+  lastName: '',
+  name: '', // Computed
   email: '',
   // Personal
   birthDate: '',
@@ -100,7 +102,9 @@ const initialFormData: RegistrationFormData = {
   gender: '',
   selfConfidence: 5,
   hasPartner: false,
-  partnerName: '',
+  partnerFirstName: '',
+  partnerLastName: '',
+  partnerName: '', // Computed
   // Food & Drinks
   dietaryRequirements: '',
   partnerDietaryRequirements: '',

@@ -96,9 +96,9 @@ const sections: Section[] = [
   {
     id: 'personal',
     title: 'Persoonlijke Gegevens',
-    description: 'Geboortejaar en partner',
+    description: 'Naam, geboortedatum en partner',
     points: SECTION_POINTS.personal,
-    icon: Calendar
+    icon: User
   },
   {
     id: 'foodDrinks',
@@ -161,14 +161,23 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state for each section
+  // Name fields
+  const [firstName, setFirstName] = useState(formData.firstName || '');
+  const [lastName, setLastName] = useState(formData.lastName || '');
+
   // Pre-fill partner info from attendance if available
   const [birthDate, setBirthDate] = useState<string>(formData.birthDate || '');
   const [birthDateWarning, setBirthDateWarning] = useState<string>('');
   const [hasPartner, setHasPartner] = useState(
     formData.hasPartner || attendance.bringingPlusOne === true
   );
-  const [partnerName, setPartnerName] = useState(
-    formData.partnerName || attendance.plusOneName || ''
+  // Split partnerName from attendance into first/last
+  const attendancePartnerParts = (attendance.plusOneName || '').split(' ');
+  const [partnerFirstName, setPartnerFirstName] = useState(
+    formData.partnerFirstName || attendancePartnerParts[0] || ''
+  );
+  const [partnerLastName, setPartnerLastName] = useState(
+    formData.partnerLastName || attendancePartnerParts.slice(1).join(' ') || ''
   );
   // Food & Drinks
   const [dietaryRequirements, setDietaryRequirements] = useState(formData.dietaryRequirements);
@@ -215,6 +224,7 @@ export default function ProfilePage() {
               setCompletedSections({
                 basic: !!data.completedSections.basic,
                 personal: !!data.completedSections.personal,
+                foodDrinks: !!data.completedSections.foodDrinks,
                 skills: !!data.completedSections.skills,
                 music: !!data.completedSections.music,
                 jkvHistorie: !!data.completedSections.jkvHistorie,
@@ -235,9 +245,13 @@ export default function ProfilePage() {
   // Sync local state with store after hydration
   useEffect(() => {
     if (registrationHydrated && authHydrated) {
+      setFirstName(formData.firstName || '');
+      setLastName(formData.lastName || '');
       setBirthDate(formData.birthDate || '');
       setHasPartner(formData.hasPartner || attendance.bringingPlusOne === true);
-      setPartnerName(formData.partnerName || attendance.plusOneName || '');
+      const partnerParts = (formData.partnerName || attendance.plusOneName || '').split(' ');
+      setPartnerFirstName(formData.partnerFirstName || partnerParts[0] || '');
+      setPartnerLastName(formData.partnerLastName || partnerParts.slice(1).join(' ') || '');
       setDietaryRequirements(formData.dietaryRequirements);
       setPartnerDietaryRequirements(formData.partnerDietaryRequirements || '');
       setFoodPreferences(formData.foodPreferences || DEFAULT_FOOD_PREFERENCES);
@@ -260,6 +274,7 @@ export default function ProfilePage() {
     let pts = 0;
     if (completedSections.basic) pts += SECTION_POINTS.basic;
     if (completedSections.personal) pts += SECTION_POINTS.personal;
+    if (completedSections.foodDrinks) pts += SECTION_POINTS.foodDrinks;
     if (completedSections.skills) pts += SECTION_POINTS.skills;
     if (completedSections.music) pts += SECTION_POINTS.music;
     if (completedSections.jkvHistorie) pts += SECTION_POINTS.jkvHistorie;
@@ -319,11 +334,18 @@ export default function ProfilePage() {
     try {
       // Extract year from birthDate for backward compatibility
       const birthYear = birthDate ? new Date(birthDate).getFullYear() : null;
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const partnerFullName = hasPartner ? `${partnerFirstName.trim()} ${partnerLastName.trim()}`.trim() : '';
       const data = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
         birthDate,
         birthYear,
         hasPartner,
-        partnerName,
+        partnerFirstName: hasPartner ? partnerFirstName.trim() : '',
+        partnerLastName: hasPartner ? partnerLastName.trim() : '',
+        partnerName: partnerFullName,
       };
       setFormData(data);
       await saveSectionToDb('personal', data);
@@ -451,9 +473,34 @@ export default function ProfilePage() {
       case 'personal':
         // Check if partner info comes from attendance (pre-filled)
         const hasPartnerFromAttendance = attendance.bringingPlusOne === true;
+        const currentPartnerFullName = `${partnerFirstName} ${partnerLastName}`.trim();
 
         return (
           <div className="space-y-4">
+            {/* Name fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Voornaam"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Je voornaam"
+              />
+              <Input
+                label="Achternaam"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Je achternaam"
+              />
+            </div>
+
+            {/* Email - readonly */}
+            <Input
+              label="E-mailadres"
+              value={formData.email}
+              disabled
+              className="opacity-60"
+            />
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-cream">
                 Geboortedatum
@@ -481,18 +528,29 @@ export default function ProfilePage() {
                   </div>
                   <span className="text-xs text-cream/50">(via aanmelding)</span>
                 </div>
-                {partnerName && (
-                  <p className="text-gold font-medium">{partnerName}</p>
+                {currentPartnerFullName && (
+                  <p className="text-gold font-medium">{currentPartnerFullName}</p>
                 )}
-                <Input
-                  label="Naam partner/+1 aanpassen"
-                  value={partnerName}
-                  onChange={(e) => {
-                    setPartnerName(e.target.value);
-                    setHasPartner(true);
-                  }}
-                  placeholder="Naam van je partner/+1"
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Voornaam partner"
+                    value={partnerFirstName}
+                    onChange={(e) => {
+                      setPartnerFirstName(e.target.value);
+                      setHasPartner(true);
+                    }}
+                    placeholder="Voornaam"
+                  />
+                  <Input
+                    label="Achternaam partner"
+                    value={partnerLastName}
+                    onChange={(e) => {
+                      setPartnerLastName(e.target.value);
+                      setHasPartner(true);
+                    }}
+                    placeholder="Achternaam"
+                  />
+                </div>
               </div>
             ) : (
               <>
@@ -531,12 +589,19 @@ export default function ProfilePage() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
+                    className="grid grid-cols-2 gap-4"
                   >
                     <Input
-                      label="Naam partner"
-                      value={partnerName}
-                      onChange={(e) => setPartnerName(e.target.value)}
-                      placeholder="Naam van je partner"
+                      label="Voornaam partner"
+                      value={partnerFirstName}
+                      onChange={(e) => setPartnerFirstName(e.target.value)}
+                      placeholder="Voornaam"
+                    />
+                    <Input
+                      label="Achternaam partner"
+                      value={partnerLastName}
+                      onChange={(e) => setPartnerLastName(e.target.value)}
+                      placeholder="Achternaam"
                     />
                   </motion.div>
                 )}
@@ -565,9 +630,9 @@ export default function ProfilePage() {
               placeholder="Vegetarisch, allergieën, etc."
             />
 
-            {hasPartner && partnerName && (
+            {hasPartner && partnerFirstName && (
               <Input
-                label={`Dieetwensen ${partnerName.split(' ')[0]} (optioneel)`}
+                label={`Dieetwensen ${partnerFirstName} (optioneel)`}
                 value={partnerDietaryRequirements}
                 onChange={(e) => setPartnerDietaryRequirements(e.target.value)}
                 placeholder="Vegetarisch, allergieën, etc."
@@ -1182,7 +1247,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Basic Section - Always completed */}
+        {/* Basic Section - Always completed (merged with personal) */}
         <Card className="border-l-4 border-l-success-green border-cream/10 bg-dark-wood/80">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -1190,8 +1255,8 @@ export default function ProfilePage() {
                 <Check className="w-5 h-5 text-success-green" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-cream">Basis Gegevens</p>
-                <p className="text-xs text-cream/60">{formData.name} - {formData.email}</p>
+                <p className="font-semibold text-cream">Geregistreerd</p>
+                <p className="text-xs text-cream/60">{formData.firstName || formData.name?.split(' ')[0] || 'Deelnemer'} - {formData.email}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold text-success-green">+{SECTION_POINTS.basic}</p>
