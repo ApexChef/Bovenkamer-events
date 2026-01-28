@@ -109,11 +109,12 @@ const initialFormData: RegistrationFormData = {
   dietaryRequirements: '',
   partnerDietaryRequirements: '',
   meatDistribution: {
-    pork: 25,
-    beef: 25,
-    chicken: 25,
-    game: 15,
-    fish: 10,
+    pork: 20,
+    beef: 20,
+    chicken: 20,
+    game: 10,
+    fish: 15,
+    vegetarian: 15,
   },
   drinkDistribution: {
     softDrinks: 20,

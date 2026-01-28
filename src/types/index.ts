@@ -220,21 +220,24 @@ export interface Rating {
   created_at: string;
 }
 
-// Meat distribution (percentages that sum to 100%)
+// Protein distribution (percentages that sum to 100%)
+// Renamed from "MeatDistribution" as it includes fish and vegetarian options
 export interface MeatDistribution {
   pork: number;       // percentage: varkensvlees
   beef: number;       // percentage: rundvlees
   chicken: number;    // percentage: kip
   game: number;       // percentage: wild
   fish: number;       // percentage: vis & schaaldieren
+  vegetarian: number; // percentage: vegetarisch
 }
 
 export const DEFAULT_MEAT_DISTRIBUTION: MeatDistribution = {
-  pork: 25,
-  beef: 25,
-  chicken: 25,
-  game: 15,
-  fish: 10,
+  pork: 20,
+  beef: 20,
+  chicken: 20,
+  game: 10,
+  fish: 15,
+  vegetarian: 15,
 };
 
 // Drink distribution (percentages that sum to 100%)

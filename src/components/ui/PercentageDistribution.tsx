@@ -249,102 +249,86 @@ export function PercentageDistribution({
   const total = Object.values(localValues).reduce((sum, v) => sum + v, 0);
 
   return (
-    <div className="space-y-4">
-      {/* Desktop: Split layout 2/3 sliders + 1/3 chart */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sliders section (2/3 on desktop) */}
-        <div className="lg:w-2/3 space-y-4">
-          {items.map((item) => (
-            <div key={item.key} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-cream flex items-center gap-2">
-                  <span>{item.emoji}</span>
-                  <span>{item.label}</span>
-                </label>
-                <span
-                  className="text-lg font-bold min-w-[3rem] text-right"
-                  style={{ color: item.color }}
-                >
-                  {localValues[item.key]}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={localValues[item.key] || 0}
-                onChange={(e) => handleSliderChange(item.key, parseInt(e.target.value))}
-                disabled={disabled}
-                className="w-full h-2 rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${localValues[item.key]}%, rgba(255,255,255,0.2) ${localValues[item.key]}%, rgba(255,255,255,0.2) 100%)`,
-                }}
-              />
+    <div className="space-y-6">
+      {/* Sliders section (full width) */}
+      <div className="space-y-4">
+        {items.map((item) => (
+          <div key={item.key} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-cream flex items-center gap-2">
+                <span>{item.emoji}</span>
+                <span>{item.label}</span>
+              </label>
+              <span
+                className="text-lg font-bold min-w-[3rem] text-right"
+                style={{ color: item.color }}
+              >
+                {localValues[item.key]}%
+              </span>
             </div>
-          ))}
-
-          {/* Total indicator */}
-          <div className="flex items-center justify-between text-sm pt-2 border-t border-cream/10">
-            <span className="text-cream/60">Totaal</span>
-            <span className={`font-bold ${total === 100 ? 'text-success-green' : 'text-warm-red'}`}>
-              {total}%
-            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={localValues[item.key] || 0}
+              onChange={(e) => handleSliderChange(item.key, parseInt(e.target.value))}
+              disabled={disabled}
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${localValues[item.key]}%, rgba(255,255,255,0.2) ${localValues[item.key]}%, rgba(255,255,255,0.2) 100%)`,
+              }}
+            />
           </div>
-        </div>
+        ))}
 
-        {/* Chart section (1/3 on desktop) */}
-        <div className="lg:w-1/3 flex flex-col items-center">
-          {/* Chart type toggle */}
-          {showChartToggle && (
-            <div className="flex gap-1 mb-3 p-1 bg-deep-green/30 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setChartType('bar')}
-                className={`px-3 py-1 text-xs rounded transition-colors ${
-                  chartType === 'bar'
-                    ? 'bg-gold text-deep-green font-medium'
-                    : 'text-cream/60 hover:text-cream'
-                }`}
-              >
-                Staaf
-              </button>
-              <button
-                type="button"
-                onClick={() => setChartType('pie')}
-                className={`px-3 py-1 text-xs rounded transition-colors ${
-                  chartType === 'pie'
-                    ? 'bg-gold text-deep-green font-medium'
-                    : 'text-cream/60 hover:text-cream'
-                }`}
-              >
-                Cirkel
-              </button>
+        {/* Total indicator */}
+        <div className="flex items-center justify-between text-sm pt-2 border-t border-cream/10">
+          <span className="text-cream/60">Totaal</span>
+          <span className={`font-bold ${total === 100 ? 'text-success-green' : 'text-warm-red'}`}>
+            {total}%
+          </span>
+        </div>
+      </div>
+
+      {/* Chart section (own row) */}
+      <div className="flex flex-col items-center pt-4 border-t border-cream/10">
+        {/* Chart type toggle */}
+        {showChartToggle && (
+          <div className="flex gap-1 mb-4 p-1 bg-deep-green/30 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setChartType('bar')}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                chartType === 'bar'
+                  ? 'bg-gold text-deep-green font-medium'
+                  : 'text-cream/60 hover:text-cream'
+              }`}
+            >
+              Staaf
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType('pie')}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                chartType === 'pie'
+                  ? 'bg-gold text-deep-green font-medium'
+                  : 'text-cream/60 hover:text-cream'
+              }`}
+            >
+              Cirkel
+            </button>
+          </div>
+        )}
+
+        {/* Chart display */}
+        <div className="w-full flex justify-center">
+          {chartType === 'pie' ? (
+            <PieChart items={items} values={localValues} />
+          ) : (
+            <div className="w-full max-w-md">
+              <BarChart items={items} values={localValues} />
             </div>
           )}
-
-          {/* Chart display */}
-          <div className="w-full flex justify-center">
-            {chartType === 'pie' ? (
-              <PieChart items={items} values={localValues} />
-            ) : (
-              <div className="w-full max-w-[200px]">
-                <BarChart items={items} values={localValues} />
-              </div>
-            )}
-          </div>
-
-          {/* Legend (mobile only, desktop sees it in sliders) */}
-          <div className="lg:hidden mt-3 flex flex-wrap gap-2 justify-center">
-            {items.map((item) => (
-              <div key={item.key} className="flex items-center gap-1 text-xs">
-                <div
-                  className="w-3 h-3 rounded"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-cream/80">{item.emoji}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
