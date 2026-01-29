@@ -2,14 +2,31 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Button, Card, CardContent, CardFooter } from '@/components/ui';
 import { DynamicForm } from '@/components/forms/dynamic';
+import { useAuthStore } from '@/lib/store';
 
 export default function RatePage() {
-  const [email, setEmail] = useState('');
-  const [isStarted, setIsStarted] = useState(false);
+  const { currentUser } = useAuthStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  if (!currentUser) {
+    return (
+      <main className="min-h-screen py-8 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <Card>
+            <CardContent className="py-12">
+              <h2 className="font-display text-2xl text-gold mb-4">Niet ingelogd</h2>
+              <p className="text-cream/60 mb-6">Log in om een beoordeling in te dienen.</p>
+              <Link href="/login">
+                <Button>Inloggen</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
 
   if (isSubmitted) {
     return (
@@ -36,50 +53,6 @@ export default function RatePage() {
     );
   }
 
-  if (!isStarted) {
-    return (
-      <main className="min-h-screen py-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <span className="stamp text-xs mb-4 inline-block">BEOORDELING</span>
-            <h1 className="font-display text-3xl font-bold text-gold mb-2">
-              Boy Boom Winterproef
-            </h1>
-            <p className="text-cream/60">Is de kandidaat waardig?</p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card>
-              <CardContent className="py-8 space-y-4">
-                <label className="block">
-                  <span className="text-cream font-medium">Uw Email</span>
-                  <span className="text-cream/50 text-sm block mb-2">Voor identificatie van uw beoordeling</span>
-                  <input
-                    type="email"
-                    className="w-full px-4 py-3 bg-dark-wood border border-gold/20 rounded-lg text-cream placeholder:text-cream/30 focus:outline-none focus:border-gold/60"
-                    placeholder="uw@email.nl"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </label>
-                <Button
-                  onClick={() => setIsStarted(true)}
-                  disabled={!email.trim()}
-                  className="w-full"
-                >
-                  Start Beoordeling
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto">
@@ -93,7 +66,7 @@ export default function RatePage() {
 
         <DynamicForm
           formKey="ratings"
-          email={email}
+          email={currentUser.email}
           onSubmitSuccess={() => setIsSubmitted(true)}
           renderFooter={({ isValid, isLoading, onSubmit }) => (
             <CardFooter className="flex justify-between px-0">
