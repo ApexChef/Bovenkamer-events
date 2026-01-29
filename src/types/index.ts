@@ -886,3 +886,226 @@ export interface SelectChoice {
   label: string;
   emoji?: string;
 }
+
+// =============================================================================
+// DYNAMIC FORM TYPES (US-020)
+// =============================================================================
+
+/**
+ * All field types supported by the form system.
+ * Includes US-019 types (slider, select_participant, boolean, time, select_options)
+ * and US-020 types (star_rating, text_short, text_long, checkbox_group, radio_group).
+ */
+export type FormFieldType =
+  | 'slider'
+  | 'select_participant'
+  | 'boolean'
+  | 'time'
+  | 'select_options'
+  | 'star_rating'
+  | 'text_short'
+  | 'text_long'
+  | 'checkbox_group'
+  | 'radio_group';
+
+// New option types for US-020
+
+export interface StarRatingOptions {
+  type: 'star_rating';
+  maxStars: number;
+  default?: number;
+}
+
+export interface TextShortOptions {
+  type: 'text_short';
+  maxLength?: number;
+}
+
+export interface TextLongOptions {
+  type: 'text_long';
+  maxLength?: number;
+  rows?: number;
+}
+
+export interface CheckboxGroupOptions {
+  type: 'checkbox_group';
+  choices: SelectChoice[];
+}
+
+export interface RadioGroupOptions {
+  type: 'radio_group';
+  choices: SelectChoice[];
+}
+
+/**
+ * Discriminated union of all field option types.
+ * Use type guards below to narrow based on field_type.
+ */
+export type FormFieldOptions =
+  | SliderOptions
+  | SelectParticipantOptions
+  | BooleanOptions
+  | TimeOptions
+  | SelectOptionsOptions
+  | StarRatingOptions
+  | TextShortOptions
+  | TextLongOptions
+  | CheckboxGroupOptions
+  | RadioGroupOptions;
+
+// --- Entity Types ---
+
+export interface FormDefinition {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  active_version_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormVersion {
+  id: string;
+  form_definition_id: string;
+  version_number: number;
+  is_published: boolean;
+  published_at?: string;
+  changelog?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormSection {
+  id: string;
+  form_version_id: string;
+  key: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  type: 'step' | 'section';
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormField {
+  id: string;
+  form_section_id: string;
+  key: string;
+  label: string;
+  description?: string;
+  placeholder?: string;
+  field_type: FormFieldType;
+  options: FormFieldOptions;
+  is_required: boolean;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormResponse {
+  id: string;
+  user_id: string;
+  form_version_id: string;
+  status: 'draft' | 'submitted';
+  submitted_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormFieldResponse {
+  id: string;
+  form_response_id: string;
+  form_field_id: string;
+  text?: string;
+  number?: number;
+  boolean?: boolean;
+  json?: unknown;
+  participant_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- API Types ---
+
+/**
+ * Complete form structure as returned by GET /api/forms/[key]
+ */
+export interface FormStructure {
+  definition: FormDefinition;
+  version: FormVersion;
+  sections: FormSectionWithFields[];
+}
+
+export interface FormSectionWithFields extends FormSection {
+  fields: FormField[];
+}
+
+/**
+ * Request body for POST /api/forms/[key]/respond
+ */
+export interface SubmitFormRequest {
+  answers: Record<string, unknown>;
+}
+
+/**
+ * Response from form submission
+ */
+export interface SubmitFormResult {
+  success: boolean;
+  response_id: string;
+  message: string;
+}
+
+/**
+ * User's existing response as returned by GET /api/forms/[key]/response
+ */
+export interface UserFormResponse {
+  response: FormResponse;
+  answers: Record<string, unknown>;
+}
+
+// --- Type Guards ---
+
+export function isStarRatingOptions(options: FormFieldOptions): options is StarRatingOptions {
+  return (options as StarRatingOptions).type === 'star_rating';
+}
+
+export function isTextShortOptions(options: FormFieldOptions): options is TextShortOptions {
+  return (options as TextShortOptions).type === 'text_short';
+}
+
+export function isTextLongOptions(options: FormFieldOptions): options is TextLongOptions {
+  return (options as TextLongOptions).type === 'text_long';
+}
+
+export function isCheckboxGroupOptions(options: FormFieldOptions): options is CheckboxGroupOptions {
+  return (options as CheckboxGroupOptions).type === 'checkbox_group';
+}
+
+export function isRadioGroupOptions(options: FormFieldOptions): options is RadioGroupOptions {
+  return (options as RadioGroupOptions).type === 'radio_group';
+}
+
+export function isSliderFieldOptions(options: FormFieldOptions): options is SliderOptions {
+  return (options as SliderOptions).type === 'slider';
+}
+
+export function isBooleanFieldOptions(options: FormFieldOptions): options is BooleanOptions {
+  return (options as BooleanOptions).type === 'boolean';
+}
+
+export function isTimeFieldOptions(options: FormFieldOptions): options is TimeOptions {
+  return (options as TimeOptions).type === 'time';
+}
+
+export function isSelectOptionsFieldOptions(options: FormFieldOptions): options is SelectOptionsOptions {
+  return (options as SelectOptionsOptions).type === 'select_options';
+}
+
+export function isSelectParticipantFieldOptions(options: FormFieldOptions): options is SelectParticipantOptions {
+  return (options as SelectParticipantOptions).type === 'select_participant';
+}

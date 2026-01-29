@@ -107,11 +107,6 @@ CREATE TABLE IF NOT EXISTS form_field (
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
 
-  -- Scoring (for predictions/quiz)
-  points_exact INTEGER DEFAULT 0,
-  points_close INTEGER DEFAULT 0,
-  points_direction INTEGER DEFAULT 0,
-
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -121,7 +116,6 @@ CREATE TABLE IF NOT EXISTS form_field (
 COMMENT ON TABLE form_field IS 'Individual fields/questions within a section';
 COMMENT ON COLUMN form_field.field_type IS 'Determines how the field is rendered and what answer column is used';
 COMMENT ON COLUMN form_field.options IS 'Type-specific config: slider ranges, select choices, boolean labels, etc.';
-COMMENT ON COLUMN form_field.points_exact IS 'Points for exact correct answer (predictions/quiz)';
 
 CREATE INDEX idx_form_field_section ON form_field(form_section_id);
 CREATE INDEX idx_form_field_sort ON form_field(form_section_id, sort_order);
@@ -134,11 +128,8 @@ CREATE TABLE IF NOT EXISTS form_response (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   form_version_id UUID NOT NULL REFERENCES form_version(id),
   status TEXT DEFAULT 'draft'
-    CHECK (status IN ('draft', 'submitted', 'scored')),
+    CHECK (status IN ('draft', 'submitted')),
   submitted_at TIMESTAMPTZ,
-  total_score INTEGER DEFAULT 0,
-  max_score INTEGER DEFAULT 0,
-  scored_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -166,10 +157,6 @@ CREATE TABLE IF NOT EXISTS form_field_response (
   boolean BOOLEAN,
   json JSONB,
   participant_id UUID REFERENCES users(id),
-
-  -- Scoring
-  is_correct BOOLEAN,
-  points_earned INTEGER DEFAULT 0,
 
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

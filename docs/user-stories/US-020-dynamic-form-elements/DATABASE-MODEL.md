@@ -64,9 +64,6 @@ erDiagram
         boolean is_required
         int sort_order
         boolean is_active
-        int points_exact
-        int points_close
-        int points_direction
         timestamptz created_at
         timestamptz updated_at
     }
@@ -75,11 +72,8 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid form_version_id FK
-        varchar status "draft, submitted, scored"
+        varchar status "draft, submitted"
         timestamptz submitted_at
-        int total_score
-        int max_score
-        timestamptz scored_at
         timestamptz created_at
         timestamptz updated_at
     }
@@ -93,8 +87,6 @@ erDiagram
         boolean boolean "for boolean type"
         jsonb json "for complex types"
         uuid participant_id FK "for select_participant"
-        boolean is_correct
-        int points_earned
         timestamptz created_at
         timestamptz updated_at
     }
@@ -263,9 +255,6 @@ CREATE TABLE form_field (
   is_required BOOLEAN DEFAULT false,
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
-  points_exact INTEGER DEFAULT 0,
-  points_close INTEGER DEFAULT 0,
-  points_direction INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -322,14 +311,11 @@ CREATE TABLE form_response (
   form_version_id UUID NOT NULL REFERENCES form_version(id),
   status VARCHAR(20) DEFAULT 'draft',
   submitted_at TIMESTAMPTZ,
-  total_score INTEGER DEFAULT 0,
-  max_score INTEGER DEFAULT 0,
-  scored_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   UNIQUE(user_id, form_version_id),
-  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted', 'scored'))
+  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted'))
 );
 
 CREATE INDEX idx_form_response_user ON form_response(user_id);
@@ -343,7 +329,6 @@ CREATE INDEX idx_form_response_status ON form_response(status);
 |--------|-----------|
 | `draft` | Nog niet volledig ingevuld, kan worden bewerkt |
 | `submitted` | Definitief ingediend, niet meer te wijzigen |
-| `scored` | Antwoorden zijn beoordeeld en punten toegekend |
 
 ---
 
@@ -361,8 +346,6 @@ CREATE TABLE form_field_response (
   boolean BOOLEAN,
   json JSONB,
   participant_id UUID REFERENCES users(id),
-  is_correct BOOLEAN,
-  points_earned INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -432,8 +415,7 @@ SELECT
   ffr.number,
   ffr.boolean,
   ffr.json,
-  ffr.participant_id,
-  ffr.points_earned
+  ffr.participant_id
 FROM form_response fr
 JOIN form_field_response ffr ON ffr.form_response_id = fr.id
 JOIN form_field ff ON ff.id = ffr.form_field_id
@@ -464,7 +446,7 @@ WHERE id = $1
   AND status = 'draft';
 ```
 
-### Admin: Haal alle responses op voor scoring
+### Admin: Haal alle responses op
 
 ```sql
 SELECT
@@ -472,7 +454,6 @@ SELECT
   u.name AS user_name,
   fr.status,
   fr.submitted_at,
-  fr.total_score,
   COUNT(ffr.id) AS answers_count
 FROM form_response fr
 JOIN users u ON u.id = fr.user_id
@@ -529,8 +510,7 @@ CROSS JOIN (
 
 -- 5. form_field
 INSERT INTO form_field (
-  form_section_id, key, label, field_type, options,
-  points_exact, points_close, points_direction, is_active, sort_order
+  form_section_id, key, label, field_type, options, is_active, sort_order
 )
 SELECT
   fs.id,
@@ -538,9 +518,6 @@ SELECT
   pq.label,
   pq.type,
   pq.options,
-  pq.points_exact,
-  pq.points_close,
-  pq.points_direction,
   pq.is_active,
   pq.sort_order
 FROM prediction_questions pq
@@ -635,6 +612,5 @@ flowchart TD
 | **Data Integriteit** | Antwoorden gekoppeld aan specifieke versie |
 | **Query Performance** | Genormaliseerde antwoorden, geen JSONB parsing nodig |
 | **Type Safety** | Aparte kolommen per antwoord-type |
-| **Response Tracking** | Status per ingevuld formulier (draft/submitted/scored) |
-| **Scoring** | Punten per antwoord en totaal per response |
+| **Response Tracking** | Status per ingevuld formulier (draft/submitted) |
 | **Herbruikbaar** | Zelfde structuur voor predictions, ratings, quiz, etc. |

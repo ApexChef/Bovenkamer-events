@@ -216,9 +216,6 @@ CREATE TABLE form_field (
   is_required BOOLEAN DEFAULT false,
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
-  points_exact INTEGER DEFAULT 0,
-  points_close INTEGER DEFAULT 0,
-  points_direction INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -244,14 +241,11 @@ CREATE TABLE form_response (
   form_version_id UUID NOT NULL REFERENCES form_version(id),
   status VARCHAR(20) DEFAULT 'draft',
   submitted_at TIMESTAMPTZ,
-  total_score INTEGER DEFAULT 0,
-  max_score INTEGER DEFAULT 0,
-  scored_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   UNIQUE(user_id, form_version_id),
-  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted', 'scored'))
+  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted'))
 );
 
 CREATE INDEX idx_form_response_user ON form_response(user_id);
@@ -271,8 +265,6 @@ CREATE TABLE form_field_response (
   boolean BOOLEAN,
   json JSONB,
   participant_id UUID REFERENCES users(id),
-  is_correct BOOLEAN,
-  points_earned INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -363,9 +355,6 @@ CREATE TABLE IF NOT EXISTS form_field (
   is_required BOOLEAN DEFAULT false,
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
-  points_exact INTEGER DEFAULT 0,
-  points_close INTEGER DEFAULT 0,
-  points_direction INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -386,14 +375,11 @@ CREATE TABLE IF NOT EXISTS form_response (
   form_version_id UUID NOT NULL REFERENCES form_version(id),
   status VARCHAR(20) DEFAULT 'draft',
   submitted_at TIMESTAMPTZ,
-  total_score INTEGER DEFAULT 0,
-  max_score INTEGER DEFAULT 0,
-  scored_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   UNIQUE(user_id, form_version_id),
-  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted', 'scored'))
+  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_form_response_user ON form_response(user_id);
@@ -410,8 +396,6 @@ CREATE TABLE IF NOT EXISTS form_field_response (
   boolean BOOLEAN,
   json JSONB,
   participant_id UUID REFERENCES users(id),
-  is_correct BOOLEAN,
-  points_earned INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -799,9 +783,6 @@ export interface FormField {
   is_required: boolean;
   sort_order: number;
   is_active: boolean;
-  points_exact: number;
-  points_close: number;
-  points_direction: number;
   created_at: string;
   updated_at: string;
 }
@@ -905,11 +886,8 @@ export interface FormResponse {
   id: string;
   user_id: string;
   form_version_id: string;
-  status: 'draft' | 'submitted' | 'scored';
+  status: 'draft' | 'submitted';
   submitted_at?: string;
-  total_score: number;
-  max_score: number;
-  scored_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -926,8 +904,6 @@ export interface FormFieldResponse {
   boolean?: boolean;
   json?: any;
   participant_id?: string;
-  is_correct?: boolean;
-  points_earned: number;
   created_at: string;
   updated_at: string;
 }
