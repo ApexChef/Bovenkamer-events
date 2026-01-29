@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PINInput, PINInputRef } from '@/components/ui/PINInput';
-import { useAuthStore, useRegistrationStore, usePredictionsStore } from '@/lib/store';
+import { useAuthStore, useRegistrationStore } from '@/lib/store';
 
 function LoginForm() {
   const router = useRouter();
@@ -17,7 +17,6 @@ function LoginForm() {
   const prefillEmail = searchParams.get('un'); // Pre-fill email from query param
   const { login } = useAuthStore();
   const { setComplete, setFormData, setAIAssignment, setCompletedSections, reset: resetRegistration, setAttendance, setHasHydrated: setRegistrationHydrated } = useRegistrationStore();
-  const { reset: resetPredictions } = usePredictionsStore();
   const pinInputRef = useRef<PINInputRef>(null);
 
   const [email, setEmail] = useState('');
@@ -106,10 +105,9 @@ function LoginForm() {
         localStorage.removeItem('bovenkamer_remembered_email');
       }
 
-      // IMPORTANT: Reset all stores BEFORE loading new user data
+      // IMPORTANT: Reset stores BEFORE loading new user data
       // This clears any data from a previous user session
       resetRegistration();
-      resetPredictions();
 
       // Compute PIN hash for cache
       const encoder = new TextEncoder();

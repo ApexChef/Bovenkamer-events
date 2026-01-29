@@ -5,17 +5,41 @@ import Link from 'next/link';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/AuthGuard';
-import { Predictions } from '@/types';
 
-interface UserPrediction {
-  id: string;
-  user_id: string;
-  predictions: Predictions | null;
-  users: {
-    id: string;
-    name: string;
-    email: string;
-  };
+interface FormResponseRow {
+  form_key: string;
+  user_name: string;
+  user_email: string;
+  status: string;
+  submitted_at: string;
+  section_key: string;
+  section_label: string;
+  section_sort: number;
+  field_key: string;
+  field_label: string;
+  field_type: string;
+  is_required: boolean;
+  field_sort: number;
+  text: string | null;
+  number: number | null;
+  boolean: boolean | null;
+  participant_id: string | null;
+  display_value: string;
+}
+
+interface UserResponse {
+  name: string;
+  email: string;
+  status: string;
+  submitted_at: string;
+  fields: FormResponseRow[];
+}
+
+interface FormApiResponse {
+  form_key: string;
+  total_responses: number;
+  responses: UserResponse[];
+  raw: FormResponseRow[];
 }
 
 interface ActualResults {
@@ -37,20 +61,23 @@ interface Participant {
   label: string;
 }
 
-const PREDICTION_LABELS: Record<keyof Predictions, string> = {
-  wineBottles: 'Flessen wijn',
-  beerCrates: 'Kratten bier',
-  meatKilos: "Kilo's vlees",
-  firstSleeper: 'Eerste slaper',
-  spontaneousSinger: 'Spontane zanger',
-  firstToLeave: 'Eerste vertrekker',
-  lastToLeave: 'Laatste vertrekker',
-  loudestLaugher: 'Luidste lacher',
-  longestStoryTeller: 'Langste verhaal',
-  somethingBurned: 'Iets aangebrand?',
-  outsideTemp: 'Buitentemperatuur',
-  lastGuestTime: 'Laatste gast weg',
-};
+/** Derive unique field columns from raw response data, preserving section/field sort order. */
+function getFieldColumns(raw: FormResponseRow[]): { key: string; label: string; fieldType: string }[] {
+  const seen = new Map<string, { label: string; fieldType: string; sectionSort: number; fieldSort: number }>();
+  for (const row of raw) {
+    if (!seen.has(row.field_key)) {
+      seen.set(row.field_key, {
+        label: row.field_label,
+        fieldType: row.field_type,
+        sectionSort: row.section_sort,
+        fieldSort: row.field_sort,
+      });
+    }
+  }
+  return Array.from(seen.entries())
+    .sort(([, a], [, b]) => a.sectionSort - b.sectionSort || a.fieldSort - b.fieldSort)
+    .map(([key, v]) => ({ key, label: v.label, fieldType: v.fieldType }));
+}
 
 const TIME_OPTIONS = Array.from({ length: 15 }, (_, i) => {
   const hour = 20 + Math.floor(i / 2);
@@ -69,7 +96,7 @@ export default function AdminPredictionsPage() {
 
 function AdminPredictionsContent() {
   const [activeTab, setActiveTab] = useState<'overview' | 'results' | 'live' | 'scores'>('overview');
-  const [userPredictions, setUserPredictions] = useState<UserPrediction[]>([]);
+  const [formData, setFormData] = useState<FormApiResponse | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [actualResults, setActualResults] = useState<ActualResults>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -82,20 +109,18 @@ function AdminPredictionsContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [predictionsRes, participantsRes, resultsRes] = await Promise.all([
-          fetch('/api/admin/predictions'),
+        const [formRes, participantsRes, resultsRes] = await Promise.all([
+          fetch('/api/admin/forms/predictions/responses'),
           fetch('/api/participants'),
           fetch('/api/admin/predictions/results'),
         ]);
 
-        if (predictionsRes.ok) {
-          const data = await predictionsRes.json();
-          setUserPredictions(data.predictions || []);
+        if (formRes.ok) {
+          setFormData(await formRes.json());
         }
 
         if (participantsRes.ok) {
-          const data = await participantsRes.json();
-          setParticipants(data);
+          setParticipants(await participantsRes.json());
         }
 
         if (resultsRes.ok) {
@@ -181,21 +206,35 @@ function AdminPredictionsContent() {
     }
   };
 
+  // Derive field columns and stats from form response data
+  const fieldColumns = formData ? getFieldColumns(formData.raw) : [];
+  const participantMap = new Map(participants.map((p) => [p.value, p.label]));
+
   const stats = {
-    total: userPredictions.length,
-    withPredictions: userPredictions.filter(p => p.predictions && Object.keys(p.predictions).length > 0).length,
+    total: formData?.total_responses ?? 0,
+    withPredictions: formData?.responses.filter((r) => r.fields.length > 0).length ?? 0,
     resultsEntered: Object.keys(actualResults).length,
-    totalFields: Object.keys(PREDICTION_LABELS).length,
+    totalFields: fieldColumns.length,
   };
 
-  const formatValue = (key: keyof Predictions, value: unknown): string => {
-    if (value === undefined || value === null) return '-';
-    if (key === 'somethingBurned') return value ? 'Ja' : 'Nee';
-    if (key === 'outsideTemp') return `${value}°C`;
-    if (key === 'wineBottles') return `${value} flessen`;
-    if (key === 'beerCrates') return `${value} kratten`;
-    if (key === 'meatKilos') return `${value} kg`;
-    return String(value);
+  /** Format a display value based on field type */
+  const formatFieldValue = (row: FormResponseRow | undefined): string => {
+    if (!row) return '-';
+    if (row.field_type === 'boolean') {
+      if (row.boolean === true) return 'Ja';
+      if (row.boolean === false) return 'Nee';
+      return '-';
+    }
+    if (row.field_type === 'select_participant') {
+      return row.participant_id ? (participantMap.get(row.participant_id) || row.participant_id) : '-';
+    }
+    if (row.field_type === 'slider') {
+      return row.number != null ? String(row.number) : '-';
+    }
+    if (row.field_type === 'time') {
+      return row.number != null ? String(row.number) : '-';
+    }
+    return row.display_value || '-';
   };
 
   return (
@@ -310,7 +349,7 @@ function AdminPredictionsContent() {
                 <CardDescription>Overzicht van alle ingediende voorspellingen</CardDescription>
               </CardHeader>
               <CardContent>
-                {userPredictions.length === 0 ? (
+                {!formData || formData.total_responses === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-cream/60 mb-2">Nog geen voorspellingen</p>
                     <p className="text-cream/40 text-sm">
@@ -323,30 +362,33 @@ function AdminPredictionsContent() {
                       <thead>
                         <tr className="border-b border-gold/20">
                           <th className="text-left py-3 px-2 text-gold font-semibold">Naam</th>
-                          {(Object.keys(PREDICTION_LABELS) as (keyof Predictions)[]).map((key) => (
-                            <th key={key} className="text-center py-3 px-2 text-gold/70 font-normal text-xs">
-                              {PREDICTION_LABELS[key]}
+                          {fieldColumns.map((col) => (
+                            <th key={col.key} className="text-center py-3 px-2 text-gold/70 font-normal text-xs">
+                              {col.label}
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {userPredictions.map((user, index) => (
-                          <motion.tr
-                            key={user.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="border-b border-gold/10 hover:bg-dark-wood/30"
-                          >
-                            <td className="py-3 px-2 text-cream font-medium">{user.users?.name || 'Onbekend'}</td>
-                            {(Object.keys(PREDICTION_LABELS) as (keyof Predictions)[]).map((key) => (
-                              <td key={key} className="text-center py-3 px-2 text-cream/70 text-xs">
-                                {user.predictions ? formatValue(key, user.predictions[key]) : '-'}
-                              </td>
-                            ))}
-                          </motion.tr>
-                        ))}
+                        {formData.responses.map((user, index) => {
+                          const fieldMap = new Map(user.fields.map((f) => [f.field_key, f]));
+                          return (
+                            <motion.tr
+                              key={user.email}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.03 }}
+                              className="border-b border-gold/10 hover:bg-dark-wood/30"
+                            >
+                              <td className="py-3 px-2 text-cream font-medium">{user.name}</td>
+                              {fieldColumns.map((col) => (
+                                <td key={col.key} className="text-center py-3 px-2 text-cream/70 text-xs">
+                                  {formatFieldValue(fieldMap.get(col.key))}
+                                </td>
+                              ))}
+                            </motion.tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

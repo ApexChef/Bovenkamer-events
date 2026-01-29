@@ -10,13 +10,20 @@ interface DynamicFormProps {
   formKey: string;
   email: string;
   onSubmitSuccess?: () => void;
+  onSaveDraftSuccess?: () => void;
   onError?: (error: string) => void;
+  onLoadStatus?: (status: { isSubmitted: boolean; hasAnswers: boolean }) => void;
   participants?: Array<{ value: string; label: string }>;
-  /** Custom submit button render. Receives isValid, isLoading, and submit handler. */
+  /** Allow editing fields even after the form was submitted (e.g. predictions before event). */
+  allowEditAfterSubmit?: boolean;
+  /** Custom submit button render. Receives form state and action handlers. */
   renderFooter?: (props: {
     isValid: boolean;
     isLoading: boolean;
+    isSavingDraft: boolean;
+    isSubmitted: boolean;
     onSubmit: () => void;
+    onSaveDraft: () => void;
   }) => React.ReactNode;
 }
 
@@ -28,14 +35,18 @@ export function DynamicForm({
   formKey,
   email,
   onSubmitSuccess,
+  onSaveDraftSuccess,
   onError,
+  onLoadStatus,
   participants = [],
+  allowEditAfterSubmit = false,
   renderFooter,
 }: DynamicFormProps) {
   const [form, setForm] = useState<FormStructure | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -60,16 +71,36 @@ export function DynamicForm({
         const formData: FormStructure = await formRes.json();
         setForm(formData);
 
-        // Load existing answers if available
+        // Build default values from field options (slider defaults, time defaults, etc.)
+        const defaults: Record<string, unknown> = {};
+        for (const section of formData.sections) {
+          for (const field of section.fields) {
+            const opts = field.options as unknown as Record<string, unknown>;
+            if (
+              (field.field_type === 'slider' || field.field_type === 'time') &&
+              opts.default != null
+            ) {
+              defaults[field.key] = opts.default;
+            }
+          }
+        }
+
+        // Load existing answers if available, merged over defaults
+        let hasAnswers = false;
+        let submitted = false;
         if (answersRes?.ok) {
           const answerData = await answersRes.json();
           if (answerData.answers) {
-            setAnswers(answerData.answers);
+            Object.assign(defaults, answerData.answers);
+            hasAnswers = Object.keys(answerData.answers).length > 0;
           }
           if (answerData.response?.status === 'submitted') {
             setIsSubmitted(true);
+            submitted = true;
           }
         }
+        setAnswers(defaults);
+        onLoadStatus?.({ isSubmitted: submitted, hasAnswers });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Kon formulier niet laden';
         setError(message);
@@ -80,7 +111,8 @@ export function DynamicForm({
     }
 
     loadForm();
-  }, [formKey, email, onError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formKey, email]);
 
   const handleFieldChange = useCallback((fieldKey: string, value: unknown) => {
     setAnswers((prev) => ({ ...prev, [fieldKey]: value }));
@@ -117,6 +149,37 @@ export function DynamicForm({
       setIsSubmitting(false);
     }
   }, [formKey, email, answers, isSubmitting, onSubmitSuccess, onError]);
+
+  const handleSaveDraft = useCallback(async () => {
+    if (!email || isSavingDraft) return;
+
+    try {
+      setIsSavingDraft(true);
+
+      const response = await fetch(`/api/forms/${formKey}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          answers,
+          submit: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Kon concept niet opslaan');
+      }
+
+      onSaveDraftSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Kon concept niet opslaan';
+      setError(message);
+      onError?.(message);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [formKey, email, answers, isSavingDraft, onSaveDraftSuccess, onError]);
 
   // Check if all required fields are answered
   const isValid = form?.sections.every((section) =>
@@ -165,16 +228,19 @@ export function DynamicForm({
           section={section}
           answers={answers}
           onFieldChange={handleFieldChange}
-          disabled={isSubmitted}
+          disabled={isSubmitted && !allowEditAfterSubmit}
           participants={participants}
           animationDelay={index * 0.1}
         />
       ))}
 
       {renderFooter?.({
-        isValid: isValid && !isSubmitted,
+        isValid,
         isLoading: isSubmitting,
+        isSavingDraft,
+        isSubmitted,
         onSubmit: handleSubmit,
+        onSaveDraft: handleSaveDraft,
       })}
     </div>
   );

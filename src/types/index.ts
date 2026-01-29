@@ -769,52 +769,8 @@ export interface FBExportRow {
 }
 
 // =============================================================================
-// PREDICTION QUESTION TYPES (US-019)
+// FIELD OPTION TYPES (shared between forms)
 // =============================================================================
-
-/**
- * Question types supported by prediction system
- */
-export type PredictionQuestionType =
-  | 'slider'
-  | 'select_participant'
-  | 'boolean'
-  | 'time'
-  | 'select_options';
-
-/**
- * Display categories for grouping questions
- */
-export type PredictionCategory = 'consumption' | 'social' | 'other';
-
-/**
- * Base prediction question structure from database
- */
-export interface PredictionQuestion {
-  id: string;
-  key: string;
-  label: string;
-  type: PredictionQuestionType;
-  category: PredictionCategory;
-  options: PredictionQuestionOptions;
-  points_exact: number;
-  points_close: number;
-  points_direction: number;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Type-specific options (discriminated union)
- */
-export type PredictionQuestionOptions =
-  | SliderOptions
-  | SelectParticipantOptions
-  | BooleanOptions
-  | TimeOptions
-  | SelectOptionsOptions;
 
 /**
  * Options for slider-type questions
