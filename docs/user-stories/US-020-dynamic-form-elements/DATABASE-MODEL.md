@@ -1,19 +1,23 @@
 # US-020: Database Model - Dynamic Forms
 
+> Naamgeving gebaseerd op het Salesforce WebForm patroon.
+> PostgreSQL conventie: lowercase snake_case voor alle identifiers.
+
 ## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    forms ||--o{ form_versions : "has versions"
-    forms ||--o| form_versions : "active version"
-    form_versions ||--o{ form_questions : "contains"
-    form_versions ||--o{ form_responses : "submissions"
-    users ||--o{ form_responses : "submits"
-    form_responses ||--o{ form_answers : "contains"
-    form_questions ||--o{ form_answers : "answered by"
-    users ||--o{ form_answers : "participant ref"
+    form_definition ||--o{ form_version : "has versions"
+    form_definition ||--o| form_version : "active_version"
+    form_version ||--o{ form_section : "contains"
+    form_section ||--o{ form_field : "contains"
+    form_version ||--o{ form_response : "submissions"
+    users ||--o{ form_response : "submits"
+    form_response ||--o{ form_field_response : "contains"
+    form_field ||--o{ form_field_response : "answered by"
+    users ||--o{ form_field_response : "participant ref"
 
-    forms {
+    form_definition {
         uuid id PK
         varchar key UK "predictions, ratings, etc"
         varchar name
@@ -23,9 +27,9 @@ erDiagram
         timestamptz updated_at
     }
 
-    form_versions {
+    form_version {
         uuid id PK
-        uuid form_id FK
+        uuid form_definition_id FK
         int version_number
         boolean is_published
         timestamptz published_at
@@ -34,15 +38,28 @@ erDiagram
         timestamptz updated_at
     }
 
-    form_questions {
+    form_section {
         uuid id PK
         uuid form_version_id FK
+        varchar key "criteria, consumption, etc"
+        varchar label "Beoordelingscriteria"
+        text description
+        varchar icon
+        varchar type "step | section"
+        int sort_order
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    form_field {
+        uuid id PK
+        uuid form_section_id FK
         varchar key "location, wineBottles, etc"
         text label
         text description
         text placeholder
-        varchar type "slider, star_rating, text_long, etc"
-        varchar section "criteria, consumption, etc"
+        varchar field_type "slider, star_rating, etc"
         jsonb options
         boolean is_required
         int sort_order
@@ -54,7 +71,7 @@ erDiagram
         timestamptz updated_at
     }
 
-    form_responses {
+    form_response {
         uuid id PK
         uuid user_id FK
         uuid form_version_id FK
@@ -67,10 +84,10 @@ erDiagram
         timestamptz updated_at
     }
 
-    form_answers {
+    form_field_response {
         uuid id PK
-        uuid response_id FK
-        uuid question_id FK
+        uuid form_response_id FK
+        uuid form_field_id FK
         text text "for text types"
         numeric number "for numeric types"
         boolean boolean "for boolean type"
@@ -90,188 +107,238 @@ erDiagram
     }
 ```
 
+## Naamgeving Mapping
+
+| Salesforce Object | PostgreSQL Tabel | Beschrijving |
+|---|---|---|
+| `WebFormDefinition__c` | `form_definition` | Formulier definitie |
+| `WebFormVersion__c` | `form_version` | Versioning |
+| `WebFormStep__c` | `form_section` | Stappen of secties |
+| `WebFormField__c` | `form_field` | Veld/vraag definitie |
+| `WebFormResponse__c` | `form_response` | Ingevuld formulier |
+| `WebFormFieldResponse__c` | `form_field_response` | Individueel antwoord |
+
+---
+
 ## Tabel Definities
 
-### 1. `forms` - Hoofdformulier definitie
+### 1. `form_definition`
+
+Hoofdformulier definitie. Elk formulier in de applicatie is een record.
 
 ```sql
-CREATE TABLE forms (
+CREATE TABLE form_definition (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Identificatie
-  key VARCHAR(50) UNIQUE NOT NULL,      -- 'predictions', 'ratings', 'registration_quiz'
-  name VARCHAR(100) NOT NULL,            -- 'Voorspellingen', 'Boy Boom Beoordeling'
+  key VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
   description TEXT,
-
-  -- Actieve versie
-  active_version_id UUID,               -- FK naar form_versions (nullable voor nieuwe forms)
-
-  -- Timestamps
+  active_version_id UUID,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes
-CREATE UNIQUE INDEX idx_forms_key ON forms(key);
+CREATE UNIQUE INDEX idx_form_definition_key ON form_definition(key);
 ```
 
 **Voorbeelddata:**
+
 | key | name | description |
 |-----|------|-------------|
-| predictions | Voorspellingen | Voorspellingen voor de BBQ avond |
-| ratings | Boy Boom Beoordeling | Beoordeling van de locatie en gastheer |
-| registration_quiz | Registratie Quiz | Persoonlijke vragen voor de quiz |
+| `predictions` | Voorspellingen | Voorspellingen voor de BBQ avond |
+| `ratings` | Boy Boom Beoordeling | Beoordeling van de locatie en gastheer |
+| `registration_quiz` | Registratie Quiz | Persoonlijke vragen voor de quiz |
+| `live_quiz` | Live Quiz | Quiz tijdens het evenement |
 
 ---
 
-### 2. `form_versions` - Versioning van formulieren
+### 2. `form_version`
+
+Versioning van formulieren. Elke keer dat de structuur wijzigt, wordt een nieuwe versie aangemaakt. Bestaande antwoorden blijven gekoppeld aan hun oorspronkelijke versie.
 
 ```sql
-CREATE TABLE form_versions (
+CREATE TABLE form_version (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Parent
-  form_id UUID NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
-
-  -- Versioning
-  version_number INTEGER NOT NULL,       -- 1, 2, 3, ...
-  is_published BOOLEAN DEFAULT false,    -- true = kan worden ingevuld
-  published_at TIMESTAMPTZ,              -- wanneer gepubliceerd
-
-  -- Metadata
-  changelog TEXT,                        -- Beschrijving van wijzigingen
-
-  -- Timestamps
+  form_definition_id UUID NOT NULL REFERENCES form_definition(id) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  is_published BOOLEAN DEFAULT false,
+  published_at TIMESTAMPTZ,
+  changelog TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Constraints
-  UNIQUE(form_id, version_number)
+  UNIQUE(form_definition_id, version_number)
 );
 
--- Indexes
-CREATE INDEX idx_form_versions_form ON form_versions(form_id);
-CREATE INDEX idx_form_versions_published ON form_versions(form_id, is_published);
+-- FK voor active_version_id (na aanmaken beide tabellen)
+ALTER TABLE form_definition
+  ADD CONSTRAINT fk_form_definition_active_version
+  FOREIGN KEY (active_version_id)
+  REFERENCES form_version(id);
+
+CREATE INDEX idx_form_version_definition ON form_version(form_definition_id);
+CREATE INDEX idx_form_version_published ON form_version(form_definition_id, is_published);
 ```
 
 **Versioning Flow:**
 ```
-form: "ratings" (v1 active)
-├── version 1 (published, active) ─── questions v1
-├── version 2 (draft)             ─── questions v2 (bewerken)
-└── version 3 (niet aangemaakt)
+form_definition: "ratings"
+├── version 1 (published, active) → sections & fields v1
+├── version 2 (draft)             → sections & fields v2 (bewerken)
 ```
 
 ---
 
-### 3. `form_questions` - Vragen per versie
+### 3. `form_section`
+
+Groepering van velden binnen een versie. Kan twee types hebben:
+
+| Type | Gebruik | Voorbeeld |
+|------|---------|-----------|
+| `step` | Stap in een wizard flow | Registratie stap 1, 2, 3 |
+| `section` | Visuele groepering op een pagina | "Beoordelingscriteria", "Open Vragen" |
 
 ```sql
-CREATE TABLE form_questions (
+CREATE TABLE form_section (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Parent
-  form_version_id UUID NOT NULL REFERENCES form_versions(id) ON DELETE CASCADE,
-
-  -- Identificatie
-  key VARCHAR(50) NOT NULL,              -- 'location', 'wineBottles', etc.
-
-  -- Display
-  label TEXT NOT NULL,                   -- Vraag tekst
-  description TEXT,                      -- Extra uitleg
-  placeholder TEXT,                      -- Placeholder voor input
-
-  -- Type & Classificatie
-  type VARCHAR(30) NOT NULL,             -- Question type (zie enum)
-  section VARCHAR(50),                   -- Sub-groepering: 'criteria', 'consumption', etc.
-
-  -- Type-specifieke opties
-  options JSONB DEFAULT '{}',
-
-  -- Validatie
-  is_required BOOLEAN DEFAULT false,
-
-  -- Ordering & Status
+  form_version_id UUID NOT NULL REFERENCES form_version(id) ON DELETE CASCADE,
+  key VARCHAR(50) NOT NULL,
+  label VARCHAR(100) NOT NULL,
+  description TEXT,
+  icon VARCHAR(10),
+  type VARCHAR(10) NOT NULL DEFAULT 'section',
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Scoring (voor predictions/quiz)
+  UNIQUE(form_version_id, key),
+  CONSTRAINT chk_form_section_type CHECK (type IN ('step', 'section'))
+);
+
+CREATE INDEX idx_form_section_version ON form_section(form_version_id);
+CREATE INDEX idx_form_section_sort ON form_section(form_version_id, sort_order);
+```
+
+**Voorbeelddata (ratings):**
+
+| key | label | type | sort_order | icon |
+|-----|-------|------|------------|------|
+| `criteria` | Beoordelingscriteria | section | 1 | |
+| `feedback` | Open Vragen | section | 2 | |
+| `verdict` | Het Eindoordeel | section | 3 | |
+
+**Voorbeelddata (predictions):**
+
+| key | label | type | sort_order | icon |
+|-----|-------|------|------------|------|
+| `consumption` | Consumptie | section | 1 | |
+| `social` | Sociaal | section | 2 | |
+| `other` | Overig | section | 3 | |
+
+**Voorbeelddata (registration - wizard):**
+
+| key | label | type | sort_order | icon |
+|-----|-------|------|------------|------|
+| `muziek` | Muziek | step | 1 | |
+| `entertainment` | Entertainment | step | 2 | |
+| `eten` | Eten | step | 3 | |
+| `jeugd` | Jeugd | step | 4 | |
+
+---
+
+### 4. `form_field`
+
+Individuele velden/vragen binnen een sectie.
+
+```sql
+CREATE TABLE form_field (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_section_id UUID NOT NULL REFERENCES form_section(id) ON DELETE CASCADE,
+  key VARCHAR(50) NOT NULL,
+  label TEXT NOT NULL,
+  description TEXT,
+  placeholder TEXT,
+  field_type VARCHAR(30) NOT NULL,
+  options JSONB DEFAULT '{}',
+  is_required BOOLEAN DEFAULT false,
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
   points_exact INTEGER DEFAULT 0,
   points_close INTEGER DEFAULT 0,
   points_direction INTEGER DEFAULT 0,
-
-  -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Constraints
-  UNIQUE(form_version_id, key)           -- Key moet uniek zijn binnen versie
+  UNIQUE(form_section_id, key)
 );
 
--- Indexes
-CREATE INDEX idx_form_questions_version ON form_questions(form_version_id);
-CREATE INDEX idx_form_questions_section ON form_questions(form_version_id, section);
-CREATE INDEX idx_form_questions_sort ON form_questions(form_version_id, sort_order);
+CREATE INDEX idx_form_field_section ON form_field(form_section_id);
+CREATE INDEX idx_form_field_sort ON form_field(form_section_id, sort_order);
 ```
 
-**Question Types:**
+**Field Types:**
+
 ```typescript
-type FormQuestionType =
+type FormFieldType =
   // Numeric
-  | 'slider'           // Range slider
-  | 'star_rating'      // 1-5 sterren
+  | 'slider'             // Range slider
+  | 'star_rating'        // 1-5 sterren
 
   // Text
-  | 'text_short'       // Korte tekst (max ~100 chars)
-  | 'text_long'        // Textarea
+  | 'text_short'         // Korte tekst (max ~100 chars)
+  | 'text_long'          // Textarea
 
   // Selection
-  | 'select_options'   // Dropdown met opties
+  | 'select_options'     // Dropdown met opties
   | 'select_participant' // Dropdown met deelnemers
-  | 'boolean'          // Ja/Nee
+  | 'boolean'            // Ja/Nee
 
   // Special
-  | 'time'             // Tijdselectie
-  | 'checkbox_group'   // Multi-select
-  | 'radio_group';     // Single select (styled)
+  | 'time'               // Tijdselectie
+  | 'checkbox_group'     // Multi-select
+  | 'radio_group';       // Single select (styled)
 ```
+
+**Voorbeelddata (ratings → section: criteria):**
+
+| key | label | field_type | is_required | sort_order |
+|-----|-------|------------|-------------|------------|
+| `location` | Locatie | star_rating | true | 1 |
+| `hospitality` | Gastvrijheid | star_rating | true | 2 |
+| `fire_quality` | Kwaliteit Vuurvoorziening | star_rating | true | 3 |
+| `parking` | Parkeergelegenheid | star_rating | true | 4 |
+| `overall` | Algemene Organisatie | star_rating | true | 5 |
 
 ---
 
-### 4. `form_responses` - Ingevuld formulier per gebruiker
+### 5. `form_response`
+
+Eén ingevuld formulier per gebruiker per versie.
 
 ```sql
-CREATE TABLE form_responses (
+CREATE TABLE form_response (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Relations
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  form_version_id UUID NOT NULL REFERENCES form_versions(id),
-
-  -- Status
-  status VARCHAR(20) DEFAULT 'draft',    -- 'draft', 'submitted', 'scored'
-  submitted_at TIMESTAMPTZ,              -- Wanneer definitief ingediend
-
-  -- Scoring (voor predictions/quiz)
-  total_score INTEGER DEFAULT 0,         -- Totaal behaalde punten
-  max_score INTEGER DEFAULT 0,           -- Maximaal haalbare punten
-  scored_at TIMESTAMPTZ,                 -- Wanneer gescoord
-
-  -- Timestamps
+  form_version_id UUID NOT NULL REFERENCES form_version(id),
+  status VARCHAR(20) DEFAULT 'draft',
+  submitted_at TIMESTAMPTZ,
+  total_score INTEGER DEFAULT 0,
+  max_score INTEGER DEFAULT 0,
+  scored_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Constraints
-  UNIQUE(user_id, form_version_id)       -- Één response per form versie per user
+  UNIQUE(user_id, form_version_id),
+  CONSTRAINT chk_form_response_status CHECK (status IN ('draft', 'submitted', 'scored'))
 );
 
--- Indexes
-CREATE INDEX idx_form_responses_user ON form_responses(user_id);
-CREATE INDEX idx_form_responses_version ON form_responses(form_version_id);
-CREATE INDEX idx_form_responses_status ON form_responses(status);
+CREATE INDEX idx_form_response_user ON form_response(user_id);
+CREATE INDEX idx_form_response_version ON form_response(form_version_id);
+CREATE INDEX idx_form_response_status ON form_response(status);
 ```
 
 **Response Statuses:**
+
 | Status | Betekenis |
 |--------|-----------|
 | `draft` | Nog niet volledig ingevuld, kan worden bewerkt |
@@ -280,44 +347,36 @@ CREATE INDEX idx_form_responses_status ON form_responses(status);
 
 ---
 
-### 5. `form_answers` - Individuele antwoorden
+### 6. `form_field_response`
+
+Individueel antwoord op een veld. Meerdere opslagkolommen voor verschillende typen.
 
 ```sql
-CREATE TABLE form_answers (
+CREATE TABLE form_field_response (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Relations
-  response_id UUID NOT NULL REFERENCES form_responses(id) ON DELETE CASCADE,
-  question_id UUID NOT NULL REFERENCES form_questions(id),
-
-  -- Flexible Answer Storage (één veld per type)
-  text TEXT,                             -- text_short, text_long, select_options
-  number NUMERIC,                        -- slider, star_rating, time
-  boolean BOOLEAN,                       -- boolean
-  json JSONB,                            -- checkbox_group, complex answers
-  participant_id UUID                    -- select_participant
-    REFERENCES users(id),
-
-  -- Scoring (voor quiz/predictions)
-  is_correct BOOLEAN,                    -- Was het antwoord correct?
-  points_earned INTEGER DEFAULT 0,       -- Behaalde punten voor dit antwoord
-
-  -- Timestamps
+  form_response_id UUID NOT NULL REFERENCES form_response(id) ON DELETE CASCADE,
+  form_field_id UUID NOT NULL REFERENCES form_field(id),
+  text TEXT,
+  number NUMERIC,
+  boolean BOOLEAN,
+  json JSONB,
+  participant_id UUID REFERENCES users(id),
+  is_correct BOOLEAN,
+  points_earned INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  -- Constraints
-  UNIQUE(response_id, question_id)       -- Één antwoord per vraag per response
+  UNIQUE(form_response_id, form_field_id)
 );
 
--- Indexes
-CREATE INDEX idx_form_answers_response ON form_answers(response_id);
-CREATE INDEX idx_form_answers_question ON form_answers(question_id);
+CREATE INDEX idx_form_field_response_response ON form_field_response(form_response_id);
+CREATE INDEX idx_form_field_response_field ON form_field_response(form_field_id);
 ```
 
-**Answer Storage per Type:**
-| Question Type | Opslag Veld | Voorbeeld |
-|---------------|-------------|-----------|
+**Opslag per Field Type:**
+
+| Field Type | Kolom | Voorbeeld |
+|------------|-------|-----------|
 | `text_short` | text | "Amsterdam" |
 | `text_long` | text | "De sfeer was geweldig..." |
 | `slider` | number | 15 |
@@ -330,86 +389,74 @@ CREATE INDEX idx_form_answers_question ON form_answers(question_id);
 
 ---
 
-## Foreign Key met Active Version
-
-```sql
--- Voeg FK constraint toe nadat beide tabellen bestaan
-ALTER TABLE forms
-  ADD CONSTRAINT fk_forms_active_version
-  FOREIGN KEY (active_version_id)
-  REFERENCES form_versions(id);
-```
-
----
-
 ## Query Voorbeelden
 
-### Haal actieve vragen op voor een formulier
+### Haal actieve velden op voor een formulier (met secties)
 
 ```sql
-SELECT fq.*
-FROM forms f
-JOIN form_versions fv ON fv.id = f.active_version_id
-JOIN form_questions fq ON fq.form_version_id = fv.id
-WHERE f.key = 'ratings'
-  AND fq.is_active = true
-ORDER BY fq.sort_order;
+SELECT
+  fs.key AS section_key,
+  fs.label AS section_label,
+  fs.type AS section_type,
+  fs.icon AS section_icon,
+  ff.*
+FROM form_definition fd
+JOIN form_version fv ON fv.id = fd.active_version_id
+JOIN form_section fs ON fs.form_version_id = fv.id AND fs.is_active = true
+JOIN form_field ff ON ff.form_section_id = fs.id AND ff.is_active = true
+WHERE fd.key = 'ratings'
+ORDER BY fs.sort_order, ff.sort_order;
 ```
 
 ### Haal of maak een response voor een gebruiker
 
 ```sql
--- Get or create response
-INSERT INTO form_responses (user_id, form_version_id, status)
-SELECT $1, f.active_version_id, 'draft'
-FROM forms f WHERE f.key = 'ratings'
+INSERT INTO form_response (user_id, form_version_id, status)
+SELECT $1, fd.active_version_id, 'draft'
+FROM form_definition fd
+WHERE fd.key = 'ratings'
 ON CONFLICT (user_id, form_version_id) DO NOTHING
 RETURNING id;
-
--- Of haal bestaande op
-SELECT fr.*
-FROM form_responses fr
-JOIN form_versions fv ON fv.id = fr.form_version_id
-JOIN forms f ON f.id = fv.form_id
-WHERE fr.user_id = $1 AND f.key = 'ratings';
 ```
 
 ### Haal alle antwoorden van een response op
 
 ```sql
 SELECT
-  fq.key,
-  fq.label,
-  fq.type,
-  fq.section,
-  fa.text,
-  fa.number,
-  fa.boolean,
-  fa.json,
-  fa.participant_id,
-  fa.points_earned
-FROM form_responses fr
-JOIN form_answers fa ON fa.response_id = fr.id
-JOIN form_questions fq ON fq.id = fa.question_id
+  fs.key AS section_key,
+  fs.label AS section_label,
+  ff.key AS field_key,
+  ff.label AS field_label,
+  ff.field_type,
+  ffr.text,
+  ffr.number,
+  ffr.boolean,
+  ffr.json,
+  ffr.participant_id,
+  ffr.points_earned
+FROM form_response fr
+JOIN form_field_response ffr ON ffr.form_response_id = fr.id
+JOIN form_field ff ON ff.id = ffr.form_field_id
+JOIN form_section fs ON fs.id = ff.form_section_id
 WHERE fr.id = $1
-ORDER BY fq.sort_order;
+ORDER BY fs.sort_order, ff.sort_order;
 ```
 
 ### Sla een antwoord op (upsert)
 
 ```sql
-INSERT INTO form_answers (response_id, question_id, number)
+INSERT INTO form_field_response (form_response_id, form_field_id, number)
 VALUES ($1, $2, $3)
-ON CONFLICT (response_id, question_id)
+ON CONFLICT (form_response_id, form_field_id)
 DO UPDATE SET
   number = EXCLUDED.number,
   updated_at = NOW();
 ```
 
-### Submit een response (definitief maken)
+### Submit een response
 
 ```sql
-UPDATE form_responses
+UPDATE form_response
 SET status = 'submitted',
     submitted_at = NOW(),
     updated_at = NOW()
@@ -417,7 +464,7 @@ WHERE id = $1
   AND status = 'draft';
 ```
 
-### Haal alle responses op voor scoring (admin)
+### Admin: Haal alle responses op voor scoring
 
 ```sql
 SELECT
@@ -426,13 +473,13 @@ SELECT
   fr.status,
   fr.submitted_at,
   fr.total_score,
-  COUNT(fa.id) AS answers_count
-FROM form_responses fr
+  COUNT(ffr.id) AS answers_count
+FROM form_response fr
 JOIN users u ON u.id = fr.user_id
-JOIN form_versions fv ON fv.id = fr.form_version_id
-JOIN forms f ON f.id = fv.form_id
-LEFT JOIN form_answers fa ON fa.response_id = fr.id
-WHERE f.key = 'predictions'
+JOIN form_version fv ON fv.id = fr.form_version_id
+JOIN form_definition fd ON fd.id = fv.form_definition_id
+LEFT JOIN form_field_response ffr ON ffr.form_response_id = fr.id
+WHERE fd.key = 'predictions'
   AND fr.status = 'submitted'
 GROUP BY fr.id, u.name
 ORDER BY fr.submitted_at;
@@ -442,32 +489,54 @@ ORDER BY fr.submitted_at;
 
 ## Migratie van Bestaande Data
 
-### Van `prediction_questions` naar `form_questions`
+### Van `prediction_questions` naar nieuw model
 
 ```sql
--- 1. Maak forms record
-INSERT INTO forms (key, name, description)
+-- 1. form_definition
+INSERT INTO form_definition (key, name, description)
 VALUES ('predictions', 'Voorspellingen', 'Voorspellingen voor de BBQ avond');
 
--- 2. Maak form_version record
-INSERT INTO form_versions (form_id, version_number, is_published, published_at)
-SELECT id, 1, true, NOW() FROM forms WHERE key = 'predictions';
+-- 2. form_version
+INSERT INTO form_version (form_definition_id, version_number, is_published, published_at)
+SELECT id, 1, true, NOW() FROM form_definition WHERE key = 'predictions';
 
--- 3. Update forms.active_version_id
-UPDATE forms f SET active_version_id = fv.id
-FROM form_versions fv WHERE fv.form_id = f.id AND f.key = 'predictions';
+-- 3. Koppel active_version
+UPDATE form_definition fd SET active_version_id = fv.id
+FROM form_version fv WHERE fv.form_definition_id = fd.id AND fd.key = 'predictions';
 
--- 4. Migreer questions
-INSERT INTO form_questions (
-  form_version_id, key, label, type, section, options,
+-- 4. form_section (van oude category waarden)
+INSERT INTO form_section (form_version_id, key, label, type, sort_order)
+SELECT DISTINCT
+  fv.id,
+  pq.category,
+  CASE pq.category
+    WHEN 'consumption' THEN 'Consumptie'
+    WHEN 'social' THEN 'Sociaal'
+    WHEN 'other' THEN 'Overig'
+  END,
+  'section',
+  CASE pq.category
+    WHEN 'consumption' THEN 1
+    WHEN 'social' THEN 2
+    WHEN 'other' THEN 3
+  END
+FROM prediction_questions pq
+CROSS JOIN (
+  SELECT fv.id FROM form_version fv
+  JOIN form_definition fd ON fd.id = fv.form_definition_id
+  WHERE fd.key = 'predictions'
+) fv;
+
+-- 5. form_field
+INSERT INTO form_field (
+  form_section_id, key, label, field_type, options,
   points_exact, points_close, points_direction, is_active, sort_order
 )
 SELECT
-  fv.id,
+  fs.id,
   pq.key,
   pq.label,
   pq.type,
-  pq.category,  -- wordt section
   pq.options,
   pq.points_exact,
   pq.points_close,
@@ -475,90 +544,97 @@ SELECT
   pq.is_active,
   pq.sort_order
 FROM prediction_questions pq
-CROSS JOIN (
-  SELECT fv.id FROM form_versions fv
-  JOIN forms f ON f.id = fv.form_id
-  WHERE f.key = 'predictions'
-) fv;
+JOIN form_section fs ON fs.key = pq.category
+JOIN form_version fv ON fv.id = fs.form_version_id
+JOIN form_definition fd ON fd.id = fv.form_definition_id
+WHERE fd.key = 'predictions';
 ```
 
-### Van `registrations.predictions` JSONB naar `form_responses` + `form_answers`
+### Van `registrations.predictions` JSONB naar `form_response` + `form_field_response`
 
 ```sql
--- Stap 1: Maak form_responses voor elke user met predictions
-INSERT INTO form_responses (user_id, form_version_id, status, submitted_at, created_at)
+-- Stap 1: Maak form_response voor elke user
+INSERT INTO form_response (user_id, form_version_id, status, submitted_at, created_at)
 SELECT DISTINCT
   r.user_id,
-  f.active_version_id,
+  fd.active_version_id,
   'submitted',
   r.updated_at,
   r.created_at
 FROM registrations r
-JOIN forms f ON f.key = 'predictions'
+JOIN form_definition fd ON fd.key = 'predictions'
 WHERE r.predictions IS NOT NULL
   AND r.predictions != '{}'::jsonb
 ON CONFLICT (user_id, form_version_id) DO NOTHING;
 
--- Stap 2: Migreer antwoorden naar form_answers
-INSERT INTO form_answers (response_id, question_id, number, text, boolean)
+-- Stap 2: Migreer antwoorden
+INSERT INTO form_field_response (form_response_id, form_field_id, number, text, boolean)
 SELECT
   fr.id,
-  fq.id,
+  ff.id,
   CASE
-    WHEN fq.type IN ('slider', 'time', 'star_rating') THEN (r.predictions->fq.key)::numeric
+    WHEN ff.field_type IN ('slider', 'time', 'star_rating') THEN (r.predictions->ff.key)::numeric
   END,
   CASE
-    WHEN fq.type IN ('text_short', 'text_long', 'select_options', 'select_participant')
-    THEN r.predictions->>fq.key
+    WHEN ff.field_type IN ('text_short', 'text_long', 'select_options', 'select_participant')
+    THEN r.predictions->>ff.key
   END,
   CASE
-    WHEN fq.type = 'boolean' THEN (r.predictions->fq.key)::boolean
+    WHEN ff.field_type = 'boolean' THEN (r.predictions->ff.key)::boolean
   END
 FROM registrations r
-JOIN forms f ON f.key = 'predictions'
-JOIN form_responses fr ON fr.user_id = r.user_id AND fr.form_version_id = f.active_version_id
-JOIN form_questions fq ON fq.form_version_id = f.active_version_id
+JOIN form_definition fd ON fd.key = 'predictions'
+JOIN form_response fr ON fr.user_id = r.user_id AND fr.form_version_id = fd.active_version_id
+JOIN form_field ff ON ff.form_section_id IN (
+  SELECT fs.id FROM form_section fs WHERE fs.form_version_id = fd.active_version_id
+)
 WHERE r.predictions IS NOT NULL
-  AND r.predictions ? fq.key
-ON CONFLICT (response_id, question_id) DO NOTHING;
+  AND r.predictions ? ff.key
+ON CONFLICT (form_response_id, form_field_id) DO NOTHING;
 ```
 
 ---
 
-## Voordelen van dit Model
-
-| Aspect | Voordeel |
-|--------|----------|
-| **Versioning** | Formulieren kunnen worden bijgewerkt zonder bestaande antwoorden te verliezen |
-| **Flexibiliteit** | Nieuwe formulieren toevoegen zonder code wijzigingen |
-| **Data Integriteit** | Antwoorden blijven gekoppeld aan specifieke versie |
-| **Query Performance** | Genormaliseerde antwoorden, geen JSONB parsing nodig |
-| **Type Safety** | Aparte kolommen per antwoord-type |
-| **Audit Trail** | Versie historie behouden |
-| **Rollback** | Actieve versie kan worden teruggedraaid |
-| **Response Tracking** | Status per ingevuld formulier (draft/submitted/scored) |
-| **Scoring** | Punten per antwoord én totaal per response |
-| **Herbruikbaar** | Zelfde structuur voor predictions, ratings, quiz, etc. |
-
 ## Relatie Overzicht
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Definitie
-        F[forms] -->|1:N| FV[form_versions]
-        FV -->|1:N| FQ[form_questions]
+        FD[form_definition] -->|1:N| FV[form_version]
+        FV -->|1:N| FS[form_section]
+        FS -->|1:N| FF[form_field]
     end
 
     subgraph Invullen
-        U[users] -->|1:N| FR[form_responses]
+        U[users] -->|1:N| FR[form_response]
         FV -->|1:N| FR
-        FR -->|1:N| FA[form_answers]
-        FQ -->|1:N| FA
+        FR -->|1:N| FFR[form_field_response]
+        FF -->|1:N| FFR
     end
+
+    style FS fill:#D4AF37,color:#1B4332
 ```
 
 **Leesrichting:**
-1. Een `form` heeft meerdere `versions`
-2. Elke `version` heeft meerdere `questions`
-3. Elke `version` kan meerdere `responses` hebben (1 per user)
-4. Elke `response` heeft meerdere `answers` (1 per question)
+1. Een `form_definition` heeft meerdere `form_version`s
+2. Elke `form_version` heeft meerdere `form_section`s (type: step of section)
+3. Elke `form_section` heeft meerdere `form_field`s
+4. Elke `form_version` kan meerdere `form_response`s hebben (1 per user)
+5. Elke `form_response` heeft meerdere `form_field_response`s (1 per field)
+
+---
+
+## Voordelen
+
+| Aspect | Voordeel |
+|--------|----------|
+| **Salesforce Alignment** | Naamgeving consistent met bewezen WebForm patroon |
+| **Versioning** | Formulieren bijwerken zonder bestaande antwoorden te verliezen |
+| **Sections** | Flexibele groepering: wizard steps of visuele secties |
+| **Flexibiliteit** | Nieuwe formulieren toevoegen zonder code wijzigingen |
+| **Data Integriteit** | Antwoorden gekoppeld aan specifieke versie |
+| **Query Performance** | Genormaliseerde antwoorden, geen JSONB parsing nodig |
+| **Type Safety** | Aparte kolommen per antwoord-type |
+| **Response Tracking** | Status per ingevuld formulier (draft/submitted/scored) |
+| **Scoring** | Punten per antwoord en totaal per response |
+| **Herbruikbaar** | Zelfde structuur voor predictions, ratings, quiz, etc. |
