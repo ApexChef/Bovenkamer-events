@@ -621,6 +621,7 @@ export interface FBReportData {
     completed: number; // Users who filled preferences
     totalParticipants: number; // Total active participants
     totalPersons: number; // Participants + partners
+    missingParticipants: string[]; // Names of participants who haven't filled preferences
   };
   persons: PersonPreference[]; // Combined self + partner preferences
 }
