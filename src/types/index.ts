@@ -252,21 +252,6 @@ export interface QuizAnswer {
   answered_at: string;
 }
 
-export interface Rating {
-  id: string;
-  user_id: string;
-  location_rating: number;
-  hospitality_rating: number;
-  fire_quality_rating: number;
-  parking_rating: number;
-  overall_rating: number;
-  best_aspect?: string;
-  improvement_suggestion?: string;
-  is_worthy: boolean;
-  worthy_explanation?: string;
-  created_at: string;
-}
-
 // Protein distribution (percentages that sum to 100%)
 // Renamed from "MeatDistribution" as it includes fish and vegetarian options
 export interface MeatDistribution {
