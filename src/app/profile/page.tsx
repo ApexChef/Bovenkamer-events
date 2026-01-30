@@ -320,10 +320,10 @@ const toggleSection = (sectionId: SectionId) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
   };
 
-  // Helper to save section to database
-  const saveSectionToDb = async (section: string, data: Record<string, unknown>) => {
+  // Helper to save section to database — returns { saved, sectionComplete }
+  const saveSectionToDb = async (section: string, data: Record<string, unknown>): Promise<{ saved: boolean; sectionComplete: boolean }> => {
     try {
-      await fetch('/api/profile', {
+      const response = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -332,8 +332,18 @@ const toggleSection = (sectionId: SectionId) => {
           data,
         }),
       });
+      if (!response.ok) {
+        console.error('Error saving to database:', response.status);
+        return { saved: false, sectionComplete: false };
+      }
+      const result = await response.json();
+      return {
+        saved: result.success === true,
+        sectionComplete: result.sectionComplete === true,
+      };
     } catch (error) {
       console.error('Error saving to database:', error);
+      return { saved: false, sectionComplete: false };
     }
   };
 
@@ -356,8 +366,10 @@ const toggleSection = (sectionId: SectionId) => {
         partnerName: partnerFullName,
       };
       setFormData(data);
-      await saveSectionToDb('personal', data);
-      markSectionComplete('personal');
+      const { sectionComplete } = await saveSectionToDb('personal', data);
+      if (sectionComplete) {
+        markSectionComplete('personal');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -380,8 +392,10 @@ const toggleSection = (sectionId: SectionId) => {
         waterPreference,
       };
       setFormData(data);
-      await saveSectionToDb('foodDrinks', data);
-      markSectionComplete('foodDrinks');
+      const { sectionComplete } = await saveSectionToDb('foodDrinks', data);
+      if (sectionComplete) {
+        markSectionComplete('foodDrinks');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -396,8 +410,10 @@ const toggleSection = (sectionId: SectionId) => {
         additionalSkills,
       };
       setFormData(data);
-      await saveSectionToDb('skills', data);
-      markSectionComplete('skills');
+      const { sectionComplete } = await saveSectionToDb('skills', data);
+      if (sectionComplete) {
+        markSectionComplete('skills');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -412,8 +428,10 @@ const toggleSection = (sectionId: SectionId) => {
         musicGenre,
       };
       setFormData(data);
-      await saveSectionToDb('music', data);
-      markSectionComplete('music');
+      const { sectionComplete } = await saveSectionToDb('music', data);
+      if (sectionComplete) {
+        markSectionComplete('music');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -432,8 +450,10 @@ const toggleSection = (sectionId: SectionId) => {
         bovenkamerJoinYear,
       };
       setFormData(data);
-      await saveSectionToDb('jkvHistorie', data);
-      markSectionComplete('jkvHistorie');
+      const { sectionComplete } = await saveSectionToDb('jkvHistorie', data);
+      if (sectionComplete) {
+        markSectionComplete('jkvHistorie');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -448,8 +468,10 @@ const toggleSection = (sectionId: SectionId) => {
         borrelPlanning2026,
       };
       setFormData(data);
-      await saveSectionToDb('borrelStats', data);
-      markSectionComplete('borrelStats');
+      const { sectionComplete } = await saveSectionToDb('borrelStats', data);
+      if (sectionComplete) {
+        markSectionComplete('borrelStats');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
@@ -463,8 +485,10 @@ const toggleSection = (sectionId: SectionId) => {
         quizAnswers,
       };
       setFormData(data);
-      await saveSectionToDb('quiz', data);
-      markSectionComplete('quiz');
+      const { sectionComplete } = await saveSectionToDb('quiz', data);
+      if (sectionComplete) {
+        markSectionComplete('quiz');
+      }
       setExpandedSection(null);
     } finally {
       setIsLoading(false);
