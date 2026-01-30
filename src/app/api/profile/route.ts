@@ -131,16 +131,30 @@ export async function GET(request: NextRequest) {
       attendanceConfirmed: registration.attendance_confirmed,
     };
 
+    // Fetch prediction evaluation (if any)
+    const { data: predictionEvaluation } = await supabase
+      .from('user_evaluations')
+      .select('evaluation')
+      .eq('user_id', user.id)
+      .eq('type', 'prediction')
+      .single();
+
     // Calculate completed sections based on what points have been awarded
     // This reflects sections the user has explicitly saved (via POST)
     // Also check for "Registratie voltooid" which is the original basic points entry
-    const { data: existingPointsEntries } = await supabase
+    const { data: existingPointsEntries, error: ledgerError } = await supabase
       .from('points_ledger')
       .select('description')
       .eq('user_id', user.id);
 
+    if (ledgerError) {
+      console.error('Error reading points_ledger for user', user.id, ledgerError);
+    }
+
     const allDescriptions = new Set(
-      (existingPointsEntries || []).map((e: { description: string }) => e.description)
+      (existingPointsEntries || [])
+        .map((e: { description: string | null }) => e.description)
+        .filter((d): d is string => d != null)
     );
 
     // Check if basic points were awarded (either via "profile_basic" or "Registratie voltooid")
@@ -148,9 +162,9 @@ export async function GET(request: NextRequest) {
 
     // Extract profile sections from descriptions
     const awardedSections = new Set(
-      (existingPointsEntries || [])
-        .filter((e: { description: string }) => e.description.startsWith('profile_'))
-        .map((e: { description: string }) => e.description.replace('profile_', ''))
+      Array.from(allDescriptions)
+        .filter((d) => d.startsWith('profile_'))
+        .map((d) => d.replace('profile_', ''))
     );
 
     // Sections are "complete" only if points have been awarded (user explicitly saved)
@@ -183,6 +197,7 @@ export async function GET(request: NextRequest) {
       user,
       profile,
       completedSections,
+      predictionEvaluation: predictionEvaluation?.evaluation || null,
     });
   } catch (error) {
     console.error('Profile GET error:', error);
@@ -346,12 +361,16 @@ export async function POST(request: NextRequest) {
     // Only award points if the section has meaningful data
     if (sectionPoints && isSectionDataValid(section, data)) {
       // Check if points for this section were already awarded
-      const { data: existingPoints } = await supabase
+      const { data: existingPoints, error: checkError } = await supabase
         .from('points_ledger')
         .select('id')
         .eq('user_id', user.id)
         .eq('description', pointsDescription)
-        .single();
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing points:', checkError);
+      }
 
       if (!existingPoints) {
         // Award points for this section
@@ -366,17 +385,25 @@ export async function POST(request: NextRequest) {
 
         if (pointsError) {
           console.error('Error awarding points:', pointsError);
-          // Don't fail the request, just log the error
         } else {
           pointsAwarded = sectionPoints;
         }
       }
     }
 
+    // Verify the actual ledger state — this is the source of truth
+    const { data: verifiedEntry } = await supabase
+      .from('points_ledger')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('description', pointsDescription)
+      .maybeSingle();
+
     return NextResponse.json({
       success: true,
       message: `Section ${section} saved successfully`,
       pointsAwarded,
+      sectionComplete: !!verifiedEntry,
     });
   } catch (error) {
     console.error('Profile POST error:', error);
