@@ -10,8 +10,16 @@ import {
   LogOut,
   Flame,
   Gamepad2,
-  Settings,
+  LayoutDashboard,
   UtensilsCrossed,
+  ChefHat,
+  Package,
+  Users,
+  CreditCard,
+  ClipboardList,
+  FileText,
+  Target,
+  Star,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -50,8 +58,37 @@ const mainNavItems: NavItem[] = [
   { href: '/profile', label: 'Profiel', icon: User },
 ];
 
-const adminNavItems = [
-  { href: '/admin', label: 'Admin', icon: Settings },
+interface AdminGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const adminGroups: AdminGroup[] = [
+  {
+    label: 'Event & Menu',
+    items: [
+      { href: '/admin/menu', label: 'Menu Beheer', icon: ChefHat },
+      { href: '/admin/purchase-orders', label: 'Inkooporders', icon: Package },
+      { href: '/admin/fb-rapport', label: 'F&B Rapport', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Deelnemers & Activiteit',
+    items: [
+      { href: '/admin/gebruikers', label: 'Gebruikersbeheer', icon: Users },
+      { href: '/admin/payments', label: 'Betalingen', icon: CreditCard },
+      { href: '/admin/registraties', label: 'Registraties', icon: ClipboardList },
+      { href: '/admin/formulieren', label: 'Formulieren', icon: FileText },
+    ],
+  },
+  {
+    label: 'Entertainment',
+    items: [
+      { href: '/admin/quiz', label: 'Quiz Beheer', icon: Trophy },
+      { href: '/admin/predictions', label: 'Voorspellingen', icon: Target },
+      { href: '/admin/ratings', label: 'Beoordelingen', icon: Star },
+    ],
+  },
 ];
 
 export function AppSidebar({ userName, userRole, onLogout }: AppSidebarProps) {
@@ -116,29 +153,54 @@ export function AppSidebar({ userName, userRole, onLogout }: AppSidebarProps) {
 
         {/* Admin Section */}
         {userRole === 'admin' && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-cream/50 uppercase text-xs tracking-wider">
-              Beheer
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-cream/50 uppercase text-xs tracking-wider">
+                Admin
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive(item.href)}
+                      isActive={pathname === '/admin'}
                       className="text-cream/70 hover:text-cream hover:bg-gold/10 data-[active=true]:bg-gold/20 data-[active=true]:text-gold"
                     >
-                      <Link href={item.href}>
-                        <item.icon className="w-5 h-5" />
-                        <span>{item.label}</span>
+                      <Link href="/admin">
+                        <LayoutDashboard className="w-5 h-5" />
+                        <span>Dashboard</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            {adminGroups.map((group) => (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel className="text-cream/50 uppercase text-xs tracking-wider">
+                  {group.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive(item.href)}
+                          className="text-cream/70 hover:text-cream hover:bg-gold/10 data-[active=true]:bg-gold/20 data-[active=true]:text-gold"
+                        >
+                          <Link href={item.href}>
+                            <item.icon className="w-5 h-5" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
+          </>
         )}
       </SidebarContent>
 
