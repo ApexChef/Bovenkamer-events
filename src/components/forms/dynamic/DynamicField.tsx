@@ -173,14 +173,21 @@ export function DynamicField({
 
     case 'select_participant': {
       return (
-        <Select
-          label={field.label}
-          options={participants}
-          placeholder="Selecteer een deelnemer"
-          value={(value as string) ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-        />
+        <div className="space-y-2">
+          <div>
+            <p className="text-sm font-semibold text-gold uppercase tracking-wider">{field.label}</p>
+            {field.description && (
+              <p className="text-cream/50 text-sm mt-1">{field.description}</p>
+            )}
+          </div>
+          <Select
+            options={participants}
+            placeholder="Selecteer een deelnemer"
+            value={(value as string) ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
       );
     }
 
