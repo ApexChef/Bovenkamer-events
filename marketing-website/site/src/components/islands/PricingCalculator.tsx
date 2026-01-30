@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { pricingCalculator } from '../../data/pricing';
 
 export default function PricingCalculator() {
-  const [guestCount, setGuestCount] = useState(pricingCalculator.defaultGuests);
+  const [guestCount, setGuestCount] = useState<number>(pricingCalculator.defaultGuests);
 
   // Calculate price based on guest count
   const calculatePrice = (guests: number): { tier: string; price: number | null; label: string } => {
