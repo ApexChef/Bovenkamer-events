@@ -239,13 +239,11 @@ export async function POST(request: NextRequest) {
           ...updateData,
           first_name: data.firstName || null,
           last_name: data.lastName || null,
-          name: data.name || null, // Full name for backward compatibility
           birth_date: data.birthDate || null,
           birth_year: data.birthYear || (data.birthDate ? new Date(data.birthDate).getFullYear() : null),
           has_partner: data.hasPartner,
           partner_first_name: data.partnerFirstName || null,
           partner_last_name: data.partnerLastName || null,
-          partner_name: data.partnerName || null, // Full name for backward compatibility
         };
         break;
 
@@ -318,6 +316,14 @@ export async function POST(request: NextRequest) {
 
       default:
         return NextResponse.json({ error: 'Invalid section' }, { status: 400 });
+    }
+
+    // For the personal section, also sync name to the users table
+    if (section === 'personal' && data.name) {
+      await supabase
+        .from('users')
+        .update({ name: data.name as string, first_name: data.firstName as string || null, last_name: data.lastName as string || null })
+        .eq('id', user.id);
     }
 
     // Check if registration exists
