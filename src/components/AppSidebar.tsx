@@ -12,6 +12,7 @@ import {
   Gamepad2,
   LayoutDashboard,
   UtensilsCrossed,
+  BookOpen,
   ChefHat,
   Package,
   Users,
@@ -20,6 +21,7 @@ import {
   FileText,
   Target,
   Star,
+  UserCheck,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,6 +54,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Home', icon: Home },
   { href: '/eten-drinken', label: 'Eten & Drinken', icon: UtensilsCrossed },
+  { href: '/menu', label: 'Menu', icon: BookOpen, featureKey: 'show_menu' },
   { href: '/predictions', label: 'Voorspellingen', icon: BarChart3, featureKey: 'show_predictions' },
   { href: '/leaderboard', label: 'Ranking', icon: Trophy, featureKey: 'show_live_ranking' },
   { href: '/game', label: 'Burger Game', icon: Gamepad2, featureKey: 'show_burger_game' },
@@ -76,6 +79,7 @@ const adminGroups: AdminGroup[] = [
     label: 'Deelnemers & Activiteit',
     items: [
       { href: '/admin/gebruikers', label: 'Gebruikersbeheer', icon: Users },
+      { href: '/admin/deelnemers', label: 'Deelnemers', icon: UserCheck },
       { href: '/admin/payments', label: 'Betalingen', icon: CreditCard },
       { href: '/admin/registraties', label: 'Registraties', icon: ClipboardList },
       { href: '/admin/formulieren', label: 'Formulieren', icon: FileText },

@@ -9,7 +9,9 @@ export type FeatureKey =
   | 'show_predictions'
   | 'show_live_ranking'
   | 'show_prediction_evaluation'
-  | 'show_ratings';
+  | 'show_ratings'
+  | 'show_payments'
+  | 'show_menu';
 
 export interface FeatureToggle {
   feature_key: FeatureKey;
@@ -28,6 +30,8 @@ export interface FeatureFlags {
   show_live_ranking: boolean;
   show_prediction_evaluation: boolean;
   show_ratings: boolean;
+  show_payments: boolean;
+  show_menu: boolean;
 }
 
 export const DEFAULT_FEATURES: FeatureFlags = {
@@ -39,6 +43,8 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   show_live_ranking: false,
   show_prediction_evaluation: false,
   show_ratings: false,
+  show_payments: false,
+  show_menu: false,
 };
 
 export interface User {

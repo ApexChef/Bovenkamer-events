@@ -125,6 +125,54 @@ Geen voorkeuren = we kiezen voor je. 😈
 
 ---
 
+## Bericht 6 - Game voor extra punten
+*Vrijdag 31 januari - Eerst versturen*
+
+```
+🎮 Extra punten verdienen?
+
+Er staat een game klaar in de app. Speel 'm en scoor punten voor het leaderboard.
+
+👉 https://bovenkamer.netlify.app/game
+```
+
+---
+
+## Bericht 7 - Taak van de avond
+*Vrijdag 31 januari*
+
+```
+📋 Check je dashboard!
+
+Je hebt een persoonlijke taak gekregen voor morgenavond. De Rechtsraad verwacht dat je deze uitvoert.
+
+👉 https://bovenkamer.netlify.app/dashboard
+```
+
+---
+
+## Bericht 8 - Nog 1 dag + Voorspellingen
+*Vrijdag 31 januari - Dag voor het event*
+
+```
+🔮 Nog 1 dag!
+
+Morgen is het zover. De Bovenkamer Winterproef.
+
+Maar eerst: voorspellingen. Waag je gok en verdien extra punten.
+
+Hoeveel flessen wijn gaan er doorheen? Wie valt als eerste in slaap? Wie vertrekt als eerste?
+
+Exacte voorspelling = 50 punten
+Dichtbij = 25 punten
+
+👉 https://bovenkamer.netlify.app/predictions
+
+Tot morgen. 🔥
+```
+
+---
+
 ## Tips voor versturen
 
 1. **Timing**: Verstuur bericht 1 op een moment dat mensen actief zijn (lunch of avond)

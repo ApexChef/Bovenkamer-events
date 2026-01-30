@@ -13,6 +13,7 @@ import {
   Trophy,
   Target,
   Star,
+  UserCheck,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { AuthGuard } from '@/components/AuthGuard';
@@ -44,6 +45,8 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   show_live_ranking: 'Live Ranking',
   show_prediction_evaluation: 'Voorspellingen Evaluatie',
   show_ratings: 'Boy Boom Beoordeling',
+  show_payments: 'Tikkie Betaling',
+  show_menu: 'Menu',
 };
 
 interface AdminItem {
@@ -71,6 +74,7 @@ const adminGroups: AdminGroup[] = [
     label: 'Deelnemers & Activiteit',
     items: [
       { href: '/admin/gebruikers', label: 'Gebruikersbeheer', description: 'Accounts, rollen en punten', icon: Users },
+      { href: '/admin/deelnemers', label: 'Deelnemers', description: 'Deelnemers en toewijzingen', icon: UserCheck },
       { href: '/admin/payments', label: 'Betalingen', description: 'Tikkie overzicht en instellingen', icon: CreditCard },
       { href: '/admin/registraties', label: 'Registraties', description: 'Aanmeldingen beheren', icon: ClipboardList },
       { href: '/admin/formulieren', label: 'Formulieren', description: 'Formulieren en vragen beheren', icon: FileText },

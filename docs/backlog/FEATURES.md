@@ -176,6 +176,29 @@ Per groep een hoofdvaardigheid en subvaardigheden.
 
 ---
 
+## 🎁 Cadeau-idee Lijst
+
+### Concept
+De gastheer/gastvrouw kan een verlanglijst met cadeau-ideeën aanmaken. Gasten kunnen vervolgens kiezen welk cadeautje zij willen geven, zodat er geen dubbele cadeaus komen.
+
+### Gastheer/Gastvrouw
+- Lijst aanmaken met cadeau-ideeën
+- Per cadeau: naam, omschrijving, optioneel een link/afbeelding, prijsindicatie
+- Cadeau markeren als "meerdere welkom" (bijv. fles wijn) of "uniek" (maar één nodig)
+- Overzicht wie welk cadeau heeft geclaimd
+
+### Gast
+- Verlanglijst bekijken met beschikbare cadeaus
+- Cadeau claimen ("Dit geef ik!")
+- Geclaimde cadeaus zijn niet meer zichtbaar/kiesbaar voor andere gasten (tenzij "meerdere welkom")
+- Optie om claim weer los te laten
+
+### Privacy
+- Gasten zien niet wie welk cadeau heeft gekozen — alleen de gastheer/gastvrouw ziet dit
+- Zo blijft het een verrassing
+
+---
+
 ## 📋 Prioriteit Matrix
 
 | Feature                        | Impact | Effort | Prioriteit  |

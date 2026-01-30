@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { UtensilsCrossed } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
+import { FeatureToggle } from '@/components/FeatureToggle';
 
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
@@ -56,6 +58,17 @@ export default function Home() {
             Kandidaat <span className="text-gold">Boy Boom</span>
           </p>
         </div>
+
+        {/* Menu CTA */}
+        <FeatureToggle feature="show_menu">
+          <Link
+            href="/menu"
+            className="card inline-flex items-center gap-3 mb-8 hover:border-gold/40 transition-colors cursor-pointer"
+          >
+            <UtensilsCrossed className="w-5 h-5 text-gold" />
+            <span className="text-gold font-semibold">Bekijk het Menu</span>
+          </Link>
+        </FeatureToggle>
 
         {/* Registration CTA */}
         <div className="mb-12">

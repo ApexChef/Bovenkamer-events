@@ -6,9 +6,9 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ExpectedParticipant } from '@/types';
+import { ExpectedParticipant, AIAssignment } from '@/types';
 import Link from 'next/link';
-import { Trophy, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
+import { Trophy, ChevronDown, CheckCircle, XCircle, ClipboardList } from 'lucide-react';
 
 export default function AdminParticipantsPage() {
   return (
@@ -29,6 +29,18 @@ interface PointsEntry {
   gamePoints: number;
   bonusPoints: number;
 }
+
+interface AssignmentEntry {
+  name: string;
+  aiAssignment: AIAssignment;
+}
+
+const WARNING_COLORS: Record<AIAssignment['warningLevel'], { bg: string; text: string; label: string }> = {
+  GROEN: { bg: 'bg-success-green', text: 'text-cream', label: 'Groen' },
+  GEEL: { bg: 'bg-yellow-500', text: 'text-dark-wood', label: 'Geel' },
+  ORANJE: { bg: 'bg-orange-500', text: 'text-dark-wood', label: 'Oranje' },
+  ROOD: { bg: 'bg-warm-red', text: 'text-cream', label: 'Rood' },
+};
 
 const POINT_CATEGORIES = [
   { key: 'registrationPoints' as const, label: 'Registratie', max: 300, color: 'text-green-400', bgColor: 'bg-green-400' },
@@ -52,6 +64,11 @@ function AdminParticipantsContent() {
   const [isGeneratingAssignments, setIsGeneratingAssignments] = useState(false);
   const [assignmentMessage, setAssignmentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Assignments overview
+  const [assignments, setAssignments] = useState<AssignmentEntry[]>([]);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
+  const [expandedAssignmentName, setExpandedAssignmentName] = useState<string | null>(null);
+
   // Add participant form
   const [newName, setNewName] = useState('');
   const [newEmailHint, setNewEmailHint] = useState('');
@@ -61,6 +78,7 @@ function AdminParticipantsContent() {
   useEffect(() => {
     fetchParticipants();
     fetchPointsOverview();
+    fetchAssignments();
   }, []);
 
   const fetchParticipants = async () => {
@@ -104,6 +122,26 @@ function AdminParticipantsContent() {
       console.error('Failed to fetch points overview:', err);
     } finally {
       setIsLoadingPoints(false);
+    }
+  };
+
+  const fetchAssignments = async () => {
+    try {
+      const response = await fetch('/api/admin/registrations?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        const entries: AssignmentEntry[] = (data.registrations || [])
+          .filter((r: any) => r.aiAssignment)
+          .map((r: any) => ({
+            name: r.name,
+            aiAssignment: r.aiAssignment as AIAssignment,
+          }));
+        setAssignments(entries);
+      }
+    } catch (err) {
+      console.error('Failed to fetch assignments:', err);
+    } finally {
+      setIsLoadingAssignments(false);
     }
   };
 
@@ -184,6 +222,7 @@ function AdminParticipantsContent() {
         type: 'success',
         text: `${data.generated} toewijzingen gegenereerd${data.failed > 0 ? ` (${data.failed} mislukt)` : ''}`,
       });
+      fetchAssignments();
     } catch (err) {
       console.error('Error generating assignments:', err);
       setAssignmentMessage({
@@ -232,6 +271,87 @@ function AdminParticipantsContent() {
             </motion.div>
           )}
         </div>
+
+        {/* Toewijzingen Overview */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-gold" />
+              Toewijzingen ({assignments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingAssignments ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-4 border-gold/20 border-t-gold rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-cream/70 text-sm">Laden...</p>
+              </div>
+            ) : assignments.length === 0 ? (
+              <div className="text-center py-8 text-cream/50">
+                <p>Nog geen toewijzingen gegenereerd</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {assignments.map((entry) => {
+                  const { aiAssignment } = entry;
+                  const colors = WARNING_COLORS[aiAssignment.warningLevel];
+                  const isExpanded = expandedAssignmentName === entry.name;
+
+                  return (
+                    <div
+                      key={entry.name}
+                      className="rounded-lg bg-dark-wood/30 hover:bg-dark-wood/50 transition-colors"
+                    >
+                      <button
+                        onClick={() => setExpandedAssignmentName(isExpanded ? null : entry.name)}
+                        className="w-full flex items-center gap-3 p-3 text-left"
+                      >
+                        {/* Warning level badge */}
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${colors.bg} ${colors.text}`}>
+                          {aiAssignment.warningLevel}
+                        </span>
+
+                        {/* Name + title */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-cream font-medium truncate">{entry.name}</span>
+                            <span className="text-gold text-sm truncate">{aiAssignment.officialTitle}</span>
+                          </div>
+                          <p className="text-cream/60 text-sm truncate">{aiAssignment.task}</p>
+                        </div>
+
+                        <ChevronDown className={`w-4 h-4 text-cream/30 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-3 pb-3 pt-1 border-t border-gold/10 space-y-2">
+                              <div>
+                                <p className="text-xs text-cream/40 uppercase tracking-wider">Redenering</p>
+                                <p className="text-cream/80 text-sm">{aiAssignment.reasoning}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-cream/40 uppercase tracking-wider">Speciaal privilege</p>
+                                <p className="text-cream/80 text-sm">{aiAssignment.specialPrivilege}</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Add Participant Form */}
         <Card className="mb-8">

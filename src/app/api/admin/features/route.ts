@@ -123,6 +123,8 @@ function getFeatureDescription(key: FeatureKey): string {
     show_live_ranking: 'Toon live ranking menu item',
     show_prediction_evaluation: 'Toon AI-evaluatie van voorspellingen op dashboard',
     show_ratings: 'Toon Boy Boom beoordeling op dashboard',
+    show_payments: 'Toon Tikkie betaal-CTA op dashboard',
+    show_menu: 'Toon menu-kaart op homepage en /menu pagina',
   };
   return descriptions[key] || key;
 }

@@ -14,6 +14,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { FeatureToggle } from '@/components/FeatureToggle';
+import { PaymentCard } from '@/components/PaymentCard';
 
 interface AIAssignment {
   officialTitle: string;
@@ -26,6 +27,7 @@ interface AIAssignment {
 interface HomeTabProps {
   formData: {
     name: string;
+    email?: string;
     hasPartner: boolean;
     partnerName?: string;
   };
@@ -95,7 +97,7 @@ export function HomeTab({
   return (
     <div className="space-y-4">
       {/* Countdown Timer */}
-      <FeatureToggle feature="show_countdown">
+      <FeatureToggle feature="show_countdown" showWhileLoading={false}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,6 +326,22 @@ export function HomeTab({
               </CardContent>
             </Card>
           </Link>
+        </motion.div>
+      </FeatureToggle>
+
+      {/* Tikkie Payment */}
+      <FeatureToggle feature="show_payments">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.37 }}
+        >
+          <PaymentCard
+            userId={formData.email}
+            userName={formData.name}
+            hasPartner={formData.hasPartner}
+            partnerName={formData.partnerName}
+          />
         </motion.div>
       </FeatureToggle>
 

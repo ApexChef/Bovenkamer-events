@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
           primary_skill,
           has_partner,
           partner_name,
-          status
+          status,
+          ai_assignment
         )
       `,
         { count: 'exact' }
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
         wasExpectedParticipant: false, // TODO: Check against expected_participants
         primarySkill: reg?.primary_skill || null,
         hasPartner: reg?.has_partner || false,
+        aiAssignment: reg?.ai_assignment || null,
       };
     });
 

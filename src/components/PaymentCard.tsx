@@ -3,19 +3,15 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
+import { Card, CardContent, Button } from '@/components/ui';
 
-interface PaymentStatus {
+interface PaymentRecord {
   id: string;
   amount_cents: number;
   status: 'pending' | 'processing' | 'paid' | 'expired' | 'cancelled';
   tikkie_url: string | null;
   deadline: string | null;
   paid_at: string | null;
-  registrations?: {
-    has_partner: boolean;
-    partner_name: string | null;
-  };
 }
 
 const PRICE_PER_PERSON = 50; // €50 per person
@@ -27,28 +23,20 @@ function formatCentsToEuros(cents: number): string {
   }).format(cents / 100);
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
-  pending: { label: 'Openstaand', color: 'text-yellow-500', bgColor: 'bg-yellow-500/20', icon: '○' },
-  processing: { label: 'In behandeling', color: 'text-blue-400', bgColor: 'bg-blue-400/20', icon: '◐' },
-  paid: { label: 'Betaald', color: 'text-success-green', bgColor: 'bg-success-green/20', icon: '✓' },
-  expired: { label: 'Verlopen', color: 'text-warm-red', bgColor: 'bg-warm-red/20', icon: '✗' },
-  cancelled: { label: 'Geannuleerd', color: 'text-cream/50', bgColor: 'bg-cream/10', icon: '—' },
-};
-
 interface PaymentCardProps {
   userId?: string;
+  userName?: string;
   hasPartner?: boolean;
   partnerName?: string;
 }
 
-export function PaymentCard({ userId, hasPartner = false, partnerName }: PaymentCardProps) {
-  const [payment, setPayment] = useState<PaymentStatus | null>(null);
+export function PaymentCard({ userId, userName, hasPartner = false, partnerName }: PaymentCardProps) {
+  const firstName = userName?.split(' ')[0] || '';
+  const [payment, setPayment] = useState<PaymentRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Calculate number of persons and total amount
   const numberOfPersons = hasPartner ? 2 : 1;
   const totalAmountCents = numberOfPersons * PRICE_PER_PERSON * 100;
 
@@ -63,197 +51,149 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
         const response = await fetch(`/api/payments?user_id=${userId}`);
         if (response.ok) {
           const data = await response.json();
-          // Get the user's payment from the list
           const userPayment = data.payments?.[0] || null;
-
           if (userPayment) {
             setPayment(userPayment);
-          } else {
-            // Check localStorage for local payment status
-            const localStatus = localStorage.getItem(`payment-status-${userId}`);
-            if (localStatus === 'processing') {
-              setPayment({
-                id: `local-${userId}`,
-                amount_cents: totalAmountCents,
-                status: 'processing',
-                tikkie_url: null,
-                deadline: null,
-                paid_at: null,
-              });
-            }
           }
         }
       } catch (err) {
         console.error('Error fetching payment:', err);
-        setError('Kon betaalstatus niet ophalen');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPayment();
-  }, [userId, totalAmountCents]);
+  }, [userId]);
 
-  // Handle payment confirmed - set status to processing
+  // User clicks "Ik heb betaald" — self-report to DB
   const handlePaymentConfirmed = async () => {
     setIsUpdatingStatus(true);
     try {
-      if (payment?.id) {
-        // Update existing payment record
-        const response = await fetch(`/api/payments/${payment.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'processing' }),
-        });
+      const response = await fetch('/api/payments/self-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userId }),
+      });
 
-        if (response.ok) {
-          setPayment({ ...payment, status: 'processing' });
-        }
-      } else {
-        // No payment record exists - create a local "processing" state
-        // and store in localStorage to persist the status
-        const localPayment: PaymentStatus = {
-          id: `local-${userId}`,
-          amount_cents: totalAmountCents,
-          status: 'processing',
-          tikkie_url: null,
-          deadline: null,
-          paid_at: null,
-        };
-        setPayment(localPayment);
-
-        // Store in localStorage to persist across page reloads
-        if (userId) {
-          localStorage.setItem(`payment-status-${userId}`, 'processing');
-        }
+      if (response.ok) {
+        const data = await response.json();
+        setPayment((prev) => prev
+          ? { ...prev, status: data.status }
+          : {
+              id: 'self-reported',
+              amount_cents: totalAmountCents,
+              status: data.status,
+              tikkie_url: null,
+              deadline: null,
+              paid_at: null,
+            }
+        );
       }
     } catch (err) {
-      console.error('Error updating payment status:', err);
+      console.error('Error reporting payment:', err);
     } finally {
       setIsUpdatingStatus(false);
       setShowModal(false);
     }
   };
 
-  // Handle cancel - just close modal without updating status
-  const handleCancel = () => {
-    setShowModal(false);
-  };
-
   if (isLoading) {
     return (
-      <Card className="h-full">
-        <CardContent className="py-8 text-center">
+      <Card>
+        <CardContent className="py-6 text-center">
           <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin mx-auto" />
         </CardContent>
       </Card>
     );
   }
 
-  // Determine status - use payment status if available, otherwise pending
   const status = payment?.status || 'pending';
-  const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const displayAmount = payment?.amount_cents || totalAmountCents;
+
+  // Minimal card when paid
+  if (status === 'paid') {
+    const paidText = hasPartner && partnerName
+      ? `Jij en ${partnerName} zijn helemaal geregeld`
+      : 'Je bent helemaal geregeld';
+
+    return (
+      <Card className="border-success-green/30 bg-dark-wood">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-success-green/20 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-success-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-success-green font-semibold">
+                {firstName ? `Bedankt ${firstName}!` : 'Bedankt!'}
+              </p>
+              <p className="text-cream/50 text-xs">
+                {paidText}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Minimal card when processing (user said they paid, admin hasn't confirmed)
+  if (status === 'processing') {
+    return (
+      <Card className="border-blue-400/30 bg-dark-wood">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-400/20 rounded-full flex items-center justify-center">
+              <span className="text-blue-400 text-lg">◐</span>
+            </div>
+            <div>
+              <p className="text-blue-400 font-semibold">
+                {firstName ? `Top ${firstName}!` : 'Top!'}
+              </p>
+              <p className="text-cream/50 text-xs">
+                We checken je betaling — even geduld
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Full card with CTA for pending / no payment
+  const ctaSubtext = hasPartner && partnerName
+    ? `Voor jou en ${partnerName} — ${formatCentsToEuros(displayAmount)}`
+    : `Jouw bijdrage — ${formatCentsToEuros(displayAmount)}`;
 
   return (
     <>
-      <Card className="h-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      <Card>
+        <CardContent className="py-4">
+          <div className="space-y-3">
             <div>
-              <CardTitle>Betaling</CardTitle>
-              <CardDescription>Deelnamekosten Winterproef</CardDescription>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.color}`}>
-              {statusConfig.icon} {statusConfig.label}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Amount breakdown */}
-            <div className="bg-dark-wood/50 rounded-lg p-4 border border-gold/20">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-cream/70">Deelnemer</span>
-                  <span className="text-cream">€{PRICE_PER_PERSON}</span>
-                </div>
-                {hasPartner && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-cream/70">Partner{partnerName ? ` (${partnerName})` : ''}</span>
-                    <span className="text-cream">€{PRICE_PER_PERSON}</span>
-                  </div>
-                )}
-                <div className="border-t border-gold/20 pt-2 mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-cream/50 text-xs uppercase tracking-wider">Totaal ({numberOfPersons} {numberOfPersons === 1 ? 'persoon' : 'personen'})</span>
-                    <span className="font-display text-2xl text-gold">
-                      {formatCentsToEuros(displayAmount)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <p className="text-cream font-semibold">
+                {firstName ? `Hoi ${firstName}, nog even tikken!` : 'Nog even tikken!'}
+              </p>
+              <p className="text-cream/50 text-xs mt-0.5">
+                {ctaSubtext}
+              </p>
             </div>
 
-            {/* Paid date */}
-            {payment?.paid_at && status === 'paid' && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-cream/60">Betaald op</span>
-                <span className="text-success-green">
-                  {new Date(payment.paid_at).toLocaleDateString('nl-NL', {
-                    day: 'numeric',
-                    month: 'long',
-                  })}
-                </span>
-              </div>
-            )}
-
-            {/* CTA Button for pending payments */}
-            {status === 'pending' && (
-              <Button
-                onClick={() => setShowModal(true)}
-                className="w-full"
-                size="lg"
-              >
-                Betalen via Tikkie
-              </Button>
-            )}
-
-            {/* Processing message */}
-            {status === 'processing' && (
-              <div className="text-center py-3 bg-blue-400/10 rounded-lg border border-blue-400/20">
-                <p className="text-blue-400 font-medium mb-1">Betaling in behandeling</p>
-                <p className="text-cream/50 text-sm">
-                  Je betaling wordt verwerkt. Dit kan even duren.
-                </p>
-              </div>
-            )}
-
-            {/* Success message */}
-            {status === 'paid' && (
-              <div className="text-center py-3 bg-success-green/10 rounded-lg border border-success-green/20">
-                <div className="w-10 h-10 bg-success-green/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-5 h-5 text-success-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-success-green font-semibold">Bedankt voor je betaling!</p>
-              </div>
-            )}
-
-            {/* Expired message */}
-            {status === 'expired' && (
-              <div className="text-center py-3 bg-warm-red/10 rounded-lg border border-warm-red/20">
-                <p className="text-warm-red text-sm">
-                  Betaling is verlopen. Neem contact op met de organisatie.
-                </p>
-              </div>
-            )}
+            <Button
+              onClick={() => setShowModal(true)}
+              className="w-full"
+              size="lg"
+            >
+              Betaal via Tikkie
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment Modal */}
+      {/* QR Code Modal */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -261,7 +201,7 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
-            onClick={handleCancel}
+            onClick={() => setShowModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -271,20 +211,13 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
-                <h3 className="font-display text-2xl text-gold mb-2">Betalen via Tikkie</h3>
+                <h3 className="font-display text-2xl text-gold mb-2">
+                  Tikkie tijd!
+                </h3>
                 <p className="text-cream/70 text-sm mb-4">
-                  Scan de QR-code met je camera of Tikkie app
+                  Scan de QR-code en tik {formatCentsToEuros(displayAmount)} over
                 </p>
 
-                {/* Amount display */}
-                <div className="bg-gold/10 rounded-lg p-3 mb-4 border border-gold/20">
-                  <p className="text-cream/50 text-xs uppercase tracking-wider mb-1">Te betalen</p>
-                  <p className="font-display text-3xl text-gold">
-                    {formatCentsToEuros(displayAmount)}
-                  </p>
-                </div>
-
-                {/* QR Code */}
                 <div className="bg-white rounded-xl p-4 inline-block mx-auto mb-4">
                   <Image
                     src="/tikkie-qr.png"
@@ -296,23 +229,22 @@ export function PaymentCard({ userId, hasPartner = false, partnerName }: Payment
                 </div>
 
                 <p className="text-cream/50 text-xs mb-6">
-                  Vermeld je naam bij de betaling
+                  Vermeld &lsquo;{firstName || 'je naam'}&rsquo; bij de betaling
                 </p>
 
-                {/* Confirm payment button */}
                 <Button
                   onClick={handlePaymentConfirmed}
                   className="w-full"
                   disabled={isUpdatingStatus}
                 >
-                  {isUpdatingStatus ? 'Even geduld...' : 'Ik heb betaald'}
+                  {isUpdatingStatus ? 'Even geduld...' : 'Geregeld, ik heb betaald!'}
                 </Button>
 
                 <button
-                  onClick={handleCancel}
+                  onClick={() => setShowModal(false)}
                   className="mt-3 text-cream/50 hover:text-cream text-sm transition-colors"
                 >
-                  Annuleren
+                  Doe ik later
                 </button>
               </div>
             </motion.div>
