@@ -1051,3 +1051,206 @@ export function isSelectOptionsFieldOptions(options: FormFieldOptions): options 
 export function isSelectParticipantFieldOptions(options: FormFieldOptions): options is SelectParticipantOptions {
   return (options as SelectParticipantOptions).type === 'select_participant';
 }
+
+// =============================================================================
+// MENU & SHOPPING LIST TYPES (US-014 v2)
+// =============================================================================
+
+/**
+ * Event entity
+ */
+export interface MenuEvent {
+  id: string;
+  name: string;
+  eventType: 'bbq' | 'diner' | 'lunch' | 'borrel' | 'receptie' | 'overig';
+  eventDate: string | null; // ISO date string
+  totalPersons: number | null;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  notes: string | null;
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}
+
+/**
+ * Event with course count (for list view)
+ */
+export interface EventWithCourseCount extends MenuEvent {
+  courseCount: number;
+}
+
+/**
+ * Event course entity
+ */
+export interface EventCourse {
+  id: string;
+  eventId: string;
+  name: string;
+  sortOrder: number;
+  gramsPerPerson: number;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Menu item entity
+ */
+export interface MenuItem {
+  id: string;
+  courseId: string;
+  name: string;
+  itemType: 'protein' | 'side' | 'fixed';
+  category: string | null;
+  yieldPercentage: number; // 0-100
+  wasteDescription: string | null;
+  unitWeightGrams: number | null;
+  unitLabel: string | null;
+  roundingGrams: number | null;
+  distributionPercentage: number | null; // Protein only
+  gramsPerPerson: number | null; // Fixed only
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Event course with menu items
+ */
+export interface EventCourseWithItems extends EventCourse {
+  menuItems: MenuItem[];
+}
+
+/**
+ * Event with full details (courses and items)
+ */
+export interface EventWithDetails extends MenuEvent {
+  courses: EventCourseWithItems[];
+}
+
+/**
+ * Shopping list item (calculated result)
+ */
+export interface ShoppingListItem {
+  menuItemId: string;
+  name: string;
+  itemType: 'protein' | 'side' | 'fixed';
+  category: string | null;
+  edibleGrams: number;
+  brutoGrams: number;
+  purchaseQuantity: number;
+  purchaseUnits: number | null; // For fixed units (e.g., 13 hamburgers)
+  unit: string; // 'g', 'kg', 'stuks', etc.
+  unitLabel: string | null;
+  calculation: {
+    // Common fields
+    yieldPercentage: number;
+    brutoGrams: number;
+    purchaseQuantity: number;
+
+    // Protein-specific
+    totalCourseGrams?: number;
+    categoryPercentage?: number;
+    categoryGrams?: number;
+    distributionPercentage?: number;
+    itemEdibleGrams?: number;
+
+    // Side-specific
+    numberOfSides?: number;
+    perItemGrams?: number;
+
+    // Fixed-specific
+    gramsPerPerson?: number;
+    totalPersons?: number;
+
+    // Unit-specific
+    unitWeightGrams?: number | null;
+    roundingGrams?: number | null;
+    purchaseUnits?: number | null;
+  };
+}
+
+/**
+ * Shopping list for a single course
+ */
+export interface ShoppingListCourse {
+  courseId: string;
+  courseName: string;
+  gramsPerPerson: number;
+  items: ShoppingListItem[];
+  subtotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+  };
+}
+
+/**
+ * Complete shopping list for an event
+ */
+export interface ShoppingList {
+  courses: ShoppingListCourse[];
+  grandTotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+  };
+}
+
+/**
+ * Shopping list API response
+ */
+export interface ShoppingListResponse {
+  event: {
+    id: string;
+    name: string;
+    totalPersons: number;
+  };
+  averageMeatDistribution: MeatDistribution;
+  courses: ShoppingListCourse[];
+  grandTotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+  };
+}
+
+/**
+ * Form data for creating event
+ */
+export interface CreateEventData {
+  name: string;
+  eventType: MenuEvent['eventType'];
+  eventDate: string | null;
+  totalPersons: number | null;
+  status: MenuEvent['status'];
+  notes: string;
+}
+
+/**
+ * Form data for creating course
+ */
+export interface CreateCourseData {
+  name: string;
+  sortOrder: number;
+  gramsPerPerson: number;
+  notes: string;
+}
+
+/**
+ * Form data for creating menu item
+ */
+export interface CreateMenuItemData {
+  name: string;
+  itemType: MenuItem['itemType'];
+  category: string | null;
+  yieldPercentage: number;
+  wasteDescription: string;
+  unitWeightGrams: number | null;
+  unitLabel: string;
+  roundingGrams: number | null;
+  distributionPercentage: number | null;
+  gramsPerPerson: number | null;
+  sortOrder: number;
+  isActive: boolean;
+}
