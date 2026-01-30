@@ -2,6 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  ChefHat,
+  Package,
+  BarChart3,
+  Users,
+  CreditCard,
+  ClipboardList,
+  FileText,
+  Trophy,
+  Target,
+  Star,
+} from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { AuthGuard } from '@/components/AuthGuard';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
@@ -31,6 +43,59 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   show_predictions: 'Voorspellingen',
   show_live_ranking: 'Live Ranking',
 };
+
+interface AdminItem {
+  href: string;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+}
+
+interface AdminGroup {
+  label: string;
+  items: AdminItem[];
+}
+
+const adminGroups: AdminGroup[] = [
+  {
+    label: 'Event & Menu',
+    items: [
+      { href: '/admin/menu', label: 'Menu Beheer', description: 'Gerechten en menu samenstellen', icon: ChefHat },
+      { href: '/admin/purchase-orders', label: 'Inkooporders', description: 'Inkoop en bestellingen', icon: Package },
+      { href: '/admin/fb-rapport', label: 'F&B Rapport', description: 'Boodschappenlijst genereren', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Deelnemers & Activiteit',
+    items: [
+      { href: '/admin/gebruikers', label: 'Gebruikersbeheer', description: 'Accounts, rollen en punten', icon: Users },
+      { href: '/admin/payments', label: 'Betalingen', description: 'Tikkie overzicht en instellingen', icon: CreditCard },
+      { href: '/admin/registraties', label: 'Registraties', description: 'Aanmeldingen beheren', icon: ClipboardList },
+      { href: '/admin/formulieren', label: 'Formulieren', description: 'Formulieren en vragen beheren', icon: FileText },
+    ],
+  },
+  {
+    label: 'Entertainment',
+    items: [
+      { href: '/admin/quiz', label: 'Quiz Beheer', description: 'Vragen beheren en quiz starten', icon: Trophy },
+      { href: '/admin/predictions', label: 'Voorspellingen', description: 'Uitkomsten invullen', icon: Target },
+      { href: '/admin/ratings', label: 'Beoordelingen', description: 'Boy Boom resultaten', icon: Star },
+    ],
+  },
+];
+
+const favoriteHrefs = [
+  '/admin/menu',
+  '/admin/gebruikers',
+  '/admin/payments',
+  '/admin/quiz',
+  '/admin/formulieren',
+  '/admin/fb-rapport',
+];
+
+const favoriteItems = favoriteHrefs
+  .map(href => adminGroups.flatMap(g => g.items).find(item => item.href === href))
+  .filter((item): item is AdminItem => item !== undefined);
 
 function AdminPageContent() {
   const [features, setFeatures] = useState<FeatureToggle[]>([]);
@@ -92,56 +157,49 @@ function AdminPageContent() {
           <p className="text-cream/60">Beheer de Winterproef</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Link href="/admin/gebruikers">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">Gebruikersbeheer</p>
-                <p className="text-cream/50 text-sm">Accounts, rollen en punten</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/admin/payments">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">Betalingen</p>
-                <p className="text-cream/50 text-sm">Tikkie overzicht en instellingen</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/admin/quiz">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">Quiz Beheer</p>
-                <p className="text-cream/50 text-sm">Vragen beheren en quiz starten</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/admin/predictions">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">Voorspellingen</p>
-                <p className="text-cream/50 text-sm">Uitkomsten invullen</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/admin/ratings">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">Beoordelingen</p>
-                <p className="text-cream/50 text-sm">Boy Boom resultaten</p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/admin/fb-rapport">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
-              <CardContent className="py-6 text-center">
-                <p className="text-gold font-semibold mb-1">F&B Rapport</p>
-                <p className="text-cream/50 text-sm">Boodschappenlijst genereren</p>
-              </CardContent>
-            </Card>
-          </Link>
+        {/* Favorieten */}
+        <div className="mb-8">
+          <h2 className="font-display text-lg font-semibold text-cream mb-4">Favorieten</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {favoriteItems.map((item) => (
+              <Link key={item.href} href={item.href}>
+                <Card className="hover:border-gold/50 transition-colors cursor-pointer">
+                  <CardContent className="py-6 text-center">
+                    <item.icon className="w-6 h-6 text-gold mx-auto mb-2" />
+                    <p className="text-gold font-semibold mb-1">{item.label}</p>
+                    <p className="text-cream/50 text-sm">{item.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Alle Beheer — gegroepeerd */}
+        <div className="mb-8">
+          <h2 className="font-display text-lg font-semibold text-cream mb-4">Alle Beheer</h2>
+          <div className="space-y-6">
+            {adminGroups.map((group) => (
+              <div key={group.label}>
+                <h3 className="text-sm text-cream/50 uppercase tracking-wider mb-3">{group.label}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {group.items.map((item) => (
+                    <Link key={item.href} href={item.href}>
+                      <Card className="hover:border-gold/50 transition-colors cursor-pointer">
+                        <CardContent className="py-4 flex items-center gap-3">
+                          <item.icon className="w-5 h-5 text-gold shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-cream font-medium text-sm">{item.label}</p>
+                            <p className="text-cream/40 text-xs truncate">{item.description}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Feature Toggles */}

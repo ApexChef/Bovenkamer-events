@@ -1,805 +1,255 @@
-# US-014: Admin Food & Beverage Rapport - PREPARE Phase
+# US-014 v2: Menu & Inkoopberekening - PREPARE Phase
 
 ## Executive Summary
 
-This document contains comprehensive research findings for implementing an admin F&B reporting page that aggregates food and drink preferences from participants and partners to generate a practical shopping list. The project leverages an existing database schema (`food_drink_preferences` table), established admin page patterns, and will require export functionality for PDF and Excel/CSV formats.
+This document contains the research findings for implementing a **dynamic menu & inkoopberekening (shopping list calculation)** system. This is v2 of US-014, building on top of the fully implemented F&B preference report (v1).
+
+**What v1 delivered (complete):**
+- F&B rapport page (`/admin/fb-rapport`) showing aggregated food/drink preferences
+- Calculation library (`src/lib/fb-calculations.ts`) for meat, drink, and dietary statistics
+- Report components (`src/components/fb-report/`) for visual display
+- API endpoint (`/api/admin/fb-report`) for fetching preference data
+- Excel/CSV/PDF export functionality
+
+**What v2 adds (to be built):**
+- Event/Course/Menu-item management (admin CRUD)
+- Dynamic shopping list calculation based on menu + participant preferences
+- Yield percentage handling (bruto vs netto weights)
+- Three calculation types: protein (preference-driven), side (evenly split), fixed (per-person)
+- LLM-assisted menu item suggestions (yield %, waste description)
+- Shopping list display per course with totals
 
 **Key Findings:**
-- Complete database schema exists for storing food/drink preferences per user and partner
-- Established admin authentication and authorization patterns available
-- Multiple export libraries available for PDF (react-to-print, browser print) and Excel (XLSX/SheetJS)
-- Partner data is stored separately in `registrations` table with `has_partner` flag and name fields
-- Existing admin pages demonstrate card-based UI patterns with Framer Motion animations
+1. Three new database tables needed: `events`, `event_courses`, `menu_items`
+2. Existing `food_drink_preferences.meat_distribution` provides category averages for protein calculations
+3. Calculation engine is pure math - no new external dependencies required
+4. Admin CRUD UI follows existing patterns (DashboardLayout, Card-based, Framer Motion)
+5. Existing `fb-calculations.ts` can be extended or a separate `menu-calculations.ts` created
 
 **Recommendations:**
-1. Use browser native print-to-PDF with CSS media queries (simplest, no dependencies)
-2. Use SheetJS/XLSX library for Excel/CSV export (industry standard)
-3. Leverage existing admin layout (`DashboardLayout`) and authentication patterns
-4. Follow existing admin page UI patterns for consistency
+1. Create separate calculation module (`src/lib/menu-calculations.ts`) to keep concerns clean
+2. Use Supabase cascading deletes for event/course/item hierarchy
+3. Admin UI at `/admin/menu` with nested course/item management
+4. Shopping list view at `/admin/inkooplijst` or as section within menu page
+5. Optional LLM integration via existing Anthropic API key for yield suggestions
 
 ---
 
-## Technology Overview
+## v1 Implementation Status (What Already Exists)
 
-### Database: Supabase PostgreSQL
-The application uses Supabase (PostgreSQL) for data storage with existing migrations and schemas in place.
+### Fully Implemented Components
 
-### Frontend: Next.js 14 App Router
-- Server and client components
-- TypeScript for type safety
-- Framer Motion for animations
-- Tailwind CSS for styling
+| Component | File | Status |
+|-----------|------|--------|
+| F&B Report Page | `src/app/admin/fb-rapport/page.tsx` | Complete |
+| F&B Report API | `src/app/api/admin/fb-report/route.ts` | Complete |
+| Calculation Library | `src/lib/fb-calculations.ts` | Complete |
+| ReportHeader | `src/components/fb-report/ReportHeader.tsx` | Complete |
+| DietaryWarnings | `src/components/fb-report/DietaryWarnings.tsx` | Complete |
+| MeatBreakdown | `src/components/fb-report/MeatBreakdown.tsx` | Complete |
+| DrinkBreakdown | `src/components/fb-report/DrinkBreakdown.tsx` | Complete |
+| SidesBreakdown | `src/components/fb-report/SidesBreakdown.tsx` | Complete |
+| PersonDetailList | `src/components/fb-report/PersonDetailList.tsx` | Complete |
+| F&B Types | `src/types/index.ts` (lines 586-769) | Complete |
+| Database | `food_drink_preferences` table | Complete |
+| Food-Drinks API | `src/app/api/food-drinks/route.ts` | Complete |
 
-### Authentication: Custom JWT-based
-- Admin role checking via `getUserFromRequest()` and `isAdmin()`
-- Cookie-based session management
+### Existing Calculation Functions (fb-calculations.ts)
 
----
-
-## Detailed Documentation
-
-### 1. Database Schema
-
-#### food_drink_preferences Table
-
-**Location:** `supabase/migrations/20260128_food_drink_preferences.sql`
-
-**Columns:**
-```sql
-id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
-person_type TEXT CHECK (person_type IN ('self', 'partner'))
-
--- Food preferences
-dietary_requirements TEXT
-meat_distribution JSONB DEFAULT '{"pork": 20, "beef": 20, "chicken": 20, "game": 10, "fish": 15, "vegetarian": 15}'
-veggies_preference INT (0-5)
-sauces_preference INT (0-5)
-
--- Drink preferences
-starts_with_bubbles BOOLEAN
-bubble_type TEXT CHECK (bubble_type IN ('champagne', 'prosecco', NULL))
-drink_distribution JSONB DEFAULT '{"softDrinks": 0, "wine": 0, "beer": 0}'
-soft_drink_preference TEXT
-soft_drink_other TEXT
-water_preference TEXT CHECK (water_preference IN ('sparkling', 'flat', NULL))
-wine_preference INT (0-100, where 0=red, 100=white)
-beer_type TEXT CHECK (beer_type IN ('pils', 'speciaal'))
-
--- Timestamps
-created_at TIMESTAMPTZ
-updated_at TIMESTAMPTZ
-
--- Constraint: UNIQUE(user_id, person_type)
-```
-
-**Key Points:**
-- One record per user per `person_type` ('self' or 'partner')
-- Percentages stored as JSONB objects
-- Wine preference slider: 0 = 100% red, 50 = mix, 100 = 100% white
-- NULL wine_preference if wine <= 10% in drink_distribution
-- NULL beer_type if beer = 0%
-
-**Indexes:**
-```sql
-CREATE INDEX idx_food_drink_user ON food_drink_preferences(user_id);
-```
-
-#### Related Tables
-
-**users table** (`supabase/migrations/001_initial_schema.sql`):
-```sql
-id UUID PRIMARY KEY
-email TEXT UNIQUE
-name TEXT
-first_name TEXT  -- Added in 20260128_name_split.sql
-last_name TEXT   -- Added in 20260128_name_split.sql
-role TEXT CHECK (role IN ('participant', 'admin', 'quizmaster'))
-email_verified BOOLEAN
-is_active BOOLEAN
-```
-
-**registrations table** (`supabase/migrations/001_initial_schema.sql` + `20260128_name_split.sql`):
-```sql
-id UUID PRIMARY KEY
-user_id UUID REFERENCES users(id)
-name TEXT
-first_name TEXT           -- Added in migration
-last_name TEXT            -- Added in migration
-has_partner BOOLEAN
-partner_name TEXT
-partner_first_name TEXT   -- Added in migration
-partner_last_name TEXT    -- Added in migration
-dietary_requirements TEXT  -- Deprecated, moved to food_drink_preferences
-```
-
-**Critical:** Partner information is stored in `registrations` table, while their food/drink preferences are in `food_drink_preferences` with `person_type = 'partner'`.
-
----
-
-### 2. API Patterns
-
-#### Existing Admin API Example
-
-**File:** `src/app/api/admin/predictions/route.ts`
-
-**Pattern:**
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+// Constants already defined:
+PORTION_SIZES = { meat: 200g, wine: 2 glasses, beer: 2 bottles, bubbles: 1 glass }
+CONTAINER_SIZES = { wineBottle: 750ml, beerCrate: 24, ... }
+MEAT_CATEGORIES = ['pork', 'beef', 'chicken', 'game', 'fish', 'vegetarian']
+
+// Functions already implemented:
+calculateMeatStats(persons) → MeatStats  // weighted distribution per category
+calculateDrinkStats(persons) → DrinkStats  // wine, beer, soft drinks, water, bubbles
+groupDietaryRequirements(persons) → DietaryGroups
+formatWinePreference(preference) → string
+calculateAverageVeggies(persons) → number
+calculateAverageSauces(persons) → number
+```
+
+### Existing Database: food_drink_preferences
+
+```sql
+-- Key columns providing input for v2 calculations:
+user_id UUID REFERENCES users(id)
+person_type TEXT ('self' | 'partner')
+meat_distribution JSONB DEFAULT '{"pork":20,"beef":20,"chicken":20,"game":10,"fish":15,"vegetarian":15}'
+-- ^ This is the primary input for protein-item calculations
+```
+
+The **average meat_distribution** across all persons (self + partner) drives how protein items are distributed across categories in the menu system.
+
+---
+
+## New System: Menu & Inkoopberekening
+
+### Concept
+
+The system generates a **complete shopping list** based on a menu with courses (gangen). It is not tied to a specific event type - it works for BBQ, dinner, lunch, or any meal.
+
+```
+Event (e.g., "Nieuwjaars BBQ 2026", type: BBQ)
+  +-- Course 1: Aperitief (80g p.p.)
+  |     +-- Borrelhapjes (fixed, 50g p.p.)
+  |     +-- Nootjes (fixed, 30g p.p.)
+  +-- Course 2: Hoofdgerecht (450g p.p.)
+  |     +-- Picanha (protein, beef, 50% of beef)
+  |     +-- Kipsate (protein, chicken, 100%)
+  |     +-- Hele zalm (protein, fish, 100%)
+  |     +-- Courgette (side, vegetables)
+  |     +-- Stokbrood (fixed, 80g p.p.)
+  +-- Course 3: Dessert (150g p.p.)
+        +-- Ananas (fixed, fruit, 150g p.p.)
+```
+
+### Three Item Types
+
+| Type | When Used | Calculation Basis | Example |
+|------|-----------|------------------|---------|
+| `protein` | Meat/fish/vega | Course budget x category% x item distribution% / yield% | Picanha, Zalm, Kipsate |
+| `side` | Accompaniments | Course budget / number_of_sides / yield% | Courgette, Salade |
+| `fixed` | Items with own portion | Persons x grams_per_person / yield% | Stokbrood, Saus, Ananas |
+
+### Calculation Formulas
+
+**Per course:**
+```
+T_course = Number_of_Persons x course.grams_per_person
+```
+
+**Protein items:**
+```
+C_i = T_course x AVG(meat_distribution[category_i])     // category budget
+P_j = C_i x distribution_percentage_j                    // item's share of category
+B_j = P_j / yield_percentage_j                           // bruto (accounting for waste)
+I_j = CEIL(B_j / unit) x unit                            // rounded to purchase unit
+```
+
+**Side items:**
+```
+Per_Item = T_course / Number_of_Side_Items
+B_j = Per_Item / yield_percentage_j
+I_j = CEIL(B_j / unit) x unit
+```
+
+**Fixed items:**
+```
+Edible_j = Number_of_Persons x item.grams_per_person
+B_j = Edible_j / yield_percentage_j
+I_j = CEIL(B_j / unit) x unit
+```
+
+---
+
+## Database Schema (New Tables)
+
+### 1. Events (`events`)
+
+```sql
+CREATE TABLE events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,                        -- e.g., "Nieuwjaars BBQ 2026"
+  event_type TEXT NOT NULL,                  -- e.g., "bbq", "diner", "lunch", "borrel"
+  event_date DATE,
+  total_persons INT,                         -- can also be dynamically calculated
+  status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'completed')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### 2. Event Courses (`event_courses`)
+
+```sql
+CREATE TABLE event_courses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,                        -- e.g., "Aperitief", "Hoofdgerecht"
+  sort_order INT NOT NULL DEFAULT 0,
+  grams_per_person INT NOT NULL,             -- edible grams per person for this course
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Typical values per course type:**
+
+| Course | grams_per_person | Notes |
+|--------|-----------------|-------|
+| Aperitief | 80 | Snacks, nuts |
+| Voorgerecht | 120 | Light portion |
+| Hoofdgerecht | 450 | Proteins + sides |
+| Dessert | 150 | Dessert |
+
+### 3. Menu Items (`menu_items`)
+
+```sql
+CREATE TABLE menu_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID NOT NULL REFERENCES event_courses(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,                          -- e.g., "Picanha", "Ananas van de grill"
+
+  -- Calculation type
+  item_type TEXT NOT NULL CHECK (item_type IN (
+    'protein',    -- distributed via meat_distribution preferences
+    'side',       -- evenly split across side items in course
+    'fixed'       -- own grams_per_person
+  )),
+
+  -- Category (for protein items: maps to meat_distribution keys)
+  category TEXT CHECK (category IN (
+    'pork', 'beef', 'chicken', 'game', 'fish', 'vegetarian',
+    'fruit', 'vegetables', 'salad', 'bread', 'sauce', 'dairy', 'other'
+  )),
+
+  -- Purchase calculation
+  yield_percentage NUMERIC(5,2) NOT NULL,      -- e.g., 85.00 (= 85% edible)
+  waste_description TEXT,                       -- e.g., "Remove skin and core"
+  unit_weight_grams INT,                       -- e.g., 150 (per burger), NULL if N/A
+  unit_label TEXT,                              -- e.g., "stuk", "stokje", "fles"
+  rounding_grams INT DEFAULT 100,              -- rounding value if no fixed unit
+
+  -- Distribution
+  distribution_percentage NUMERIC(5,2),        -- % within category (protein only)
+  grams_per_person INT,                        -- override grams (fixed items only)
+
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### Table Relationships
+
+```
+events
+  +-- event_courses (1:N, CASCADE DELETE)
+        +-- menu_items (1:N, CASCADE DELETE)
+
+food_drink_preferences (existing)
+  -> provides AVG meat_distribution per category
+  -> input for protein item calculations
+```
+
+---
+
+## Existing Code Patterns to Reuse
+
+### Admin Authentication Pattern
+
+```typescript
+// From src/app/api/admin/predictions/route.ts
 import { getUserFromRequest, isAdmin } from '@/lib/auth/jwt';
 
-export async function GET(request: NextRequest) {
-  try {
-    // 1. Check authentication and admin role
-    const adminUser = await getUserFromRequest(request);
-    if (!adminUser || !isAdmin(adminUser)) {
-      return NextResponse.json(
-        { error: 'UNAUTHORIZED', message: 'Admin toegang vereist' },
-        { status: 403 }
-      );
-    }
-
-    // 2. Create Supabase client
-    const supabase = createServerClient();
-
-    // 3. Fetch data with joins
-    const { data, error } = await supabase
-      .from('registrations')
-      .select(`
-        id,
-        user_id,
-        predictions,
-        users (id, name, email)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'DATABASE_ERROR', message: 'Kon data niet ophalen' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ data: data || [] });
-  } catch (error) {
-    console.error('Admin API error:', error);
-    return NextResponse.json(
-      { error: 'SERVER_ERROR', message: 'Er ging iets mis' },
-      { status: 500 }
-    );
-  }
-}
-```
-
-**Authentication Pattern:**
-```typescript
-// From src/lib/auth/jwt.ts
-export interface JWTPayload {
-  userId: string;
-  email: string;
-  name: string;
-  role: 'participant' | 'admin' | 'quizmaster';
-  registrationStatus: 'pending' | 'approved' | 'rejected' | 'cancelled';
-  emailVerified: boolean;
-}
-
-export async function getUserFromRequest(request: {
-  cookies: { get: (name: string) => any };
-}): Promise<JWTPayload | null>;
-
-export function isAdmin(payload: JWTPayload | null): boolean;
-```
-
-**Database Client:**
-```typescript
-// From src/lib/supabase.ts
-import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
-
-export function createServerClient() {
-  return createSupabaseServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-```
-
----
-
-### 3. Admin Page UI Patterns
-
-#### Layout Component
-
-**File:** `src/components/layouts/DashboardLayout.tsx`
-
-**Features:**
-- Sidebar navigation (responsive)
-- Mobile header with hamburger menu
-- Consistent styling with Tailwind classes
-- Deep green background (`bg-deep-green`)
-- Gold accent colors (`text-gold`, `border-gold`)
-
-**Usage:**
-```tsx
-import { DashboardLayout } from '@/components/layouts/DashboardLayout';
-
-export default function AdminPage() {
-  return (
-    <AuthGuard requireAdmin requireApproved>
-      <DashboardLayout>
-        <YourContent />
-      </DashboardLayout>
-    </AuthGuard>
-  );
-}
-```
-
-#### Card-Based UI Pattern
-
-**File:** `src/app/admin/page.tsx`
-
-**Pattern:**
-```tsx
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
-import { motion } from 'framer-motion';
-
-// Stats cards
-<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.1 }}
-  >
-    <Card>
-      <CardContent className="py-4 text-center">
-        <p className="text-3xl font-bold text-gold">{stat}</p>
-        <p className="text-cream/60 text-sm">Label</p>
-      </CardContent>
-    </Card>
-  </motion.div>
-</div>
-
-// Main content card
-<Card>
-  <CardHeader>
-    <CardTitle>Title</CardTitle>
-    <CardDescription>Description</CardDescription>
-  </CardHeader>
-  <CardContent>
-    {/* Content */}
-  </CardContent>
-</Card>
-```
-
-**Color System (Tailwind Config):**
-```javascript
-colors: {
-  'deep-green': '#1B4332',
-  'gold': '#D4AF37',
-  'cream': '#F5F5DC',
-  'dark-wood': '#2C1810',
-  'warm-red': '#8B0000',
-  'success-green': '#2D5A27',
-}
-```
-
-#### AuthGuard Component
-
-**Usage:**
-```tsx
-import { AuthGuard } from '@/components/AuthGuard';
-
-<AuthGuard requireAdmin requireApproved>
-  <AdminContent />
-</AuthGuard>
-```
-
-**Props:**
-- `requireAdmin`: boolean - Restricts to admin role
-- `requireApproved`: boolean - Requires approved registration status
-
----
-
-### 4. Export Functionality Research
-
-#### PDF Export Options
-
-**Option 1: Browser Native Print-to-PDF (Recommended)**
-
-**Pros:**
-- No dependencies
-- Works with all modern browsers
-- Simple implementation
-- Good CSS support
-
-**Implementation:**
-```typescript
-// Trigger browser print dialog
-const handlePrint = () => {
-  window.print();
-};
-
-// CSS Media Query for print styling
-@media print {
-  /* Hide non-printable elements */
-  .no-print {
-    display: none !important;
-  }
-
-  /* Adjust page size and margins */
-  @page {
-    size: A4;
-    margin: 2cm;
-  }
-
-  /* Prevent page breaks inside elements */
-  .avoid-break {
-    page-break-inside: avoid;
-  }
-
-  /* Force page breaks */
-  .page-break {
-    page-break-before: always;
-  }
-
-  /* Show colors in print */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-}
-```
-
-**Tailwind CSS Integration:**
-```tsx
-<button className="print:hidden">Don't print this</button>
-<div className="print:block hidden">Only show when printing</div>
-```
-
-**Sources:**
-- [react-to-print npm package](https://www.npmjs.com/package/react-to-print)
-- [How to Print PDF Files with React (Using react-to-print & Tailwind)](https://medium.com/@hikmahx/how-to-print-pdf-files-with-react-using-react-to-print-tailwind-884c46750c35)
-- [Optimizing React to Print Workflows For Print-Friendly App](https://www.dhiwise.com/post/boosting-efficiency-optimizing-your-react-to-print-workflow)
-
-**Option 2: react-to-print Library**
-
-**Installation:**
-```bash
-npm install react-to-print
-```
-
-**Usage:**
-```tsx
-import { useReactToPrint } from 'react-to-print';
-
-const componentRef = useRef<HTMLDivElement>(null);
-
-const handlePrint = useReactToPrint({
-  content: () => componentRef.current,
-  documentTitle: 'F&B Rapport',
-  pageStyle: `
-    @page {
-      size: A4;
-      margin: 2cm;
-    }
-    @media print {
-      body { -webkit-print-color-adjust: exact; }
-    }
-  `,
-});
-
-<div ref={componentRef}>
-  {/* Content to print */}
-</div>
-```
-
-**Pros:**
-- More control over print output
-- Can customize page styles programmatically
-- Good TypeScript support
-
-**Cons:**
-- Additional dependency (14.9 kB gzipped)
-
-**Source:** [react-to-print GitHub](https://github.com/gregnb/react-to-print)
-
-**Option 3: jsPDF + html2canvas (Not Recommended)**
-
-**Cons:**
-- Complex setup
-- Limited CSS support
-- Requires font conversion for non-standard fonts
-- Larger bundle size
-
-**Source:** [Generate PDFs from HTML in React with jsPDF](https://www.nutrient.io/blog/how-to-convert-html-to-pdf-using-react/)
-
-#### Excel/CSV Export Options
-
-**Recommended: SheetJS/XLSX Library**
-
-**Installation:**
-```bash
-npm install xlsx
-```
-
-**Usage:**
-```typescript
-import * as XLSX from 'xlsx';
-
-interface ReportData {
-  name: string;
-  dietary: string;
-  // ... other fields
-}
-
-const exportToExcel = (data: ReportData[]) => {
-  // Create worksheet
-  const ws = XLSX.utils.json_to_sheet(data);
-
-  // Create workbook
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'F&B Rapport');
-
-  // Export to file
-  XLSX.writeFile(wb, `fb-rapport-${new Date().toISOString().split('T')[0]}.xlsx`);
-};
-
-const exportToCSV = (data: ReportData[]) => {
-  const ws = XLSX.utils.json_to_sheet(data);
-  const csv = XLSX.utils.sheet_to_csv(ws);
-
-  // Create download
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `fb-rapport-${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
-};
-```
-
-**Features:**
-- Supports .xlsx, .csv, .json
-- Can flatten nested data
-- Good TypeScript support
-- Industry standard
-
-**Sources:**
-- [How to Export Data into Excel in Next JS 14](https://emdiya.medium.com/how-to-export-data-into-excel-in-next-js-14-820edf8eae6a)
-- [Sheets in ReactJS Sites with NextJS - SheetJS](https://docs.sheetjs.com/docs/demos/static/nextjs/)
-- [Parse and Generate CSV with Next.js](https://mojoauth.com/parse-and-generate-formats/parse-and-generate-csv-with-nextjs)
-
-**Alternative: react-xlsx-wrapper**
-
-**Source:** [react-xlsx-wrapper GitHub](https://github.com/AS-Devs/react-xlsx-wrapper)
-
----
-
-### 5. Data Aggregation Strategy
-
-#### Query Pattern for F&B Report
-
-**Required Data:**
-1. All users with their food/drink preferences (self)
-2. Partner food/drink preferences (where applicable)
-3. Registration data for partner names and dietary requirements
-4. Aggregated counts and percentages
-
-**Supabase Query Example:**
-```typescript
-// Get all users with preferences
-const { data: userPreferences } = await supabase
-  .from('food_drink_preferences')
-  .select(`
-    id,
-    user_id,
-    person_type,
-    dietary_requirements,
-    meat_distribution,
-    veggies_preference,
-    sauces_preference,
-    starts_with_bubbles,
-    bubble_type,
-    drink_distribution,
-    soft_drink_preference,
-    soft_drink_other,
-    water_preference,
-    wine_preference,
-    beer_type,
-    users!inner (
-      id,
-      name,
-      first_name,
-      last_name,
-      email
-    )
-  `)
-  .eq('person_type', 'self');
-
-// Get all partner preferences
-const { data: partnerPreferences } = await supabase
-  .from('food_drink_preferences')
-  .select(`
-    id,
-    user_id,
-    person_type,
-    dietary_requirements,
-    meat_distribution,
-    veggies_preference,
-    sauces_preference,
-    starts_with_bubbles,
-    bubble_type,
-    drink_distribution,
-    soft_drink_preference,
-    soft_drink_other,
-    water_preference,
-    wine_preference,
-    beer_type
-  `)
-  .eq('person_type', 'partner');
-
-// Get registration data for partner names
-const { data: registrations } = await supabase
-  .from('registrations')
-  .select(`
-    user_id,
-    has_partner,
-    partner_first_name,
-    partner_last_name
-  `)
-  .eq('has_partner', true);
-```
-
-**Data Transformation:**
-```typescript
-interface PersonPreference {
-  name: string;
-  type: 'self' | 'partner';
-  dietary: string | null;
-  meatDist: Record<string, number>;
-  drinkDist: Record<string, number>;
-  winePreference: number | null;
-  beerType: string | null;
-  veggies: number;
-  sauces: number;
-  bubbles: { starts: boolean; type: string | null };
-  softDrink: string | null;
-  water: string | null;
-}
-
-// Combine self and partner data
-const allPersons: PersonPreference[] = [
-  ...userPreferences.map(pref => ({
-    name: pref.users.name,
-    type: 'self' as const,
-    dietary: pref.dietary_requirements,
-    // ... map other fields
-  })),
-  ...partnerPreferences.map(pref => {
-    const reg = registrations.find(r => r.user_id === pref.user_id);
-    return {
-      name: reg ? `${reg.partner_first_name} ${reg.partner_last_name}` : 'Partner',
-      type: 'partner' as const,
-      dietary: pref.dietary_requirements,
-      // ... map other fields
-    };
-  })
-];
-```
-
-#### Calculation Logic
-
-**Meat Distribution:**
-```typescript
-const totalPersons = allPersons.length;
-const portionSize = 200; // grams per person
-
-const meatStats = {
-  pork: { count: 0, percentage: 0, kg: 0 },
-  beef: { count: 0, percentage: 0, kg: 0 },
-  chicken: { count: 0, percentage: 0, kg: 0 },
-  game: { count: 0, percentage: 0, kg: 0 },
-  fish: { count: 0, percentage: 0, kg: 0 },
-  vegetarian: { count: 0, percentage: 0, kg: 0 },
-};
-
-// Calculate weighted counts
-allPersons.forEach(person => {
-  Object.entries(person.meatDist).forEach(([type, percentage]) => {
-    meatStats[type].count += percentage / 100;
-  });
-});
-
-// Calculate percentages and kg
-Object.keys(meatStats).forEach(type => {
-  meatStats[type].percentage = (meatStats[type].count / totalPersons) * 100;
-  meatStats[type].kg = (meatStats[type].count * portionSize) / 1000;
-});
-```
-
-**Drink Calculations:**
-```typescript
-// Wine
-const winePrefs = allPersons.filter(p => p.drinkDist.wine > 10);
-const totalWineDrinkers = winePrefs.reduce((sum, p) => sum + (p.drinkDist.wine / 100), 0);
-const wineBottles = Math.ceil(totalWineDrinkers * 2 / 6); // 2 glasses per person, 6 glasses per bottle
-
-// Red/White split
-const redPreference = winePrefs.reduce((sum, p) => {
-  const wineWeight = p.drinkDist.wine / 100;
-  const redPct = p.winePreference ? (100 - p.winePreference) / 100 : 0.5;
-  return sum + (wineWeight * redPct);
-}, 0);
-const redBottles = Math.ceil((redPreference / totalWineDrinkers) * wineBottles);
-const whiteBottles = wineBottles - redBottles;
-
-// Beer
-const beerPrefs = allPersons.filter(p => p.drinkDist.beer > 0);
-const totalBeerDrinkers = beerPrefs.reduce((sum, p) => sum + (p.drinkDist.beer / 100), 0);
-const beerCrates = Math.ceil(totalBeerDrinkers * 2 / 24); // 2 beers per person, 24 per crate
-
-// Beer type split
-const pilsCount = beerPrefs.filter(p => p.beerType === 'pils').length;
-const speciaalCount = beerPrefs.filter(p => p.beerType === 'speciaal').length;
-
-// Bubbles
-const bubblesPrefs = allPersons.filter(p => p.bubbles.starts);
-const champagneCount = bubblesPrefs.filter(p => p.bubbles.type === 'champagne').length;
-const proseccoCount = bubblesPrefs.filter(p => p.bubbles.type === 'prosecco').length;
-const champagneBottles = Math.ceil(champagneCount / 6); // 1 glass per person, 6 per bottle
-const proseccoBottles = Math.ceil(proseccoCount / 6);
-```
-
-**Dietary Requirements Grouping:**
-```typescript
-interface DietaryGroup {
-  allergies: Array<{ name: string; dietary: string }>;
-  vegetarian: Array<{ name: string }>;
-  vegan: Array<{ name: string }>;
-  other: Array<{ name: string; dietary: string }>;
-}
-
-const groupDietaryRequirements = (persons: PersonPreference[]): DietaryGroup => {
-  const groups: DietaryGroup = {
-    allergies: [],
-    vegetarian: [],
-    vegan: [],
-    other: [],
-  };
-
-  persons.forEach(person => {
-    if (!person.dietary) return;
-
-    const lower = person.dietary.toLowerCase();
-    if (lower.includes('allergi') || lower.includes('intolerant')) {
-      groups.allergies.push({ name: person.name, dietary: person.dietary });
-    } else if (lower.includes('vegan')) {
-      groups.vegan.push({ name: person.name });
-    } else if (lower.includes('vegetar')) {
-      groups.vegetarian.push({ name: person.name });
-    } else {
-      groups.other.push({ name: person.name, dietary: person.dietary });
-    }
-  });
-
-  return groups;
-};
-```
-
----
-
-### 6. Partner Data Linking
-
-**Database Relationships:**
-```
-users (id) ← registrations (user_id)
-                ↓ has_partner, partner_first_name, partner_last_name
-
-users (id) ← food_drink_preferences (user_id, person_type='self')
-users (id) ← food_drink_preferences (user_id, person_type='partner')
-```
-
-**Key Points:**
-- One user can have up to 2 food_drink_preferences records: 'self' and 'partner'
-- Partner name stored in `registrations.partner_first_name` + `partner_last_name`
-- `registrations.has_partner` indicates if partner exists
-- Partner preferences linked by `user_id` + `person_type='partner'`
-
-**API Pattern Example:**
-
-**File:** `src/app/api/food-drinks/route.ts` (lines 28-34)
-
-```typescript
-// Get registration to check if user has partner
-const { data: registration } = await supabase
-  .from('registrations')
-  .select('has_partner, partner_first_name, partner_last_name')
-  .eq('user_id', user.id)
-  .single();
-
-// ... later in response:
-partnerName: registration?.partner_first_name
-  ? `${registration.partner_first_name} ${registration.partner_last_name || ''}`.trim()
-  : null,
-```
-
----
-
-### 7. Snapshot and Refresh Pattern
-
-**Current Timestamp Display:**
-```typescript
-const [generatedAt, setGeneratedAt] = useState<Date>(new Date());
-const [isRefreshing, setIsRefreshing] = useState(false);
-
-const handleRefresh = async () => {
-  setIsRefreshing(true);
-  try {
-    await fetchReportData();
-    setGeneratedAt(new Date());
-  } finally {
-    setIsRefreshing(false);
-  }
-};
-
-// In UI
-<div className="flex items-center justify-between">
-  <p className="text-cream/60">
-    Gegenereerd: {generatedAt.toLocaleString('nl-NL', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}
-  </p>
-  <button onClick={handleRefresh} disabled={isRefreshing}>
-    {isRefreshing ? '🔄 Bezig...' : '🔄 Vernieuwen'}
-  </button>
-</div>
-```
-
-**Status Indicator:**
-```typescript
-const { data: allPreferences } = await supabase
-  .from('food_drink_preferences')
-  .select('user_id', { count: 'exact', head: true })
-  .eq('person_type', 'self');
-
-const { data: allUsers } = await supabase
-  .from('users')
-  .select('id', { count: 'exact', head: true })
-  .eq('role', 'participant')
-  .eq('is_active', true);
-
-const completionRate = `${allPreferences?.length || 0} van ${allUsers?.length || 0}`;
-```
-
----
-
-## Compatibility Matrix
-
-| Component | Version | Compatible With | Notes |
-|-----------|---------|-----------------|-------|
-| Next.js | 14.2.0 | React 18.2.0 | App Router required |
-| React | 18.2.0 | Next.js 14.2.0 | - |
-| TypeScript | 5.3.3 | Next.js 14.2.0 | Strict mode enabled |
-| Supabase Client | 2.90.1 | PostgreSQL | - |
-| Framer Motion | 12.26.2 | React 18.2.0 | For animations |
-| Tailwind CSS | 3.4.1 | PostCSS 8.4.35 | Custom theme configured |
-| XLSX (recommended) | Latest (2026) | Next.js 14 | For Excel/CSV export |
-| react-to-print (optional) | Latest (2026) | React 18 | Alternative to native print |
-
----
-
-## Security Considerations
-
-### Authentication & Authorization
-
-**Admin-Only Access:**
-```typescript
-// Pattern from existing admin endpoints
-const user = await getUserFromRequest(request);
-if (!user || !isAdmin(user)) {
+const adminUser = await getUserFromRequest(request);
+if (!adminUser || !isAdmin(adminUser)) {
   return NextResponse.json(
     { error: 'UNAUTHORIZED', message: 'Admin toegang vereist' },
     { status: 403 }
@@ -807,340 +257,201 @@ if (!user || !isAdmin(user)) {
 }
 ```
 
-**JWT Token Verification:**
-- Tokens stored in httpOnly cookies (XSS protection)
-- 30-day expiration
-- Signed with HS256 algorithm
-- Verified on every request
+### Admin Page Pattern
 
-**Role-Based Access:**
-- `role` field in JWT payload
-- Admin role required for this feature
-- AuthGuard component on client-side
-- Server-side validation on API routes
+```tsx
+// From existing admin pages
+import { AuthGuard } from '@/components/AuthGuard';
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { motion } from 'framer-motion';
 
-### Data Privacy
-
-**Dietary Requirements:**
-- Contains potentially sensitive health information
-- Admin-only access appropriate
-- Consider GDPR compliance for data retention
-
-**Export Files:**
-- PDF/Excel files contain personal data
-- Should not be stored on server
-- Client-side generation and download only
-- Filenames should include timestamp for versioning
-
----
-
-## Performance Considerations
-
-### Database Queries
-
-**Optimization Strategies:**
-1. Use `select()` to fetch only needed columns
-2. Leverage existing index on `food_drink_preferences(user_id)`
-3. Consider pagination if > 100 participants
-4. Use `count: 'exact'` sparingly (only when needed)
-
-**Estimated Query Performance:**
-- 50 participants + 10 partners = ~120ms query time
-- 100 participants + 20 partners = ~200ms query time
-
-### Client-Side Calculations
-
-**Data Processing:**
-- All aggregation done client-side after fetch
-- Acceptable for < 200 total persons
-- Consider server-side aggregation if > 500 persons
-
-**Re-render Optimization:**
-```typescript
-// Memoize expensive calculations
-const meatStats = useMemo(() => calculateMeatStats(persons), [persons]);
-const drinkStats = useMemo(() => calculateDrinkStats(persons), [persons]);
-const dietaryGroups = useMemo(() => groupDietaryRequirements(persons), [persons]);
-```
-
-### Export Performance
-
-**Browser Print:**
-- Instant trigger
-- Browser handles PDF generation
-- No performance impact on application
-
-**XLSX Export:**
-- < 1 second for 200 rows
-- All processing client-side
-- No server load
-
----
-
-## Resource Links
-
-### Official Documentation
-- [Next.js 14 Documentation](https://nextjs.org/docs)
-- [Supabase JavaScript Client](https://supabase.com/docs/reference/javascript)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-
-### Libraries & Tools
-- [SheetJS Documentation](https://docs.sheetjs.com/)
-- [react-to-print npm](https://www.npmjs.com/package/react-to-print)
-- [Framer Motion Documentation](https://www.framer.com/motion/)
-
-### Export Solutions
-- [How to Export Data into Excel in Next JS 14](https://emdiya.medium.com/how-to-export-data-into-excel-in-next-js-14-820edf8eae6a)
-- [Sheets in ReactJS Sites with NextJS - SheetJS](https://docs.sheetjs.com/docs/demos/static/nextjs/)
-- [react-to-print GitHub Repository](https://github.com/gregnb/react-to-print)
-- [How to Print PDF Files with React (Using react-to-print & Tailwind)](https://medium.com/@hikmahx/how-to-print-pdf-files-with-react-using-react-to-print-tailwind-884c46750c35)
-- [Optimizing React to Print Workflows](https://www.dhiwise.com/post/boosting-efficiency-optimizing-your-react-to-print-workflow)
-
-### Authentication Patterns
-- Internal: `src/lib/auth/jwt.ts`
-- Internal: `src/app/api/admin/*/route.ts` (examples)
-
----
-
-## Recommendations
-
-### 1. Export Implementation Strategy
-
-**Recommended Approach:**
-
-**PDF Export:** Use browser native print-to-PDF
-- Pros: Zero dependencies, excellent CSS support, user controls PDF settings
-- Implementation: CSS media queries with `@media print`
-- Effort: Low
-
-**Excel Export:** Use SheetJS/XLSX library
-- Pros: Industry standard, good TypeScript support, handles complex data
-- Implementation: `XLSX.writeFile(workbook, filename)`
-- Effort: Low-Medium
-
-**CSV Export:** Use SheetJS/XLSX library (same as Excel)
-- Pros: Same library, simple format
-- Implementation: `XLSX.utils.sheet_to_csv(worksheet)`
-- Effort: Low
-
-### 2. Data Aggregation Approach
-
-**Client-Side Aggregation (Recommended for Current Scale):**
-- Fetch all data via API
-- Calculate statistics in React component
-- Use `useMemo` for expensive calculations
-- Suitable for < 200 persons
-
-**When to Consider Server-Side:**
-- If participant count > 500
-- If calculations become complex
-- If multiple pages need same aggregations
-
-### 3. UI Layout Structure
-
-**Follow Existing Patterns:**
-```
-/admin/fb-rapport/page.tsx
-├── AuthGuard (requireAdmin)
-├── DashboardLayout
-│   ├── Header (title + back button)
-│   ├── Summary Stats (cards)
-│   ├── Export Buttons (print, Excel, CSV)
-│   ├── Timestamp + Refresh
-│   ├── Dietary Requirements Section (prominent)
-│   ├── Meat & Fish Section
-│   ├── Drinks Section
-│   ├── Sides Section (veggies, sauces)
-│   └── Detail per Person (collapsible)
-```
-
-### 4. Calculation Constants
-
-**Store in constants file:**
-```typescript
-// src/lib/fb-calculations.ts
-export const PORTION_SIZES = {
-  meat: 200, // grams
-  wine: 2,   // glasses per person
-  beer: 2,   // bottles per person
-  bubbles: 1, // glass per person
-};
-
-export const CONTAINER_SIZES = {
-  wineBottle: 750,     // ml
-  wineGlasses: 6,      // per bottle
-  beerCrate: 24,       // bottles
-  champagneBottle: 750, // ml
-  champagneGlasses: 6,  // per bottle
-};
-```
-
-### 5. Type Definitions
-
-**Create types for report data:**
-```typescript
-// Add to src/types/index.ts
-export interface FBReportData {
-  timestamp: string;
-  totalPersons: number;
-  completionStatus: {
-    completed: number;
-    total: number;
-  };
-  dietary: {
-    allergies: Array<{ name: string; details: string }>;
-    vegetarian: Array<{ name: string }>;
-    vegan: Array<{ name: string }>;
-    other: Array<{ name: string; details: string }>;
-  };
-  meat: {
-    pork: MeatStat;
-    beef: MeatStat;
-    chicken: MeatStat;
-    game: MeatStat;
-    fish: MeatStat;
-    vegetarian: MeatStat;
-  };
-  drinks: {
-    wine: WineStat;
-    beer: BeerStat;
-    softDrinks: SoftDrinkStat;
-    water: WaterStat;
-    bubbles: BubblesStat;
-  };
-  sides: {
-    veggiesAverage: number;
-    saucesAverage: number;
-  };
-  persons: PersonDetail[];
+export default function AdminPage() {
+  return (
+    <AuthGuard requireAdmin requireApproved>
+      <DashboardLayout>
+        {/* Card-based layout with Framer Motion animations */}
+      </DashboardLayout>
+    </AuthGuard>
+  );
 }
+```
 
-interface MeatStat {
-  count: number;
-  percentage: number;
-  kg: number;
-}
+### Supabase Client
 
-interface WineStat {
-  totalDrinkers: number;
-  bottles: number;
-  red: { bottles: number; percentage: number };
-  white: { bottles: number; percentage: number };
-}
+```typescript
+import { createServerClient } from '@/lib/supabase';
+const supabase = createServerClient();
+```
 
-// ... other stat types
+### Color System
+
+```
+deep-green: #1B4332 (background)
+gold: #D4AF37 (accent, CTAs)
+cream: #F5F5DC (text)
+dark-wood: #2C1810 (cards)
+warm-red: #8B0000 (errors)
+success-green: #2D5A27 (success)
 ```
 
 ---
 
-## Decision Framework
+## Data Flow for Inkoopberekening
 
-### PDF Export: Browser Print vs Library
-
-| Criteria | Browser Print | react-to-print | jsPDF |
-|----------|---------------|----------------|-------|
-| Bundle Size | ✅ 0 KB | ⚠️ 14.9 KB | ❌ 150+ KB |
-| CSS Support | ✅ Excellent | ✅ Good | ❌ Limited |
-| Setup Complexity | ✅ Simple | ⚠️ Medium | ❌ Complex |
-| User Control | ✅ Yes | ⚠️ Limited | ✅ Full |
-| Maintenance | ✅ Low | ⚠️ Medium | ❌ High |
-
-**Verdict:** Browser Print (simplest, best CSS support)
-
-### Excel/CSV Export: SheetJS vs Alternatives
-
-| Criteria | SheetJS/XLSX | react-xlsx-wrapper | Custom CSV |
-|----------|--------------|-------------------|------------|
-| Features | ✅ Excel + CSV | ⚠️ Excel only | ⚠️ CSV only |
-| TypeScript | ✅ Good | ⚠️ Limited | ✅ Full control |
-| Maintenance | ✅ Active | ⚠️ Less active | ❌ DIY |
-| Complexity | ✅ Simple | ✅ Simple | ⚠️ Medium |
-| Bundle Size | ⚠️ ~100 KB | ⚠️ ~100 KB | ✅ ~1 KB |
-
-**Verdict:** SheetJS/XLSX (industry standard, both formats)
+```
+food_drink_preferences (existing)     events (new)
+(participants + partners)             (event config)
+     |                                     |
+     v                                     v
+AVG meat_distribution                event_courses
+per category                         (courses + g/p.p.)
+(self + partner combined)                  |
+     |                                     v
+     |                                menu_items
+     |                                (dishes per course)
+     |                                     |
+     +----------------+-------------------+
+                      |
+                      v
+             CALCULATION ENGINE
+             (per course, per item)
+                      |
+                      v
+             SHOPPING LIST (boodschappenlijst)
+             grouped per course:
+             - product, quantity, weight
+             - subtotal per course
+             - grand total
+```
 
 ---
 
-## Next Steps for Architecture Phase
+## LLM Integration (Optional)
 
-### Key Decisions Needed
+### Use Case A: Menu Item Suggestions
 
-1. **Server-side vs Client-side aggregation**
-   - Current recommendation: Client-side for MVP
-   - Threshold: Consider server-side if > 200 persons
+When admin enters a new menu item name, the LLM suggests:
 
-2. **Real-time updates vs Manual refresh**
-   - Current recommendation: Manual refresh with timestamp
-   - Alternative: Auto-refresh every N seconds (add later if needed)
+1. Yield percentage
+2. Waste/loss description
+3. Unit weight (if applicable)
+4. Unit label
+5. Recommended grams per person (for fixed items)
 
-3. **Export button placement**
-   - Option A: Top header (always visible)
-   - Option B: Bottom footer (after reviewing data)
-   - Recommendation: Top header with sticky positioning
+### Use Case B: Distribution Suggestions
 
-4. **Detail view default state**
-   - Option A: Collapsed (better for overview)
-   - Option B: Expanded (better for detailed review)
-   - Recommendation: Collapsed with "Expand All" button
+When multiple protein items exist in the same category:
 
-### Areas Requiring Deeper Investigation
+> "The main course contains 3 beef dishes: Picanha, Entrecote, Hamburger.
+> Suggest a distribution."
 
-1. **Edge Cases:**
-   - Users without food_drink_preferences records
-   - Partners without preference data
-   - Null/undefined values in JSONB fields
-   - Division by zero in percentage calculations
+### Existing Infrastructure
 
-2. **Data Validation:**
-   - Ensure meat_distribution percentages sum to 100
-   - Ensure drink_distribution percentages sum to 100
-   - Handle invalid wine_preference values
+- Anthropic API key already configured (`ANTHROPIC_API_KEY`)
+- Assignment endpoint exists at `/api/assignment` using Claude
+- Can create similar endpoint for menu suggestions
 
-3. **Print Layout:**
-   - Page breaks for dietary requirements section
-   - Handling long participant lists across pages
-   - Color preservation in print mode
+---
 
-### Constraints to Consider
+## Worked Example: Nieuwjaars BBQ 2026
 
-1. **Technical Constraints:**
-   - Browser print dialog cannot be styled
-   - PDF filename controlled by browser
-   - Excel export requires client-side processing
+**Event:** Nieuwjaars BBQ 2026 (type: bbq)
+**Persons:** 18 (15 participants + 3 partners)
+**Average preferences:** Beef 45%, Chicken 28%, Fish 20%, Pork 5%, Wild 3%
 
-2. **Business Constraints:**
-   - Dietary requirements must be prominently displayed
-   - Partners count as separate persons in totals
-   - Standard portion sizes are fixed (from user story)
+### Main Course (450g p.p.)
 
-3. **UX Constraints:**
-   - Admin-only access (not for participants)
-   - Desktop-first design (complex data table)
-   - Export must work offline after data loaded
+```
+Protein budget: 18 x 450g = 8,100g
+
+BEEF (45% = 3,645g):
+  Picanha   (50%): 1,823g / 0.85 yield = 2,144g -> 2,200g
+  Hamburger (50%): 1,823g / 0.95 yield = 1,919g -> 13 stuks x 150g = 1,950g
+
+CHICKEN (28% = 2,268g):
+  Kipsate  (100%): 2,268g / 0.95 yield = 2,387g -> 80 stokjes x 30g = 2,400g
+
+FISH (20% = 1,620g):
+  Hele zalm(100%): 1,620g / 0.55 yield = 2,945g -> 3,000g
+
+PORK (5% = 405g):
+  Spareribs(100%): 405g / 0.60 yield = 675g -> 700g
+
+Side:
+  Courgette: 18 x 100g = 1,800g / 0.90 yield = 2,000g
+
+Fixed:
+  Stokbrood:  18 x 80g = 1,440g -> 6 stuks x 250g = 1,500g
+  BBQ saus:   18 x 30g = 540g -> 2 flessen x 500ml
+  Pindasaus:  18 x 40g = 720g -> 2 flessen x 500ml
+```
+
+---
+
+## Technology & Compatibility
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Next.js | 14.2.0 | App Router required |
+| React | 18.2.0 | Client components for CRUD |
+| TypeScript | 5.3.3 | Strict mode |
+| Supabase Client | 2.90.1 | PostgreSQL |
+| Framer Motion | 12.26.2 | Animations |
+| Tailwind CSS | 3.4.1 | Custom theme |
+| Anthropic SDK | (existing) | Optional LLM integration |
+
+No new external dependencies required for core functionality.
+
+---
+
+## Security Considerations
+
+- All new endpoints admin-only (JWT + role check)
+- CRUD operations on events/courses/items require admin role
+- No participant-facing data exposure
+- Calculation results are admin-only
+- Shopping list export follows same patterns as existing Excel/PDF export
+
+---
+
+## Key Decisions for Architecture Phase
+
+### Already Decided (from bbq_inkoop_berekening.md)
+
+1. **Three item types:** protein, side, fixed
+2. **Yield percentage:** per item, accounts for waste
+3. **Category system:** maps to existing meat_distribution keys
+4. **Partner inclusion:** partners count in averages and totals
+5. **Event hierarchy:** event -> courses -> menu items (CASCADE DELETE)
+
+### To Decide in Architecture
+
+1. **Admin UI structure:** Single page vs multi-page (events list, event detail, course detail)
+2. **Shopping list placement:** Separate page or section within event detail
+3. **LLM integration:** MVP without LLM or include from start
+4. **Persons count source:** Manual input on event vs auto-calculate from registrations
+5. **CRUD API design:** RESTful routes vs single endpoint with actions
+6. **State management:** Local state vs Zustand store for menu builder
 
 ---
 
 ## Self-Verification Checklist
 
-- [x] All sources are authoritative and current (2026)
-- [x] Version numbers are explicitly stated throughout
-- [x] Security implications are clearly documented
-- [x] Alternative approaches are presented with pros/cons
-- [x] Documentation is organized for easy navigation
-- [x] All technical terms are defined or linked to definitions
-- [x] Code examples are accurate (verified against codebase)
-- [x] Recommendations are backed by concrete evidence
-- [x] Compatibility issues are identified
-- [x] Files are saved to `docs/preparation/` folder (US-014-Admin-F&B)
-- [x] Executive summary provides actionable overview
-- [x] Database schema fully documented with field types
-- [x] API patterns extracted from existing codebase
-- [x] Partner data linking fully explained
-- [x] Export options researched with sources cited
+- [x] v1 implementation fully documented
+- [x] New database schema defined with all columns and constraints
+- [x] Calculation formulas specified with worked examples
+- [x] Existing code patterns identified for reuse
+- [x] Data flow between existing and new systems documented
+- [x] Security considerations addressed
+- [x] Technology compatibility verified
+- [x] LLM integration scope defined
+- [x] Key architectural decisions identified
+- [x] No new external dependencies for core functionality
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Prepared By:** PACT Preparer
-**Date:** 2026-01-28
+**Date:** 2026-01-29
 **Status:** Complete - Ready for Architecture Phase
