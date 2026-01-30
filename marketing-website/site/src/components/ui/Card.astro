@@ -1,0 +1,36 @@
+---
+/**
+ * Card Component
+ * Reusable card container with variants
+ */
+
+import type { CardProps } from '../../types';
+
+interface Props extends CardProps {}
+
+const {
+  variant = 'default',
+  hover = false,
+  class: className = '',
+} = Astro.props;
+
+// Base classes
+const baseClasses = 'rounded-lg transition-all duration-300';
+
+// Variant classes
+const variantClasses = {
+  default: 'bg-white shadow-card p-6 md:p-8',
+  feature: 'bg-white border border-gray-100 p-6 md:p-8',
+  pricing: 'bg-white shadow-card p-8 md:p-10',
+};
+
+// Hover effect
+const hoverClass = hover ? 'hover:shadow-card-hover hover:-translate-y-1' : '';
+
+// Combined classes
+const cardClasses = `${baseClasses} ${variantClasses[variant]} ${hoverClass} ${className}`;
+---
+
+<div class={cardClasses}>
+  <slot />
+</div>

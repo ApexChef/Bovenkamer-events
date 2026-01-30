@@ -16,6 +16,7 @@ interface ActualResults {
   meatKilos?: number;
   firstSleeper?: string;
   spontaneousSinger?: string;
+  firstToLeave?: string;
   lastToLeave?: string;
   loudestLaugher?: string;
   longestStoryTeller?: string;

@@ -1,0 +1,40 @@
+---
+/**
+ * Badge Component
+ * Small label/tag for highlighting information
+ */
+
+import type { BadgeProps } from '../../types';
+
+interface Props extends BadgeProps {}
+
+const {
+  variant = 'gray',
+  size = 'md',
+  class: className = '',
+} = Astro.props;
+
+// Base classes
+const baseClasses = 'inline-flex items-center justify-center font-medium rounded-full';
+
+// Variant classes
+const variantClasses = {
+  coral: 'bg-coral-100 text-coral-700',
+  turquoise: 'bg-turquoise-100 text-turquoise-700',
+  sunshine: 'bg-sunshine-100 text-sunshine-800',
+  gray: 'bg-gray-100 text-gray-700',
+};
+
+// Size classes
+const sizeClasses = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-3 py-1.5 text-sm',
+};
+
+// Combined classes
+const badgeClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+---
+
+<span class={badgeClasses}>
+  <slot />
+</span>

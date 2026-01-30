@@ -1,0 +1,147 @@
+---
+/**
+ * Pricing Table Section
+ * 3-tier pricing comparison with popular badge
+ */
+
+import Card from '../ui/Card.astro';
+import Button from '../ui/Button.astro';
+import Badge from '../ui/Badge.astro';
+import { pricingTiers } from '../../data/pricing';
+import { Check, X } from 'lucide-react';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<section class={`py-16 md:py-24 bg-gray-50 ${className}`}>
+  <div class="container mx-auto px-4">
+    <!-- Section Header -->
+    <div class="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mb-4">
+        Eerlijke prijzen, geen verrassingen
+      </h2>
+      <p class="text-lg md:text-xl text-gray-600 leading-relaxed">
+        Start gratis, betaal alleen als je groeit
+      </p>
+    </div>
+
+    <!-- Pricing Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+      {pricingTiers.map((tier, index) => (
+        <div
+          class={`animate-slide-up ${tier.popular ? 'md:-mt-4' : ''}`}
+          style={`animation-delay: ${index * 150}ms;`}
+        >
+          <Card
+            variant="pricing"
+            class={`h-full relative ${
+              tier.popular
+                ? 'border-2 border-coral-500 shadow-card-hover'
+                : 'border border-gray-100'
+            }`}
+          >
+            {/* Popular Badge */}
+            {tier.popular && tier.highlight && (
+              <div class="absolute -top-4 left-0 right-0 flex justify-center">
+                <Badge variant="coral" size="md">
+                  {tier.highlight}
+                </Badge>
+              </div>
+            )}
+
+            {/* Tier Header */}
+            <div class="text-center mb-8">
+              <h3 class="text-2xl font-bold text-charcoal mb-2">
+                {tier.name}
+              </h3>
+              <p class="text-base text-gray-600 mb-6">
+                {tier.description}
+              </p>
+
+              {/* Price */}
+              <div class="mb-6">
+                {tier.price.amount !== null ? (
+                  <div>
+                    <div class="flex items-baseline justify-center gap-1">
+                      <span class="text-5xl font-bold text-charcoal">
+                        {tier.price.unit}{tier.price.amount.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                    {tier.price.period && (
+                      <div class="text-gray-600 mt-2">
+                        {tier.price.period}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div class="text-3xl font-bold text-charcoal">
+                    {tier.price.unit}
+                  </div>
+                )}
+              </div>
+
+              {/* Guest Info */}
+              {tier.maxGuests && (
+                <div class="text-sm text-gray-500 mb-6">
+                  {tier.id === 'free' && `Tot ${tier.maxGuests} gasten`}
+                  {tier.id === 'vip' && `Vanaf ${tier.maxGuests} gasten`}
+                </div>
+              )}
+
+              {/* CTA Button */}
+              <Button
+                variant={tier.cta.variant}
+                size="lg"
+                href={tier.cta.href}
+                fullWidth={true}
+              >
+                {tier.cta.text}
+              </Button>
+            </div>
+
+            {/* Features List */}
+            <div class="space-y-4">
+              {tier.features.map((feature) => (
+                <div class="flex items-start gap-3">
+                  <div class="flex-shrink-0 mt-0.5">
+                    {feature.included ? (
+                      <Check className="w-5 h-5 text-success" />
+                    ) : (
+                      <X className="w-5 h-5 text-gray-300" />
+                    )}
+                  </div>
+                  <div class="flex-1">
+                    <span
+                      class={`text-sm ${
+                        feature.included ? 'text-gray-700' : 'text-gray-400'
+                      }`}
+                    >
+                      {feature.text}
+                    </span>
+                    {feature.tooltip && (
+                      <div class="text-xs text-gray-500 mt-1">
+                        {feature.tooltip}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      ))}
+    </div>
+
+    <!-- Additional Info -->
+    <div class="text-center mt-12 max-w-2xl mx-auto">
+      <p class="text-sm text-gray-600 leading-relaxed">
+        Alle plannen worden eenmalig per feest afgerekend. Geen abonnementen, geen verborgen kosten.
+        Betaal alleen voor wat je gebruikt.
+      </p>
+    </div>
+  </div>
+</section>

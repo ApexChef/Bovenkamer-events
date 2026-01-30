@@ -121,6 +121,7 @@ function getFeatureDescription(key: FeatureKey): string {
     show_burger_game: 'Toon Burger Stack game CTA',
     show_predictions: 'Toon voorspellingen sectie',
     show_live_ranking: 'Toon live ranking menu item',
+    show_prediction_evaluation: 'Toon AI-evaluatie van voorspellingen op dashboard',
   };
   return descriptions[key] || key;
 }

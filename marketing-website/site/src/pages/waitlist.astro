@@ -1,0 +1,229 @@
+---
+/**
+ * Waitlist Page
+ * Dedicated waitlist signup page with benefits
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import WaitlistForm from '../components/islands/WaitlistForm';
+import { featuredTestimonials } from '../data/testimonials';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Schrijf je in - ${siteConfig.name}`;
+const description = 'Wees de eerste die Party Pilot mag uitproberen. Schrijf je in voor de waitlist en krijg exclusieve vroege toegang.';
+
+// Pick a testimonial
+const testimonial = featuredTestimonials[2];
+---
+
+<PageLayout title={title} description={description} showCTA={false}>
+  <!-- Hidden Netlify form for form detection -->
+  <form name="waitlist" netlify netlify-honeypot="bot-field" hidden>
+    <input type="text" name="name" />
+    <input type="email" name="email" />
+    <input type="text" name="referralCode" />
+  </form>
+
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Schrijf je in voor Party Pilot
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          Wees de eerste die Party Pilot mag uitproberen en krijg exclusieve voordelen
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waitlist Form & Benefits Section -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-5xl mx-auto">
+        <div class="grid lg:grid-cols-2 gap-12 items-start">
+          <!-- Waitlist Form -->
+          <div class="animate-slide-up">
+            <div class="bg-white rounded-2xl shadow-card p-8 md:p-10 sticky top-8">
+              <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-2">
+                Meld je aan
+              </h2>
+              <p class="text-gray-600 mb-8">
+                Vul je gegevens in en je hoort van ons zodra Party Pilot live gaat
+              </p>
+              <WaitlistForm client:load />
+            </div>
+          </div>
+
+          <!-- Benefits List -->
+          <div class="animate-slide-up" style="animation-delay: 200ms;">
+            <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-8">
+              Wat krijg je als early bird?
+            </h2>
+            <div class="space-y-6">
+              <!-- Benefit 1 -->
+              <div class="flex gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-coral-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold text-charcoal mb-2">
+                    Eerste toegang tot Party Pilot
+                  </h3>
+                  <p class="text-gray-600 leading-relaxed">
+                    Krijg als eerste toegang zodra we live gaan. Spring de wachtrij over en begin meteen met je feest plannen.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Benefit 2 -->
+              <div class="flex gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-turquoise-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold text-charcoal mb-2">
+                    Gratis proefperiode
+                  </h3>
+                  <p class="text-gray-600 leading-relaxed">
+                    Probeer alle premium functies 30 dagen gratis. Geen creditcard nodig, geen kleine lettertjes.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Benefit 3 -->
+              <div class="flex gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-sunshine-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold text-charcoal mb-2">
+                    Exclusieve updates
+                  </h3>
+                  <p class="text-gray-600 leading-relaxed">
+                    Ontvang exclusieve updates over nieuwe functies, tips voor feesten organiseren, en meer.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Benefit 4 -->
+              <div class="flex gap-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-coral-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/>
+                    <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                    <path d="M12 2v2"/>
+                    <path d="M12 22v-2"/>
+                    <path d="m17 20.66-1-1.73"/>
+                    <path d="M11 10.27 7 3.34"/>
+                    <path d="m20.66 17-1.73-1"/>
+                    <path d="m3.34 7 1.73 1"/>
+                    <path d="M14 12h8"/>
+                    <path d="M2 12h2"/>
+                    <path d="m20.66 7-1.73 1"/>
+                    <path d="m3.34 17 1.73-1"/>
+                    <path d="m17 3.34-1 1.73"/>
+                    <path d="m11 13.73-4 6.93"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold text-charcoal mb-2">
+                    Invloed op nieuwe functies
+                  </h3>
+                  <p class="text-gray-600 leading-relaxed">
+                    Help ons Party Pilot te verbeteren. Je feedback heeft direct invloed op welke functies we als eerste bouwen.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <p class="text-lg md:text-xl text-gray-600 mb-4">
+            Al meer dan
+          </p>
+          <p class="text-5xl md:text-6xl font-bold text-coral-600 mb-2">
+            1,247
+          </p>
+          <p class="text-lg md:text-xl text-gray-600">
+            mensen op de waitlist
+          </p>
+        </div>
+
+        <!-- Testimonial -->
+        <div class="bg-white rounded-2xl shadow-card p-8 md:p-12">
+          <div class="flex items-start gap-2 mb-6">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <svg class={`w-6 h-6 ${i < testimonial.rating ? 'text-sunshine-500 fill-current' : 'text-gray-300'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            ))}
+          </div>
+          <blockquote class="text-xl md:text-2xl text-gray-700 leading-relaxed mb-6 italic">
+            "{testimonial.quote}"
+          </blockquote>
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-coral-100 flex items-center justify-center text-coral-600 font-bold text-lg">
+              {testimonial.name.charAt(0)}
+            </div>
+            <div>
+              <div class="font-semibold text-charcoal">
+                {testimonial.name}
+              </div>
+              <div class="text-sm text-gray-500">
+                {testimonial.eventType}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="py-16 md:py-20 bg-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-4">
+        Wil je meer weten?
+      </h2>
+      <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+        Bekijk alle functies of lees hoe Party Pilot werkt
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/functies"
+          class="inline-block bg-white border-2 border-coral-500 text-coral-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-coral-50 transition-all duration-200"
+        >
+          Bekijk alle functies
+        </a>
+        <a
+          href="/hoe-werkt-het"
+          class="inline-block bg-white border-2 border-turquoise-500 text-turquoise-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-turquoise-50 transition-all duration-200"
+        >
+          Hoe werkt het?
+        </a>
+      </div>
+    </div>
+  </section>
+</PageLayout>

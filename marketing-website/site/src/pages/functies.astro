@@ -1,0 +1,126 @@
+---
+/**
+ * Features Page
+ * Complete overview of all Party Pilot features organized by category
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import FeatureCard from '../components/ui/FeatureCard.astro';
+import { featuresByCategory, categoryLabels } from '../data/features';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Alle functies - ${siteConfig.name}`;
+const description = 'Ontdek alle functies van Party Pilot: van digitale uitnodigingen tot live quizzen. Alles wat je nodig hebt voor het perfecte feest op één plek.';
+---
+
+<PageLayout title={title} description={description} showCTA={true}>
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Alle functies van Party Pilot
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          Ontdek wat Party Pilot voor jouw feest kan betekenen. Van planning tot het laatste applaus — wij hebben het geregeld.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Voor de Organisator -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+          {categoryLabels.organisator}
+        </h2>
+        <p class="text-lg text-gray-600">
+          Alle tools die jij als feestorganisator nodig hebt om moeiteloos het perfecte feest te plannen
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {featuresByCategory.organisator.map((feature, index) => (
+          <FeatureCard
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Voor de Gast -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+          {categoryLabels.feestganger}
+        </h2>
+        <p class="text-lg text-gray-600">
+          Ook voor je gasten is Party Pilot een feestje — eenvoudig aanmelden en meedoen
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        {featuresByCategory.feestganger.map((feature, index) => (
+          <FeatureCard
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Tijdens het feest -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+          {categoryLabels['tijdens-feest']}
+        </h2>
+        <p class="text-lg text-gray-600">
+          Het feest is pas echt begonnen met onze interactieve entertainment features
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {featuresByCategory.tijdensFeest.map((feature, index) => (
+          <FeatureCard
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+            index={index}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Section -->
+  <section class="py-16 md:py-20 bg-coral-50">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+        Overtuigd van de mogelijkheden?
+      </h2>
+      <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+        Start vandaag nog gratis met Party Pilot en ervaar zelf hoe makkelijk feestorganiseren kan zijn
+      </p>
+      <a
+        href="/waitlist"
+        class="inline-block bg-coral-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-coral-600 transition-all duration-200 shadow-button hover:shadow-button-hover"
+      >
+        Start gratis
+      </a>
+      <p class="text-sm text-gray-500 mt-4">
+        Gratis tot 15 gasten • Geen creditcard nodig
+      </p>
+    </div>
+  </section>
+</PageLayout>

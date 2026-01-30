@@ -191,24 +191,21 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (existingPoints) {
-          // Update existing points
+          // Delete old entry and insert new one so the points_ledger trigger
+          // fires and keeps the users table in sync.
           await supabase
             .from('points_ledger')
-            .update({
-              points: total,
-              description: `Voorspellingen punten: ${JSON.stringify(breakdown)}`,
-              updated_at: new Date().toISOString(),
-            })
+            .delete()
             .eq('id', existingPoints.id);
-        } else {
-          // Insert new points entry
-          await supabase.from('points_ledger').insert({
-            user_id: reg.user_id,
-            source: 'prediction_results',
-            points: total,
-            description: `Voorspellingen punten: ${JSON.stringify(breakdown)}`,
-          });
         }
+
+        // Insert (new or replacement) points entry — trigger syncs users table
+        await supabase.from('points_ledger').insert({
+          user_id: reg.user_id,
+          source: 'prediction_results',
+          points: total,
+          description: `Voorspellingen punten: ${JSON.stringify(breakdown)}`,
+        });
 
         usersProcessed++;
         totalPointsAwarded += total;
