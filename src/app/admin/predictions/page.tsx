@@ -48,6 +48,7 @@ interface ActualResults {
   meatKilos?: number;
   firstSleeper?: string;
   spontaneousSinger?: string;
+  firstToLeave?: string;
   lastToLeave?: string;
   loudestLaugher?: string;
   longestStoryTeller?: string;
@@ -508,6 +509,19 @@ function AdminPredictionsContent() {
                       </select>
                     </div>
                     <div>
+                      <label className="block text-cream/70 text-sm mb-2">Wie vertrok als eerste?</label>
+                      <select
+                        value={actualResults.firstToLeave ?? ''}
+                        onChange={(e) => setActualResults({ ...actualResults, firstToLeave: e.target.value || undefined })}
+                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                      >
+                        <option value="">Selecteer...</option>
+                        {participants.map((p) => (
+                          <option key={p.value} value={p.value}>{p.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-cream/70 text-sm mb-2">Wie ging als laatste naar huis?</label>
                       <select
                         value={actualResults.lastToLeave ?? ''}
@@ -710,6 +724,25 @@ function AdminPredictionsContent() {
                     <select
                       value={actualResults.spontaneousSinger ?? ''}
                       onChange={(e) => handleQuickSave({ ...actualResults, spontaneousSinger: e.target.value || undefined })}
+                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
+                    >
+                      <option value="">Nog niet bekend...</option>
+                      {participants.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* First to Leave */}
+              <motion.div whileTap={{ scale: 0.98 }}>
+                <Card className={actualResults.firstToLeave ? 'border-success-green/50' : ''}>
+                  <CardContent className="py-4">
+                    <label className="block text-gold font-semibold mb-2">🚶 Eerste vertrekker</label>
+                    <select
+                      value={actualResults.firstToLeave ?? ''}
+                      onChange={(e) => handleQuickSave({ ...actualResults, firstToLeave: e.target.value || undefined })}
                       className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
                     >
                       <option value="">Nog niet bekend...</option>
