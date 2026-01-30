@@ -108,7 +108,7 @@ export default function ContactForm() {
         className="p-8 bg-success/10 border-2 border-success rounded-lg text-center"
       >
         <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-        <h3 class="text-2xl font-semibold text-charcoal mb-2">
+        <h3 className="text-2xl font-semibold text-charcoal mb-2">
           Bericht verstuurd!
         </h3>
         <p className="text-gray-600 mb-4 text-lg">
