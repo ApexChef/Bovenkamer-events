@@ -102,6 +102,8 @@ function AdminPredictionsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isGeneratingEvaluations, setIsGeneratingEvaluations] = useState(false);
+  const [evaluationProgress, setEvaluationProgress] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
@@ -203,6 +205,35 @@ function AdminPredictionsContent() {
       setMessage({ type: 'error', text: 'Kon punten niet berekenen' });
     } finally {
       setIsCalculating(false);
+    }
+  };
+
+  // Generate AI evaluations for all users
+  const handleGenerateEvaluations = async () => {
+    setIsGeneratingEvaluations(true);
+    setEvaluationProgress('Evaluaties genereren...');
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/predictions/evaluate', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message || 'Kon evaluaties niet genereren');
+
+      setEvaluationProgress(null);
+      setMessage({
+        type: 'success',
+        text: `${data.generated} evaluaties gegenereerd${data.failed > 0 ? ` (${data.failed} mislukt)` : ''}`,
+      });
+    } catch (error) {
+      console.error('Error generating evaluations:', error);
+      setEvaluationProgress(null);
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Kon evaluaties niet genereren' });
+    } finally {
+      setIsGeneratingEvaluations(false);
     }
   };
 
@@ -879,16 +910,35 @@ function AdminPredictionsContent() {
                 )}
 
                 {/* Calculate Button */}
-                <div className="pt-4 border-t border-gold/10">
-                  <Button
-                    onClick={handleCalculatePoints}
-                    disabled={isCalculating || stats.resultsEntered === 0}
-                  >
-                    {isCalculating ? 'Berekenen...' : 'Punten Berekenen en Toekennen'}
-                  </Button>
-                  <p className="text-cream/50 text-xs mt-2">
-                    Dit berekent de punten voor alle voorspellingen en slaat ze op in het puntenboek.
-                  </p>
+                <div className="pt-4 border-t border-gold/10 space-y-4">
+                  <div>
+                    <Button
+                      onClick={handleCalculatePoints}
+                      disabled={isCalculating || stats.resultsEntered === 0}
+                    >
+                      {isCalculating ? 'Berekenen...' : 'Punten Berekenen en Toekennen'}
+                    </Button>
+                    <p className="text-cream/50 text-xs mt-2">
+                      Dit berekent de punten voor alle voorspellingen en slaat ze op in het puntenboek.
+                    </p>
+                  </div>
+
+                  {/* Generate Evaluations Button */}
+                  <div className="pt-4 border-t border-gold/10">
+                    <Button
+                      onClick={handleGenerateEvaluations}
+                      disabled={isGeneratingEvaluations || stats.resultsEntered === 0}
+                      variant="ghost"
+                    >
+                      {isGeneratingEvaluations
+                        ? (evaluationProgress || 'Genereren...')
+                        : 'Genereer Evaluaties'}
+                    </Button>
+                    <p className="text-cream/50 text-xs mt-2">
+                      Genereer per persoon een AI-evaluatie op basis van hun voorspellingen.
+                      Punten moeten eerst berekend zijn.
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>

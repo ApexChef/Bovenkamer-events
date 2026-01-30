@@ -6,7 +6,7 @@ import { useRegistrationStore, useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { HomeTab, PredictionsTab, LeaderboardTab, MiniLeaderboard } from '@/components/dashboard';
 import { FeatureToggle } from '@/components/FeatureToggle';
-import { FoodDrinkCTA } from '@/components/FoodDrinkCTA';
+import { AIAssignment } from '@/types';
 
 interface LeaderboardEntry {
   rank: number;
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [predictionsSubmitted, setPredictionsSubmitted] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [profileSynced, setProfileSynced] = useState(false);
+  const [predictionEvaluation, setPredictionEvaluation] = useState<AIAssignment | null>(null);
 
   // Track client-side mount
   useEffect(() => {
@@ -76,6 +77,9 @@ export default function DashboardPage() {
               borrelStats: !!data.completedSections.borrelStats,
               quiz: !!data.completedSections.quiz,
             });
+          }
+          if (data.predictionEvaluation) {
+            setPredictionEvaluation(data.predictionEvaluation);
           }
         }
         setProfileSynced(true);
@@ -167,13 +171,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content - 2 columns on large screens */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Food & Drink CTA */}
-            <FoodDrinkCTA />
-
             {/* Home Tab Content */}
             <HomeTab
               formData={formData}
               aiAssignment={aiAssignment}
+              predictionEvaluation={predictionEvaluation}
               userPoints={userPoints}
               userRank={userRank}
               isLoading={isLoading}

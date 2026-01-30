@@ -42,6 +42,7 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   show_burger_game: 'Burger Stack Game',
   show_predictions: 'Voorspellingen',
   show_live_ranking: 'Live Ranking',
+  show_prediction_evaluation: 'Voorspellingen Evaluatie',
 };
 
 interface AdminItem {
