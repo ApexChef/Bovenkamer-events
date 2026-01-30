@@ -7,6 +7,12 @@ export interface LeaderboardEntry {
   name: string;
   email: string;
   points: number;
+  // Category breakdown
+  registrationPoints: number;
+  predictionPoints: number;
+  quizPoints: number;
+  gamePoints: number;
+  bonusPoints: number;
   // Profile data for filtering
   birthYear: number | null;
   gender: string | null;
@@ -31,23 +37,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
-    // Get all points entries
-    const { data: allPoints } = await supabase
-      .from('points_ledger')
-      .select('user_id, points');
-
-    // Aggregate points per user
-    const userPoints: Record<string, number> = {};
-    if (allPoints) {
-      for (const entry of allPoints) {
-        userPoints[entry.user_id] = (userPoints[entry.user_id] || 0) + entry.points;
-      }
-    }
-
-    // Get users with registration data
+    // Get users with point columns (kept in sync by points_ledger trigger + set_game_points RPC)
     const { data: users } = await supabase
       .from('users')
-      .select('id, name, email');
+      .select('id, name, email, total_points, registration_points, prediction_points, quiz_points, game_points, bonus_points');
 
     const { data: registrations } = await supabase
       .from('registrations')
@@ -84,7 +77,12 @@ export async function GET(request: NextRequest) {
           userId: user.id,
           name: user.name,
           email: user.email,
-          points: userPoints[user.id] || 0,
+          points: user.total_points || 0,
+          registrationPoints: user.registration_points || 0,
+          predictionPoints: user.prediction_points || 0,
+          quizPoints: user.quiz_points || 0,
+          gamePoints: user.game_points || 0,
+          bonusPoints: user.bonus_points || 0,
           birthYear: reg.birthYear || null,
           gender: null, // We don't have gender field yet
           jkvJoinYear: reg.jkvJoinYear || null,

@@ -1,0 +1,116 @@
+---
+/**
+ * Footer Component
+ * Site footer with navigation, newsletter signup, and social links
+ */
+
+import { footerNavigation } from '../../data/navigation';
+import { siteConfig } from '../../data/siteConfig';
+import { Plane, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react';
+---
+
+<footer class="bg-charcoal text-white">
+  <!-- Main Footer Content -->
+  <div class="container mx-auto px-4 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+      <!-- Brand Column -->
+      <div class="lg:col-span-2">
+        <a href="/" class="flex items-center gap-2 mb-4 group">
+          <div class="w-10 h-10 bg-coral-500 rounded-lg flex items-center justify-center group-hover:bg-coral-600 transition-colors duration-200">
+            <Plane className="w-6 h-6 text-white transform -rotate-45" />
+          </div>
+          <span class="text-2xl font-bold">Party Pilot</span>
+        </a>
+        <p class="text-gray-400 mb-6 max-w-sm">
+          {siteConfig.tagline}
+        </p>
+        <p class="text-sm text-gray-500">
+          Maak van elk feest een succes met Party Pilot.
+        </p>
+
+        <!-- Social Links -->
+        <div class="flex gap-4 mt-6">
+          <a
+            href={siteConfig.social.twitter}
+            class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-coral-500 transition-colors duration-200"
+            aria-label="Twitter"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Twitter className="w-5 h-5" />
+          </a>
+          <a
+            href={siteConfig.social.facebook}
+            class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-coral-500 transition-colors duration-200"
+            aria-label="Facebook"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Facebook className="w-5 h-5" />
+          </a>
+          <a
+            href={siteConfig.social.instagram}
+            class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-coral-500 transition-colors duration-200"
+            aria-label="Instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Instagram className="w-5 h-5" />
+          </a>
+          <a
+            href={siteConfig.social.linkedin}
+            class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-coral-500 transition-colors duration-200"
+            aria-label="LinkedIn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Linkedin className="w-5 h-5" />
+          </a>
+        </div>
+      </div>
+
+      <!-- Navigation Columns -->
+      {footerNavigation.slice(0, 3).map((section) => (
+        <div>
+          <h3 class="text-lg font-semibold mb-4">{section.title}</h3>
+          <ul class="space-y-3">
+            {section.items.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class="text-gray-400 hover:text-white transition-colors duration-200"
+                  target={item.external ? '_blank' : undefined}
+                  rel={item.external ? 'noopener noreferrer' : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="border-t border-gray-800">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-sm text-gray-500">
+          &copy; {new Date().getFullYear()} {siteConfig.company.name}. Alle rechten voorbehouden.
+        </p>
+        <div class="flex gap-6 text-sm">
+          <a href="/privacybeleid" class="text-gray-500 hover:text-white transition-colors duration-200">
+            Privacybeleid
+          </a>
+          <a href="/algemene-voorwaarden" class="text-gray-500 hover:text-white transition-colors duration-200">
+            Algemene voorwaarden
+          </a>
+          <a href="/contact" class="text-gray-500 hover:text-white transition-colors duration-200">
+            Contact
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

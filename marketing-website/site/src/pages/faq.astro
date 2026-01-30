@@ -1,0 +1,170 @@
+---
+/**
+ * FAQ Page
+ * Complete FAQ organized by category with navigation
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import { faqByCategory, categoryLabels } from '../data/faq';
+import type { FAQCategory } from '../types';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Veelgestelde vragen - ${siteConfig.name}`;
+const description = 'Vind antwoorden op al je vragen over Party Pilot. Van prijzen tot functies, we hebben het allemaal voor je op een rijtje gezet.';
+
+const categories = Object.keys(faqByCategory) as FAQCategory[];
+---
+
+<PageLayout title={title} description={description} showCTA={false}>
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Veelgestelde vragen
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          Alles wat je wilt weten over Party Pilot op één plek
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Navigation (Sticky on Desktop) -->
+  <section class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+    <div class="container mx-auto px-4">
+      <nav class="flex gap-2 md:gap-4 overflow-x-auto py-4 scrollbar-hide">
+        {categories.map(category => (
+          <a
+            href={`#${category}`}
+            class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 font-medium text-sm whitespace-nowrap hover:bg-coral-500 hover:text-white transition-colors duration-200 flex-shrink-0"
+          >
+            {categoryLabels[category]}
+          </a>
+        ))}
+      </nav>
+    </div>
+  </section>
+
+  <!-- FAQ Sections by Category -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto space-y-16">
+        {categories.map((category, catIndex) => (
+          <div id={category} class="scroll-mt-24 animate-slide-up" style={`animation-delay: ${catIndex * 100}ms;`}>
+            <!-- Category Header -->
+            <div class="mb-8">
+              <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-3">
+                {categoryLabels[category]}
+              </h2>
+              <div class="h-1 w-20 bg-coral-500 rounded-full"></div>
+            </div>
+
+            <!-- FAQ Items for this Category -->
+            <div class="space-y-4">
+              {faqByCategory[category].map((item, itemIndex) => (
+                <details class="group bg-white rounded-lg shadow-soft hover:shadow-card transition-shadow duration-200">
+                  <summary class="cursor-pointer list-none px-6 py-4 flex items-center justify-between gap-4">
+                    <h3 class="text-lg font-semibold text-charcoal group-open:text-coral-600 transition-colors duration-200">
+                      {item.question}
+                    </h3>
+                    <div class="flex-shrink-0 w-6 h-6 text-coral-500 transition-transform duration-200 group-open:rotate-45">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"/>
+                        <path d="M12 5v14"/>
+                      </svg>
+                    </div>
+                  </summary>
+                  <div class="px-6 pb-4 pt-2">
+                    <p class="text-base text-gray-600 leading-relaxed">
+                      {item.answer}
+                    </p>
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact CTA Section -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="bg-white rounded-2xl shadow-card p-8 md:p-12">
+          <div class="w-16 h-16 rounded-full bg-coral-100 flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <circle cx="9" cy="10" r="1"/>
+              <circle cx="12" cy="10" r="1"/>
+              <circle cx="15" cy="10" r="1"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-4">
+            Vraag niet beantwoord?
+          </h2>
+          <p class="text-lg text-gray-600 mb-8">
+            Geen probleem! Neem contact met ons op en we helpen je graag verder.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/contact"
+              class="inline-block bg-coral-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-coral-600 transition-all duration-200 shadow-button hover:shadow-button-hover"
+            >
+              Neem contact op
+            </a>
+            <a
+              href="/waitlist"
+              class="inline-block bg-white border-2 border-coral-500 text-coral-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-coral-50 transition-all duration-200"
+            >
+              Probeer Party Pilot
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</PageLayout>
+
+<style>
+  /* Smooth accordion animation */
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  details[open] summary {
+    padding-bottom: 0.5rem;
+  }
+
+  details[open] > div {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Hide scrollbar for category navigation but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

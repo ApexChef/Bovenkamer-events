@@ -1,0 +1,59 @@
+---
+/**
+ * Page Layout
+ * Standard page layout with Header, Footer, and main content area
+ */
+
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  ogImage?: string;
+  ogType?: string;
+  canonical?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
+  showCTA?: boolean; // Show bottom CTA section before footer
+}
+
+const {
+  showCTA = true,
+  ...baseProps
+} = Astro.props;
+---
+
+<BaseLayout {...baseProps}>
+  <Header />
+
+  <main class="min-h-screen">
+    <slot />
+  </main>
+
+  {showCTA && (
+    <section class="bg-gradient-cta py-16 md:py-20">
+      <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
+          Klaar om je beste feest ooit te organiseren?
+        </h2>
+        <p class="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+          Sluit je aan bij duizenden feestorganisatoren die Party Pilot gebruiken
+        </p>
+        <a
+          href="/waitlist"
+          class="inline-block bg-white text-coral-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+        >
+          Start gratis
+        </a>
+        <p class="text-sm text-white/75 mt-4">
+          Geen creditcard nodig • Gratis tot 15 gasten
+        </p>
+      </div>
+    </section>
+  )}
+
+  <Footer />
+</BaseLayout>

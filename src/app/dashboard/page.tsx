@@ -6,7 +6,7 @@ import { useRegistrationStore, useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { HomeTab, PredictionsTab, LeaderboardTab, MiniLeaderboard } from '@/components/dashboard';
 import { FeatureToggle } from '@/components/FeatureToggle';
-import { FoodDrinkCTA } from '@/components/FoodDrinkCTA';
+import { AIAssignment } from '@/types';
 
 interface LeaderboardEntry {
   rank: number;
@@ -23,13 +23,14 @@ interface LeaderboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, setAIAssignment, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
   const { isAuthenticated, currentUser, _hasHydrated: authHydrated } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [predictionsSubmitted, setPredictionsSubmitted] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [profileSynced, setProfileSynced] = useState(false);
+  const [predictionEvaluation, setPredictionEvaluation] = useState<AIAssignment | null>(null);
 
   // Track client-side mount
   useEffect(() => {
@@ -77,13 +78,19 @@ export default function DashboardPage() {
               quiz: !!data.completedSections.quiz,
             });
           }
+          if (data.profile.aiAssignment) {
+            setAIAssignment(data.profile.aiAssignment);
+          }
+          if (data.predictionEvaluation) {
+            setPredictionEvaluation(data.predictionEvaluation);
+          }
         }
         setProfileSynced(true);
       }
     } catch (error) {
       console.error('Error syncing profile from database:', error);
     }
-  }, [formData.email, profileSynced, setFormData, setCompletedSections]);
+  }, [formData.email, profileSynced, setFormData, setCompletedSections, setAIAssignment]);
 
   // Fetch profile from DB to sync any changes
   useEffect(() => {
@@ -167,13 +174,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content - 2 columns on large screens */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Food & Drink CTA */}
-            <FoodDrinkCTA />
-
             {/* Home Tab Content */}
             <HomeTab
               formData={formData}
               aiAssignment={aiAssignment}
+              predictionEvaluation={predictionEvaluation}
               userPoints={userPoints}
               userRank={userRank}
               isLoading={isLoading}

@@ -8,62 +8,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
-    // Get leaderboard: sum points per user
-    const { data: leaderboard, error: leaderboardError } = await supabase
-      .from('points_ledger')
-      .select(`
-        user_id,
-        users (
-          id,
-          name,
-          email
-        )
-      `)
-      .order('user_id');
+    // Get users with total_points (kept in sync by DB trigger)
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, total_points');
 
-    if (leaderboardError) {
-      console.error('Error fetching leaderboard:', leaderboardError);
+    if (usersError) {
+      console.error('Error fetching leaderboard:', usersError);
       return NextResponse.json({ error: 'Kon leaderboard niet ophalen' }, { status: 500 });
     }
 
-    // Aggregate points per user
-    const userPoints: Record<string, { userId: string; name: string; email: string; points: number }> = {};
-
-    // First get all points entries
-    const { data: allPoints } = await supabase
-      .from('points_ledger')
-      .select('user_id, points');
-
-    if (allPoints) {
-      for (const entry of allPoints) {
-        if (!userPoints[entry.user_id]) {
-          userPoints[entry.user_id] = { userId: entry.user_id, name: '', email: '', points: 0 };
-        }
-        userPoints[entry.user_id].points += entry.points;
-      }
-    }
-
-    // Get user details
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, name, email');
-
-    if (users) {
-      for (const user of users) {
-        // Only show first name on leaderboard
-        const firstName = user.name?.split(' ')[0] || 'Deelnemer';
-        if (userPoints[user.id]) {
-          userPoints[user.id].name = firstName;
-          userPoints[user.id].email = user.email;
-        } else {
-          // User exists but has no points yet
-          userPoints[user.id] = { userId: user.id, name: firstName, email: user.email, points: 0 };
-        }
-      }
-    }
-
-    // Convert to array and sort by points
-    const sortedLeaderboard = Object.values(userPoints)
+    // Build and sort leaderboard
+    const sortedLeaderboard = (users || [])
+      .map(user => ({
+        userId: user.id,
+        name: user.name?.split(' ')[0] || 'Deelnemer',
+        email: user.email,
+        points: user.total_points || 0,
+      }))
       .sort((a, b) => b.points - a.points)
       .map((user, index) => ({
         rank: index + 1,

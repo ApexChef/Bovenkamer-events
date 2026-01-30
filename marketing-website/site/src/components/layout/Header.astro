@@ -1,0 +1,127 @@
+---
+/**
+ * Header Component
+ * Sticky navigation header with logo, nav links, and CTA button
+ * Transparent on homepage hero, solid white with shadow on scroll
+ */
+
+import { mainNavigation } from '../../data/navigation';
+import { Plane } from 'lucide-react';
+import MobileMenu from '../islands/MobileMenu';
+---
+
+<header
+  id="site-header"
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  data-scrolled="false"
+>
+  <nav class="container mx-auto px-4 py-4">
+    <div class="flex items-center justify-between">
+      <!-- Logo -->
+      <a
+        href="/"
+        class="flex items-center gap-2 text-charcoal hover:text-coral-600 transition-colors duration-200 group"
+      >
+        <div class="w-8 h-8 bg-coral-500 rounded-lg flex items-center justify-center group-hover:bg-coral-600 transition-colors duration-200">
+          <Plane className="w-5 h-5 text-white transform -rotate-45" />
+        </div>
+        <span class="text-xl md:text-2xl font-bold">Party Pilot</span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden lg:flex items-center gap-8">
+        {mainNavigation.map((item) => (
+          <a
+            href={item.href}
+            class="text-base font-medium text-gray-700 hover:text-coral-600 transition-colors duration-200"
+          >
+            {item.label}
+          </a>
+        ))}
+      </div>
+
+      <!-- CTA Button (Desktop) -->
+      <div class="hidden lg:block">
+        <a
+          href="/waitlist"
+          class="inline-block bg-coral-500 text-white px-6 py-3 rounded-lg font-semibold text-base hover:bg-coral-600 transition-all duration-200 shadow-button hover:shadow-button-hover"
+        >
+          Start gratis
+        </a>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button
+        id="mobile-menu-button"
+        class="lg:hidden p-2 text-charcoal hover:text-coral-600 transition-colors duration-200"
+        aria-label="Menu openen"
+        aria-expanded="false"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- Mobile Menu (React Island) -->
+<MobileMenu items={mainNavigation} client:idle />
+
+<script>
+  // Header scroll behavior
+  const header = document.getElementById('site-header');
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  let lastScrollY = window.scrollY;
+
+  function updateHeader() {
+    const scrollY = window.scrollY;
+    const scrolled = scrollY > 20;
+
+    if (header) {
+      header.setAttribute('data-scrolled', String(scrolled));
+
+      if (scrolled) {
+        header.classList.add('bg-white', 'shadow-soft');
+        header.classList.remove('bg-transparent');
+      } else {
+        header.classList.remove('bg-white', 'shadow-soft');
+        header.classList.add('bg-transparent');
+      }
+    }
+
+    lastScrollY = scrollY;
+  }
+
+  // Initial state
+  updateHeader();
+
+  // Listen to scroll events
+  window.addEventListener('scroll', updateHeader, { passive: true });
+
+  // Mobile menu toggle
+  if (mobileMenuButton) {
+    mobileMenuButton.addEventListener('click', () => {
+      const event = new CustomEvent('toggle-mobile-menu');
+      window.dispatchEvent(event);
+    });
+  }
+</script>
+
+<style>
+  /* Add backdrop blur when scrolled */
+  #site-header[data-scrolled="true"] {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+</style>

@@ -115,10 +115,10 @@ export async function GET() {
   try {
     const supabase = createServerClient();
 
-    // Fetch users with registration status approved
+    // Fetch users with registration status approved and point columns
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, name, registration_status')
+      .select('id, name, registration_status, registration_points, quiz_points, game_points, bonus_points')
       .eq('registration_status', 'approved');
 
     if (usersError) {
@@ -133,16 +133,6 @@ export async function GET() {
 
     if (regError) {
       console.error('Error fetching registrations:', regError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
-
-    // Fetch points ledger
-    const { data: pointsLedger, error: pointsError } = await supabase
-      .from('points_ledger')
-      .select('user_id, source, points');
-
-    if (pointsError) {
-      console.error('Error fetching points:', pointsError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
@@ -172,14 +162,14 @@ export async function GET() {
         breakdown = result.breakdown;
       }
 
-      // Get other points from ledger
-      const userPoints = pointsLedger?.filter(p => p.user_id === user.id) || [];
-      const registrationPoints = userPoints.find(p => p.source === 'registration')?.points || 0;
-      const quizPoints = userPoints.filter(p => p.source === 'quiz').reduce((sum, p) => sum + p.points, 0);
-      const gamePoints = userPoints.filter(p => p.source === 'game').reduce((sum, p) => sum + p.points, 0);
+      // Get other points from users table (kept in sync by DB trigger)
+      const registrationPoints = user.registration_points || 0;
+      const quizPoints = user.quiz_points || 0;
+      const gamePoints = user.game_points || 0;
+      const bonusPoints = user.bonus_points || 0;
 
       // Note: we use live calculated prediction points, not stored ones
-      const totalPoints = registrationPoints + predictionPoints + quizPoints + gamePoints;
+      const totalPoints = registrationPoints + predictionPoints + quizPoints + gamePoints + bonusPoints;
 
       return {
         userId: user.id,
