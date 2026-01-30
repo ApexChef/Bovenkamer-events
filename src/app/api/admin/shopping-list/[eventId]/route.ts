@@ -147,10 +147,28 @@ export async function GET(
 
     const avgMeatDistribution = getAverageMeatDistribution(persons);
 
+    // Fetch procurement data from purchase order lines (replaces menu_items.purchased_quantity)
+    const { data: procurementData } = await supabase
+      .from('purchase_order_lines')
+      .select('menu_item_id, received_quantity, purchase_orders!inner(event_id)')
+      .eq('purchase_orders.event_id', params.eventId)
+      .not('menu_item_id', 'is', null);
+
+    // Build procurement map: menu_item_id -> total received quantity
+    const procurementMap = new Map<string, number>();
+    for (const line of procurementData || []) {
+      const current = procurementMap.get(line.menu_item_id) || 0;
+      procurementMap.set(
+        line.menu_item_id,
+        current + (line.received_quantity ? parseFloat(line.received_quantity) : 0)
+      );
+    }
+
     const shoppingList = calculateShoppingList(
       coursesWithItems,
       event.total_persons,
-      avgMeatDistribution
+      avgMeatDistribution,
+      procurementMap
     );
 
     // Calculate meat distribution breakdown for protein courses

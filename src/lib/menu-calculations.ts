@@ -133,14 +133,14 @@ export function getAverageMeatDistribution(
 }
 
 /**
- * Calculates surplus from purchased vs needed quantity
+ * Calculates surplus from received vs needed quantity
  */
 function calculateSurplus(
-  purchasedQuantity: number | null,
+  receivedQuantity: number | null,
   purchaseQuantity: number
 ): number | null {
-  if (purchasedQuantity === null) return null;
-  return purchasedQuantity - purchaseQuantity;
+  if (receivedQuantity === null) return null;
+  return receivedQuantity - purchaseQuantity;
 }
 
 /**
@@ -163,7 +163,8 @@ function calculateSurplus(
 export function calculateProteinItem(
   menuItem: MenuItem,
   totalCourseGrams: number,
-  avgMeatDistribution: MeatDistribution
+  avgMeatDistribution: MeatDistribution,
+  receivedQuantity?: number | null
 ): ShoppingListItem {
   // Validate input
   if (menuItem.itemType !== 'protein') {
@@ -202,6 +203,8 @@ export function calculateProteinItem(
     purchaseQuantity = Math.ceil(brutoGrams / rounding) * rounding;
   }
 
+  const rcvd = receivedQuantity ?? null;
+
   return {
     menuItemId: menuItem.id,
     name: menuItem.name,
@@ -211,8 +214,8 @@ export function calculateProteinItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
-    purchasedQuantity: menuItem.purchasedQuantity ?? null,
-    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
+    receivedQuantity: rcvd,
+    surplus: calculateSurplus(rcvd, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -242,7 +245,8 @@ export function calculateProteinItem(
 export function calculateSideItem(
   menuItem: MenuItem,
   totalCourseGrams: number,
-  numberOfSides: number
+  numberOfSides: number,
+  receivedQuantity?: number | null
 ): ShoppingListItem {
   // Validate input
   if (menuItem.itemType !== 'side') {
@@ -270,6 +274,8 @@ export function calculateSideItem(
     purchaseQuantity = Math.ceil(brutoGrams / rounding) * rounding;
   }
 
+  const rcvd = receivedQuantity ?? null;
+
   return {
     menuItemId: menuItem.id,
     name: menuItem.name,
@@ -279,8 +285,8 @@ export function calculateSideItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
-    purchasedQuantity: menuItem.purchasedQuantity ?? null,
-    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
+    receivedQuantity: rcvd,
+    surplus: calculateSurplus(rcvd, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -306,7 +312,8 @@ export function calculateSideItem(
  */
 export function calculateFixedItem(
   menuItem: MenuItem,
-  totalPersons: number
+  totalPersons: number,
+  receivedQuantity?: number | null
 ): ShoppingListItem {
   // Validate input
   if (menuItem.itemType !== 'fixed') {
@@ -334,6 +341,8 @@ export function calculateFixedItem(
     purchaseQuantity = Math.ceil(brutoGrams / rounding) * rounding;
   }
 
+  const rcvd = receivedQuantity ?? null;
+
   return {
     menuItemId: menuItem.id,
     name: menuItem.name,
@@ -343,8 +352,8 @@ export function calculateFixedItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
-    purchasedQuantity: menuItem.purchasedQuantity ?? null,
-    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
+    receivedQuantity: rcvd,
+    surplus: calculateSurplus(rcvd, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -362,20 +371,20 @@ export function calculateFixedItem(
 }
 
 /**
- * Sums purchased and surplus totals for a list of shopping items.
- * Returns null if no items have purchasedQuantity data.
+ * Sums received and surplus totals for a list of shopping items.
+ * Returns null if no items have receivedQuantity data.
  */
-function sumPurchasedAndSurplus(items: ShoppingListItem[]): {
-  totalPurchasedGrams: number | null;
+function sumReceivedAndSurplus(items: ShoppingListItem[]): {
+  totalReceivedGrams: number | null;
   totalSurplusGrams: number | null;
 } {
-  const itemsWithData = items.filter((item) => item.purchasedQuantity !== null);
+  const itemsWithData = items.filter((item) => item.receivedQuantity !== null);
   if (itemsWithData.length === 0) {
-    return { totalPurchasedGrams: null, totalSurplusGrams: null };
+    return { totalReceivedGrams: null, totalSurplusGrams: null };
   }
   return {
-    totalPurchasedGrams: itemsWithData.reduce(
-      (sum, item) => sum + (item.purchasedQuantity ?? 0),
+    totalReceivedGrams: itemsWithData.reduce(
+      (sum, item) => sum + (item.receivedQuantity ?? 0),
       0
     ),
     totalSurplusGrams: itemsWithData.reduce(
@@ -396,7 +405,8 @@ function sumPurchasedAndSurplus(items: ShoppingListItem[]): {
 export function calculateCourseShoppingList(
   course: EventCourseWithItems,
   totalPersons: number,
-  avgMeatDistribution: MeatDistribution
+  avgMeatDistribution: MeatDistribution,
+  procurementMap?: Map<string, number>
 ): ShoppingListCourse {
   const totalCourseGrams = totalPersons * course.gramsPerPerson;
 
@@ -407,23 +417,27 @@ export function calculateCourseShoppingList(
 
   // Calculate each menu item
   const items: ShoppingListItem[] = course.menuItems.map((menuItem) => {
+    const rcvd = procurementMap?.get(menuItem.id) ?? null;
+
     switch (menuItem.itemType) {
       case 'protein':
         return calculateProteinItem(
           menuItem,
           totalCourseGrams,
-          avgMeatDistribution
+          avgMeatDistribution,
+          rcvd
         );
 
       case 'side':
         return calculateSideItem(
           menuItem,
           totalCourseGrams,
-          numberOfSides
+          numberOfSides,
+          rcvd
         );
 
       case 'fixed':
-        return calculateFixedItem(menuItem, totalPersons);
+        return calculateFixedItem(menuItem, totalPersons, rcvd);
 
       default:
         throw new Error(`Unknown item type: ${menuItem.itemType}`);
@@ -431,12 +445,12 @@ export function calculateCourseShoppingList(
   });
 
   // Calculate subtotals
-  const { totalPurchasedGrams, totalSurplusGrams } = sumPurchasedAndSurplus(items);
+  const { totalReceivedGrams, totalSurplusGrams } = sumReceivedAndSurplus(items);
   const subtotal = {
     totalEdibleGrams: items.reduce((sum, item) => sum + item.edibleGrams, 0),
     totalBrutoGrams: items.reduce((sum, item) => sum + item.brutoGrams, 0),
     totalPurchaseGrams: items.reduce((sum, item) => sum + item.purchaseQuantity, 0),
-    totalPurchasedGrams,
+    totalReceivedGrams,
     totalSurplusGrams,
   };
 
@@ -498,16 +512,17 @@ export function calculateMeatDistributionBreakdown(
 export function calculateShoppingList(
   courses: EventCourseWithItems[],
   totalPersons: number,
-  avgMeatDistribution: MeatDistribution
+  avgMeatDistribution: MeatDistribution,
+  procurementMap?: Map<string, number>
 ): ShoppingList {
   // Calculate each course
   const courseShoppingLists = courses.map((course) =>
-    calculateCourseShoppingList(course, totalPersons, avgMeatDistribution)
+    calculateCourseShoppingList(course, totalPersons, avgMeatDistribution, procurementMap)
   );
 
-  // Aggregate purchased/surplus across all courses
+  // Aggregate received/surplus across all courses
   const allItems = courseShoppingLists.flatMap((c) => c.items);
-  const { totalPurchasedGrams, totalSurplusGrams } = sumPurchasedAndSurplus(allItems);
+  const { totalReceivedGrams, totalSurplusGrams } = sumReceivedAndSurplus(allItems);
 
   // Calculate grand total
   const grandTotal = {
@@ -523,7 +538,7 @@ export function calculateShoppingList(
       (sum, course) => sum + course.subtotal.totalPurchaseGrams,
       0
     ),
-    totalPurchasedGrams,
+    totalReceivedGrams,
     totalSurplusGrams,
   };
 

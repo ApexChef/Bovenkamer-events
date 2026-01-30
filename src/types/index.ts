@@ -1108,7 +1108,6 @@ export interface MenuItem {
   roundingGrams: number | null;
   distributionPercentage: number | null; // Protein only
   gramsPerPerson: number | null; // Fixed only
-  purchasedQuantity: number | null; // Actually purchased (grams, from invoice)
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -1141,8 +1140,8 @@ export interface ShoppingListItem {
   brutoGrams: number;
   purchaseQuantity: number;
   purchaseUnits: number | null; // For fixed units (e.g., 13 hamburgers)
-  purchasedQuantity: number | null; // Actually purchased (from invoice)
-  surplus: number | null; // purchasedQuantity - purchaseQuantity (positive = over, negative = short)
+  receivedQuantity: number | null; // Actually received (from purchase order lines)
+  surplus: number | null; // receivedQuantity - purchaseQuantity (positive = over, negative = short)
   unit: string; // 'g', 'kg', 'stuks', etc.
   unitLabel: string | null;
   calculation: {
@@ -1185,7 +1184,7 @@ export interface ShoppingListCourse {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
-    totalPurchasedGrams: number | null;
+    totalReceivedGrams: number | null;
     totalSurplusGrams: number | null;
   };
 }
@@ -1213,7 +1212,7 @@ export interface ShoppingList {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
-    totalPurchasedGrams: number | null;
+    totalReceivedGrams: number | null;
     totalSurplusGrams: number | null;
   };
 }
@@ -1234,7 +1233,7 @@ export interface ShoppingListResponse {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
-    totalPurchasedGrams: number | null;
+    totalReceivedGrams: number | null;
     totalSurplusGrams: number | null;
   };
 }
@@ -1275,7 +1274,117 @@ export interface CreateMenuItemData {
   roundingGrams: number | null;
   distributionPercentage: number | null;
   gramsPerPerson: number | null;
-  purchasedQuantity: number | null;
   sortOrder: number;
   isActive: boolean;
+}
+
+// =============================================================================
+// PURCHASE ORDER TYPES (US-014 Phase 3)
+// =============================================================================
+
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'received' | 'invoiced';
+export type POLineCategory = 'food' | 'drink' | 'condiment' | 'herb' | 'non_food' | 'other';
+
+/**
+ * Purchase order entity
+ */
+export interface PurchaseOrder {
+  id: string;
+  eventId: string;
+  supplier: string;
+  orderDate: string | null;
+  expectedDeliveryDate: string | null;
+  status: PurchaseOrderStatus;
+  invoiceReference: string | null;
+  invoiceDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Purchase order with aggregate summary (for list view)
+ */
+export interface PurchaseOrderSummary extends PurchaseOrder {
+  lineCount: number;
+  totalPrice: number | null;
+  linkedItemCount: number;
+  unlinkedItemCount: number;
+}
+
+/**
+ * Purchase order line entity
+ */
+export interface PurchaseOrderLine {
+  id: string;
+  purchaseOrderId: string;
+  menuItemId: string | null;
+  name: string;
+  description: string | null;
+  lineCategory: POLineCategory;
+  orderedQuantity: number | null;
+  receivedQuantity: number | null;
+  unitLabel: string | null;
+  unitPrice: number | null;
+  totalPrice: number | null;
+  supplierArticleNr: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * PO line with menu item context (for detail view)
+ */
+export interface PurchaseOrderLineWithMenuItem extends PurchaseOrderLine {
+  menuItemName: string | null;
+  menuItemCourse: string | null;
+}
+
+/**
+ * Full purchase order with all lines
+ */
+export interface PurchaseOrderWithLines extends PurchaseOrder {
+  lines: PurchaseOrderLineWithMenuItem[];
+}
+
+/**
+ * Form data for creating/updating a purchase order
+ */
+export interface CreatePurchaseOrderData {
+  supplier: string;
+  orderDate: string | null;
+  expectedDeliveryDate: string | null;
+  status: PurchaseOrderStatus;
+  invoiceReference: string;
+  invoiceDate: string | null;
+  notes: string;
+}
+
+/**
+ * Form data for creating/updating a PO line
+ */
+export interface CreatePOLineData {
+  menuItemId: string | null;
+  name: string;
+  description: string;
+  lineCategory: POLineCategory;
+  orderedQuantity: number | null;
+  receivedQuantity: number | null;
+  unitLabel: string;
+  unitPrice: number | null;
+  totalPrice: number | null;
+  supplierArticleNr: string;
+  notes: string;
+}
+
+/**
+ * Aggregated procurement data per menu item (from PO lines)
+ */
+export interface MenuItemProcurement {
+  menuItemId: string;
+  totalReceivedQuantity: number;
+  totalOrderedQuantity: number;
+  lineCount: number;
+  suppliers: string[];
 }

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Select, TextArea } from '@/components/ui';
 import Link from 'next/link';
-import { Plus, Pencil, Trash2, ChevronRight, ShoppingCart, CalendarDays, Users, UtensilsCrossed } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronRight, ShoppingCart, CalendarDays, Users, UtensilsCrossed, Package } from 'lucide-react';
 import type {
   MenuEvent,
   EventWithCourseCount,
@@ -444,7 +444,6 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
     roundingGrams: null,
     distributionPercentage: null,
     gramsPerPerson: null,
-    purchasedQuantity: null,
     sortOrder: existingCount + 1,
     isActive: true,
   });
@@ -464,7 +463,6 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
         roundingGrams: menuItem.roundingGrams,
         distributionPercentage: menuItem.distributionPercentage,
         gramsPerPerson: menuItem.gramsPerPerson,
-        purchasedQuantity: menuItem.purchasedQuantity,
         sortOrder: menuItem.sortOrder,
         isActive: menuItem.isActive,
       });
@@ -480,7 +478,6 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
         roundingGrams: null,
         distributionPercentage: null,
         gramsPerPerson: null,
-        purchasedQuantity: null,
         sortOrder: existingCount + 1,
         isActive: true,
       });
@@ -648,18 +645,6 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
             onChange={(e) => setFormData({ ...formData, gramsPerPerson: e.target.value ? parseInt(e.target.value) : null })}
             hint="Vast aantal gram per persoon"
             required
-          />
-        )}
-
-        {menuItem && (
-          <Input
-            label="Ingekochte hoeveelheid (gram)"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.purchasedQuantity?.toString() || ''}
-            onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value ? parseFloat(e.target.value) : null })}
-            hint="Daadwerkelijk ingekocht (uit factuur)"
           />
         )}
 
@@ -1078,13 +1063,13 @@ function ShoppingListSection({ eventId, totalPersons, hasCourses, refreshTrigger
                             {formatGrams(item.purchaseQuantity)}
                           </td>
                           <td className={`text-right py-2 px-2 font-medium ${
-                            item.purchasedQuantity === null
+                            item.receivedQuantity === null
                               ? 'text-cream/40'
-                              : item.purchasedQuantity >= item.purchaseQuantity
+                              : item.receivedQuantity >= item.purchaseQuantity
                                 ? 'text-green-400'
                                 : 'text-red-400'
                           }`}>
-                            {item.purchasedQuantity !== null ? formatGrams(item.purchasedQuantity) : '-'}
+                            {item.receivedQuantity !== null ? formatGrams(item.receivedQuantity) : '-'}
                           </td>
                           <td className={`text-right py-2 px-2 font-medium ${
                             item.surplus === null
@@ -1108,7 +1093,7 @@ function ShoppingListSection({ eventId, totalPersons, hasCourses, refreshTrigger
                         <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalBrutoGrams)}</td>
                         <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalPurchaseGrams)}</td>
                         <td className="text-right py-2 px-2 text-gold">
-                          {course.subtotal.totalPurchasedGrams !== null ? formatGrams(course.subtotal.totalPurchasedGrams) : '-'}
+                          {course.subtotal.totalReceivedGrams !== null ? formatGrams(course.subtotal.totalReceivedGrams) : '-'}
                         </td>
                         <td className={`text-right py-2 px-2 font-semibold ${
                           course.subtotal.totalSurplusGrams === null
@@ -1151,7 +1136,7 @@ function ShoppingListSection({ eventId, totalPersons, hasCourses, refreshTrigger
                     <td className="text-right py-2 px-2">{formatGrams(data.grandTotal.totalBrutoGrams)}</td>
                     <td className="text-right py-2 px-2 text-lg">{formatGrams(data.grandTotal.totalPurchaseGrams)}</td>
                     <td className="text-right py-2 px-2">
-                      {data.grandTotal.totalPurchasedGrams !== null ? formatGrams(data.grandTotal.totalPurchasedGrams) : '-'}
+                      {data.grandTotal.totalReceivedGrams !== null ? formatGrams(data.grandTotal.totalReceivedGrams) : '-'}
                     </td>
                     <td className={`text-right py-2 px-2 ${
                       data.grandTotal.totalSurplusGrams === null
@@ -1360,6 +1345,19 @@ function EventDetail({ event, onRefresh, onEditEvent, onDeleteEvent }: EventDeta
         hasCourses={event.courses.length > 0}
         refreshTrigger={shoppingListRefreshTrigger}
       />
+
+      {/* Purchase Orders Link */}
+      <Card className="mt-6">
+        <CardContent className="py-4">
+          <Link href={`/admin/purchase-orders?eventId=${event.id}`}>
+            <Button variant="ghost" className="w-full justify-start">
+              <Package className="w-5 h-5 mr-2" />
+              Inkooporders beheren
+              <ChevronRight className="w-4 h-4 ml-auto" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
 
       {/* Dialogs */}
       <CourseDialog

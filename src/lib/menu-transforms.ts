@@ -14,7 +14,7 @@
  * - Null-safe transformations
  */
 
-import { MenuEvent, EventCourse, MenuItem } from '@/types';
+import { MenuEvent, EventCourse, MenuItem, PurchaseOrder, PurchaseOrderLine } from '@/types';
 
 /**
  * Transforms database event row to MenuEvent interface
@@ -68,11 +68,50 @@ export function transformMenuItem(row: any): MenuItem {
       ? parseFloat(row.distribution_percentage)
       : null,
     gramsPerPerson: row.grams_per_person,
-    purchasedQuantity: row.purchased_quantity
-      ? parseFloat(row.purchased_quantity)
-      : null,
     sortOrder: row.sort_order,
     isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Transforms database purchase_orders row to PurchaseOrder interface
+ */
+export function transformPurchaseOrder(row: any): PurchaseOrder {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    supplier: row.supplier,
+    orderDate: row.order_date,
+    expectedDeliveryDate: row.expected_delivery_date,
+    status: row.status,
+    invoiceReference: row.invoice_reference,
+    invoiceDate: row.invoice_date,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Transforms database purchase_order_lines row to PurchaseOrderLine interface
+ */
+export function transformPurchaseOrderLine(row: any): PurchaseOrderLine {
+  return {
+    id: row.id,
+    purchaseOrderId: row.purchase_order_id,
+    menuItemId: row.menu_item_id,
+    name: row.name,
+    description: row.description,
+    lineCategory: row.line_category,
+    orderedQuantity: row.ordered_quantity ? parseFloat(row.ordered_quantity) : null,
+    receivedQuantity: row.received_quantity ? parseFloat(row.received_quantity) : null,
+    unitLabel: row.unit_label,
+    unitPrice: row.unit_price ? parseFloat(row.unit_price) : null,
+    totalPrice: row.total_price ? parseFloat(row.total_price) : null,
+    supplierArticleNr: row.supplier_article_nr,
+    notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

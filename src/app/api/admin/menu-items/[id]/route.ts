@@ -91,10 +91,6 @@ export async function PATCH(
       updateData.sort_order = body.sortOrder;
     }
 
-    if (body.purchasedQuantity !== undefined) {
-      updateData.purchased_quantity = body.purchasedQuantity ?? null;
-    }
-
     if (body.isActive !== undefined) {
       updateData.is_active = body.isActive;
     }

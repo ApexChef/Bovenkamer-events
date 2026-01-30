@@ -159,7 +159,6 @@ export async function POST(
         rounding_grams: body.roundingGrams ?? 100,
         distribution_percentage: body.distributionPercentage ?? null,
         grams_per_person: body.gramsPerPerson ?? null,
-        purchased_quantity: body.purchasedQuantity ?? null,
         sort_order: body.sortOrder ?? 0,
         is_active: body.isActive ?? true,
       })
