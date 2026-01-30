@@ -1,0 +1,67 @@
+---
+/**
+ * Feature Card Component
+ * Specialized card for displaying features with icon, title, and description
+ */
+
+import Card from './Card.astro';
+import {
+  Mail, ShoppingCart, Trophy, CreditCard, UtensilsCrossed,
+  ChefHat, Bot, Bell, Star, FileEdit, Users, Calendar,
+  MessageSquare, Smartphone, Utensils, Wallet, ClipboardList,
+  Target, Award, Zap, Heart
+} from 'lucide-react';
+
+interface Props {
+  icon: string;
+  title: string;
+  description: string;
+  index?: number;
+  class?: string;
+}
+
+const {
+  icon,
+  title,
+  description,
+  index = 0,
+  class: className = '',
+} = Astro.props;
+
+// Icon mapping
+const iconMap: Record<string, any> = {
+  Mail, ShoppingCart, Trophy, CreditCard, UtensilsCrossed,
+  ChefHat, Bot, Bell, Star, FileEdit, Users, Calendar,
+  MessageSquare, Smartphone, Utensils, Wallet, ClipboardList,
+  Target, Award, Zap, Heart,
+};
+
+const IconComponent = iconMap[icon] || Star;
+
+// Animation delay based on index
+const animationDelay = `${index * 100}ms`;
+---
+
+<Card
+  variant="feature"
+  hover={true}
+  class={`group ${className}`}
+  style={`animation-delay: ${animationDelay};`}
+>
+  <div class="flex flex-col items-start gap-4">
+    <!-- Icon -->
+    <div class="w-12 h-12 rounded-lg bg-coral-100 flex items-center justify-center group-hover:bg-coral-500 transition-colors duration-300">
+      <IconComponent className="w-6 h-6 text-coral-600 group-hover:text-white transition-colors duration-300" />
+    </div>
+
+    <!-- Content -->
+    <div>
+      <h3 class="text-xl font-semibold text-charcoal mb-2 group-hover:text-coral-600 transition-colors duration-300">
+        {title}
+      </h3>
+      <p class="text-base text-gray-600 leading-relaxed">
+        {description}
+      </p>
+    </div>
+  </div>
+</Card>

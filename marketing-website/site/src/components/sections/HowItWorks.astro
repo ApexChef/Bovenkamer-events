@@ -1,0 +1,176 @@
+---
+/**
+ * How It Works Section
+ * 3-step process with horizontal stepper on desktop, vertical timeline on mobile
+ */
+
+interface Step {
+  number: number;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const steps: Step[] = [
+  {
+    number: 1,
+    icon: 'Rocket',
+    title: 'Maak je feest aan',
+    description: 'Stel je feest op in een paar klikken. Kies je type feest, stel je budget in, en deel de link met je gasten.',
+  },
+  {
+    number: 2,
+    icon: 'Users',
+    title: 'Gasten melden zich aan',
+    description: 'Gasten vullen hun voorkeuren in: dieetwensen, skills en meer. Party Pilot verzamelt alles automatisch.',
+  },
+  {
+    number: 3,
+    icon: 'PartyPopper',
+    title: 'Geniet van je feest',
+    description: 'Met automatische boodschappenlijsten, live quiz en meer is je feest perfect georganiseerd. Alleen genieten nog!',
+  },
+];
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<section class={`py-16 md:py-24 bg-gray-50 ${className}`}>
+  <div class="container mx-auto px-4">
+    <!-- Section Header -->
+    <div class="text-center max-w-3xl mx-auto mb-12 md:mb-20">
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mb-4">
+        Hoe werkt het?
+      </h2>
+      <p class="text-lg md:text-xl text-gray-600 leading-relaxed">
+        In drie simpele stappen van planning naar perfect feest
+      </p>
+    </div>
+
+    <!-- Desktop: Horizontal Stepper -->
+    <div class="hidden md:block">
+      <div class="relative">
+        <!-- Connecting Line -->
+        <div class="absolute top-20 left-0 right-0 h-1 bg-gray-200 mx-auto" style="width: calc(100% - 160px); margin-left: 80px;"></div>
+
+        <div class="grid md:grid-cols-3 gap-8 relative z-10">
+          {steps.map((step, index) => (
+            <div class="flex flex-col items-center text-center animate-slide-up" style={`animation-delay: ${index * 200}ms;`}>
+              <!-- Step Number Circle -->
+              <div class="w-16 h-16 rounded-full bg-coral-500 text-white font-bold text-2xl flex items-center justify-center mb-6 shadow-button relative">
+                {step.number}
+              </div>
+
+              <!-- Icon Circle -->
+              <div class="w-20 h-20 rounded-full bg-white shadow-card flex items-center justify-center mb-6">
+                {step.icon === 'Rocket' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                  </svg>
+                )}
+                {step.icon === 'Users' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                )}
+                {step.icon === 'PartyPopper' && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5.8 11.3 2 22l10.7-3.79"/>
+                    <path d="M4 3h.01"/>
+                    <path d="M22 8h.01"/>
+                    <path d="M15 2h.01"/>
+                    <path d="M22 20h.01"/>
+                    <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+                    <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+                    <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/>
+                    <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>
+                  </svg>
+                )}
+              </div>
+
+              <!-- Content -->
+              <h3 class="text-xl md:text-2xl font-bold text-charcoal mb-3">
+                {step.title}
+              </h3>
+              <p class="text-base text-gray-600 leading-relaxed">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile: Vertical Timeline -->
+    <div class="md:hidden space-y-8">
+      {steps.map((step, index) => (
+        <div class="flex gap-4 animate-slide-up" style={`animation-delay: ${index * 200}ms;`}>
+          <!-- Left: Number and Line -->
+          <div class="flex flex-col items-center">
+            <!-- Step Number Circle -->
+            <div class="w-12 h-12 rounded-full bg-coral-500 text-white font-bold text-xl flex items-center justify-center shadow-button flex-shrink-0">
+              {step.number}
+            </div>
+            {index < steps.length - 1 && (
+              <div class="w-1 flex-1 bg-gray-200 mt-4"></div>
+            )}
+          </div>
+
+          <!-- Right: Content -->
+          <div class="flex-1 pb-8">
+            <!-- Icon Circle -->
+            <div class="w-16 h-16 rounded-full bg-white shadow-card flex items-center justify-center mb-4">
+              {step.icon === 'Rocket' && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                  <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                </svg>
+              )}
+              {step.icon === 'Users' && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              )}
+              {step.icon === 'PartyPopper' && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5.8 11.3 2 22l10.7-3.79"/>
+                  <path d="M4 3h.01"/>
+                  <path d="M22 8h.01"/>
+                  <path d="M15 2h.01"/>
+                  <path d="M22 20h.01"/>
+                  <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+                  <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+                  <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/>
+                  <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>
+                </svg>
+              )}
+            </div>
+
+            <!-- Text Content -->
+            <h3 class="text-xl font-bold text-charcoal mb-2">
+              {step.title}
+            </h3>
+            <p class="text-base text-gray-600 leading-relaxed">
+              {step.description}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

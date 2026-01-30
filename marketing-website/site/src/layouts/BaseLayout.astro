@@ -1,0 +1,108 @@
+---
+/**
+ * Base Layout
+ * Core HTML structure with head metadata and global styles
+ */
+
+import '../styles/global.css';
+import { siteConfig } from '../data/siteConfig';
+
+interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  ogImage?: string;
+  ogType?: string;
+  canonical?: string;
+  noindex?: boolean;
+  nofollow?: boolean;
+}
+
+const {
+  title = siteConfig.name,
+  description = siteConfig.description,
+  keywords = siteConfig.keywords,
+  ogImage = siteConfig.ogImage,
+  ogType = 'website',
+  canonical,
+  noindex = false,
+  nofollow = false,
+} = Astro.props;
+
+const pageTitle = title === siteConfig.name ? title : `${title} | ${siteConfig.name}`;
+const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(ogImage, Astro.site);
+---
+
+<!DOCTYPE html>
+<html lang="nl" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Google Fonts - Inter -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Primary Meta Tags -->
+    <title>{pageTitle}</title>
+    <meta name="title" content={pageTitle} />
+    <meta name="description" content={description} />
+    {keywords && keywords.length > 0 && (
+      <meta name="keywords" content={keywords.join(', ')} />
+    )}
+    <meta name="author" content={siteConfig.author} />
+    <meta name="language" content={siteConfig.language} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Robots -->
+    {(noindex || nofollow) && (
+      <meta name="robots" content={`${noindex ? 'noindex' : 'index'},${nofollow ? 'nofollow' : 'follow'}`} />
+    )}
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:site_name" content={siteConfig.name} />
+    <meta property="og:locale" content="nl_NL" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={pageTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImageURL} />
+    {siteConfig.twitterHandle && (
+      <meta property="twitter:site" content={siteConfig.twitterHandle} />
+    )}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#FF6B6B" />
+
+    <!-- Sitemap -->
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- RSS Feed (if applicable) -->
+    <!-- <link rel="alternate" type="application/rss+xml" title={siteConfig.name} href="/rss.xml" /> -->
+  </head>
+  <body class="antialiased">
+    <slot />
+  </body>
+</html>

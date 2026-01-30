@@ -1,0 +1,68 @@
+---
+/**
+ * Homepage
+ * Main landing page with all marketing sections
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import Hero from '../components/sections/Hero.astro';
+import SocialProof from '../components/sections/SocialProof.astro';
+import Features from '../components/sections/Features.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import PricingTable from '../components/sections/PricingTable.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import PricingCalculator from '../components/islands/PricingCalculator';
+
+import { siteConfig } from '../data/siteConfig';
+
+// SEO metadata
+const title = `${siteConfig.name} - ${siteConfig.tagline}`;
+const description = siteConfig.description;
+---
+
+<PageLayout
+  title={title}
+  description={description}
+  keywords={siteConfig.keywords}
+  showCTA={true}
+>
+  <!-- Hero Section -->
+  <Hero />
+
+  <!-- Social Proof Strip -->
+  <SocialProof />
+
+  <!-- Featured Features Section -->
+  <Features />
+
+  <!-- How It Works Section -->
+  <HowItWorks />
+
+  <!-- Pricing Calculator Section -->
+  <section class="py-16 md:py-24 bg-warm-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mb-4">
+          Bereken direct je prijs
+        </h2>
+        <p class="text-lg md:text-xl text-gray-600 leading-relaxed">
+          Transparante prijzen op basis van het aantal gasten
+        </p>
+      </div>
+
+      <div class="animate-slide-up">
+        <PricingCalculator client:load />
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Table Section -->
+  <PricingTable />
+
+  <!-- Testimonials Section -->
+  <Testimonials />
+
+  <!-- FAQ Section (Top 6 Questions) -->
+  <FAQ limit={6} />
+</PageLayout>

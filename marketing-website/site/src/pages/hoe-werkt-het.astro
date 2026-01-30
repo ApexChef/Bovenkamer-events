@@ -1,0 +1,238 @@
+---
+/**
+ * How It Works Page
+ * Detailed explanation of the Party Pilot process
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Hoe werkt het? - ${siteConfig.name}`;
+const description = 'Ontdek hoe Party Pilot werkt in 3 simpele stappen. Van feest aanmaken tot de perfecte uitvoering — zo simpel kan het zijn.';
+---
+
+<PageLayout title={title} description={description} showCTA={true}>
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Hoe werkt Party Pilot?
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          In drie simpele stappen van eerste idee naar het perfecte feest. Geen gedoe, alleen genieten.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Overview -->
+  <HowItWorks class="bg-white" />
+
+  <!-- Detailed Step Explanations -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-5xl mx-auto space-y-16">
+        <!-- Step 1 Detail -->
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div class="order-2 md:order-1">
+            <div class="bg-white rounded-2xl p-8 shadow-card">
+              <div class="w-16 h-16 rounded-full bg-coral-100 flex items-center justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                  <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                </svg>
+              </div>
+              <ul class="space-y-4 text-gray-700">
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-coral-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Kies je type feest (verjaardag, BBQ, bruiloft, etc.)</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-coral-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Stel datum, tijd en locatie in</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-coral-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Bepaal je budget (optioneel)</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-coral-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Deel de unieke uitnodigingslink met je gasten</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="order-1 md:order-2 animate-slide-up">
+            <span class="inline-block px-4 py-2 bg-coral-100 text-coral-600 font-semibold rounded-full text-sm mb-4">
+              Stap 1
+            </span>
+            <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+              Maak je feest aan
+            </h2>
+            <p class="text-lg text-gray-600 leading-relaxed mb-6">
+              Begin met het aanmaken van je feest. Vul de basisgegevens in en kies welke functies je wilt gebruiken.
+              Party Pilot genereert een unieke link die je met je gasten kunt delen via WhatsApp, email of social media.
+            </p>
+            <p class="text-base text-gray-600 leading-relaxed">
+              <strong>Pro tip:</strong> Start vroeg met je planning. Zo hebben gasten genoeg tijd om zich aan te melden
+              en kun je de automatische inkooplijst op tijd genereren.
+            </p>
+          </div>
+        </div>
+
+        <!-- Mid-Step CTA -->
+        <div class="text-center py-8">
+          <a
+            href="/waitlist"
+            class="inline-flex items-center gap-2 bg-turquoise-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-turquoise-600 transition-all duration-200 shadow-button hover:shadow-button-hover"
+          >
+            <span>Start nu gratis</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/>
+              <path d="m12 5 7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Step 2 Detail -->
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div class="animate-slide-up">
+            <span class="inline-block px-4 py-2 bg-turquoise-100 text-turquoise-600 font-semibold rounded-full text-sm mb-4">
+              Stap 2
+            </span>
+            <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+              Gasten melden zich aan
+            </h2>
+            <p class="text-lg text-gray-600 leading-relaxed mb-6">
+              Je gasten ontvangen de uitnodigingslink en melden zich in een paar klikken aan. Ze vullen hun
+              voorkeuren in: dieetwensen, allergieën, vaardigheden en meer. Party Pilot verzamelt alles
+              automatisch voor je.
+            </p>
+            <p class="text-base text-gray-600 leading-relaxed">
+              <strong>Automatisch verzameld:</strong> RSVP status, dieetwensen, allergieën, drankvoorkeuren,
+              skills voor taakverdeling, en zelfs leuke weetjes voor de quiz.
+            </p>
+          </div>
+          <div>
+            <div class="bg-white rounded-2xl p-8 shadow-card">
+              <div class="w-16 h-16 rounded-full bg-turquoise-100 flex items-center justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <ul class="space-y-4 text-gray-700">
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-turquoise-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Gasten klikken op de link en vullen hun gegevens in</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-turquoise-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Dieetwensen en allergieën worden automatisch verzameld</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-turquoise-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>AI wijst grappige taken toe op basis van skills</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-turquoise-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Betalen kan direct via Tikkie-integratie</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 Detail -->
+        <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div class="order-2 md:order-1">
+            <div class="bg-white rounded-2xl p-8 shadow-card">
+              <div class="w-16 h-16 rounded-full bg-sunshine-100 flex items-center justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5.8 11.3 2 22l10.7-3.79"/>
+                  <path d="M4 3h.01"/>
+                  <path d="M22 8h.01"/>
+                  <path d="M15 2h.01"/>
+                  <path d="M22 20h.01"/>
+                  <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+                  <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+                  <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/>
+                  <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>
+                </svg>
+              </div>
+              <ul class="space-y-4 text-gray-700">
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-sunshine-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Automatische boodschappenlijst op basis van menu en gasten</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-sunshine-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Live quiz tijdens het feest met real-time scoreboard</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-sunshine-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Voorspellingen en sweepstakes voor extra competitie</span>
+                </li>
+                <li class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-sunshine-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Beoordelingen na afloop voor je volgende feest</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="order-1 md:order-2 animate-slide-up">
+            <span class="inline-block px-4 py-2 bg-sunshine-100 text-sunshine-600 font-semibold rounded-full text-sm mb-4">
+              Stap 3
+            </span>
+            <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+              Geniet van je feest
+            </h2>
+            <p class="text-lg text-gray-600 leading-relaxed mb-6">
+              Met alle voorbereiding gedaan door Party Pilot kun je eindelijk gewoon genieten. De automatische
+              boodschappenlijst zorgt dat je precies weet wat je nodig hebt. Tijdens het feest zorgen de live
+              quiz, voorspellingen en leaderboard voor eindeloos entertainment.
+            </p>
+            <p class="text-base text-gray-600 leading-relaxed">
+              <strong>Na het feest:</strong> Verzamel feedback van je gasten over locatie, eten en sfeer.
+              Gebruik deze inzichten om je volgende feest nog beter te maken.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section (Algemeen only) -->
+  <FAQ categories={['algemeen']} class="bg-white" />
+</PageLayout>

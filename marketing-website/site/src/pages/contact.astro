@@ -1,0 +1,165 @@
+---
+/**
+ * Contact Page
+ * Contact form with info sidebar
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import ContactForm from '../components/islands/ContactForm';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Contact - ${siteConfig.name}`;
+const description = 'Neem contact op met Party Pilot. Vragen, suggesties of samenwerkingen? We helpen je graag verder.';
+---
+
+<PageLayout title={title} description={description} showCTA={false}>
+  <!-- Hidden Netlify form for form detection -->
+  <form name="contact" netlify netlify-honeypot="bot-field" hidden>
+    <input type="text" name="name" />
+    <input type="email" name="email" />
+    <select name="subject">
+      <option value="vraag">Vraag</option>
+      <option value="samenwerking">Samenwerking</option>
+      <option value="bug">Bug</option>
+      <option value="anders">Anders</option>
+    </select>
+    <textarea name="message"></textarea>
+  </form>
+
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Neem contact op
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          Vraag, suggestie of samenwerking? We horen graag van je.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Form & Info Section -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid lg:grid-cols-3 gap-12">
+          <!-- Contact Form (2/3 width) -->
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-card p-8 md:p-10 animate-slide-up">
+              <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-2">
+                Stuur ons een bericht
+              </h2>
+              <p class="text-gray-600 mb-8">
+                Vul het formulier in en we nemen zo snel mogelijk contact met je op
+              </p>
+              <ContactForm client:load />
+            </div>
+          </div>
+
+          <!-- Contact Info Sidebar (1/3 width) -->
+          <div class="lg:col-span-1 space-y-6 animate-slide-up" style="animation-delay: 200ms;">
+            <!-- Email Card -->
+            <div class="bg-gray-50 rounded-2xl p-6">
+              <div class="w-12 h-12 rounded-lg bg-coral-100 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/>
+                  <path d="m2 7 8.97 5.7a1.94 1.94 0 0 0 2.06 0L22 7"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-charcoal mb-2">
+                E-mail
+              </h3>
+              <a href={`mailto:${siteConfig.email}`} class="text-coral-600 hover:text-coral-700 transition-colors">
+                {siteConfig.email}
+              </a>
+            </div>
+
+            <!-- Response Time Card -->
+            <div class="bg-gray-50 rounded-2xl p-6">
+              <div class="w-12 h-12 rounded-lg bg-turquoise-100 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-charcoal mb-2">
+                Reactietijd
+              </h3>
+              <p class="text-gray-600">
+                We reageren binnen 24 uur op werkdagen
+              </p>
+            </div>
+
+            <!-- Social Media Card -->
+            <div class="bg-gray-50 rounded-2xl p-6">
+              <div class="w-12 h-12 rounded-lg bg-sunshine-100 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-charcoal mb-4">
+                Volg ons
+              </h3>
+              <div class="flex gap-3">
+                <a href={siteConfig.social.twitter} target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-white flex items-center justify-center hover:bg-coral-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+                  </svg>
+                </a>
+                <a href={siteConfig.social.instagram} target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-white flex items-center justify-center hover:bg-coral-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                  </svg>
+                </a>
+                <a href={siteConfig.social.linkedin} target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-white flex items-center justify-center hover:bg-coral-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                    <rect width="4" height="12" x="2" y="9"/>
+                    <circle cx="4" cy="4" r="2"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Teaser Section -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="bg-white rounded-2xl shadow-card p-8 md:p-12">
+          <div class="w-16 h-16 rounded-full bg-coral-100 flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <path d="M12 17h.01"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-bold text-charcoal mb-4">
+            Misschien staat je antwoord al in onze FAQ
+          </h2>
+          <p class="text-lg text-gray-600 mb-8">
+            Bekijk onze veelgestelde vragen voor directe antwoorden op de meest voorkomende vragen
+          </p>
+          <a
+            href="/faq"
+            class="inline-flex items-center gap-2 bg-coral-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-coral-600 transition-all duration-200 shadow-button hover:shadow-button-hover"
+          >
+            <span>Bekijk de FAQ</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/>
+              <path d="m12 5 7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</PageLayout>

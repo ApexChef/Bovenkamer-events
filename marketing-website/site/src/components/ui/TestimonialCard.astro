@@ -1,0 +1,70 @@
+---
+/**
+ * Testimonial Card Component
+ * Displays testimonial with quote, name, rating, and event type
+ */
+
+import Card from './Card.astro';
+import StarRating from './StarRating.astro';
+import type { Testimonial } from '../../types';
+
+interface Props {
+  testimonial: Testimonial;
+  compact?: boolean;
+  class?: string;
+}
+
+const {
+  testimonial,
+  compact = false,
+  class: className = '',
+} = Astro.props;
+
+const { name, role, eventType, quote, rating, avatar, location } = testimonial;
+---
+
+<Card class={`h-full ${className}`} hover={true}>
+  <div class="flex flex-col h-full">
+    <!-- Rating -->
+    <div class="mb-4">
+      <StarRating rating={rating} size={compact ? 'sm' : 'md'} />
+    </div>
+
+    <!-- Quote -->
+    <blockquote class={`flex-1 mb-6 ${compact ? 'text-base' : 'text-lg'} text-gray-700 leading-relaxed`}>
+      "{quote}"
+    </blockquote>
+
+    <!-- Author Info -->
+    <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+      {avatar ? (
+        <img
+          src={avatar}
+          alt={name}
+          class="w-12 h-12 rounded-full object-cover"
+        />
+      ) : (
+        <div class="w-12 h-12 rounded-full bg-coral-100 flex items-center justify-center">
+          <span class="text-coral-600 font-semibold text-lg">
+            {name.charAt(0)}
+          </span>
+        </div>
+      )}
+
+      <div class="flex-1">
+        <div class="font-semibold text-charcoal">
+          {name}
+        </div>
+        <div class="text-sm text-gray-500">
+          {eventType}
+          {location && ` • ${location}`}
+        </div>
+        {role && (
+          <div class="text-xs text-gray-400 mt-0.5">
+            {role}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Card>

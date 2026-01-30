@@ -1,0 +1,239 @@
+---
+/**
+ * About Page
+ * Company story, mission, and values
+ */
+
+import PageLayout from '../layouts/PageLayout.astro';
+import { siteConfig } from '../data/siteConfig';
+
+const title = `Over ons - ${siteConfig.name}`;
+const description = 'Het verhaal achter Party Pilot. Geboren uit het organiseren van een vrienden BBQ, nu de go-to feestplanner voor duizenden organisatoren.';
+---
+
+<PageLayout title={title} description={description} showCTA={true}>
+  <!-- Page Header -->
+  <section class="py-16 md:py-24 bg-gradient-hero text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up">
+          Het verhaal achter Party Pilot
+        </h1>
+        <p class="text-lg md:text-xl leading-relaxed opacity-90 animate-slide-up" style="animation-delay: 200ms;">
+          Van één stressvol feest naar de ultieme feestplanner voor iedereen
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Origin Story -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <div class="grid md:grid-cols-2 gap-12 items-center mb-16">
+          <div class="animate-slide-up">
+            <div class="w-20 h-20 rounded-2xl bg-coral-100 flex items-center justify-center mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5.8 11.3 2 22l10.7-3.79"/>
+                <path d="M4 3h.01"/>
+                <path d="M22 8h.01"/>
+                <path d="M15 2h.01"/>
+                <path d="M22 20h.01"/>
+                <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+                <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+                <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98v0C9.52 4.9 9 5.52 9 6.23V7"/>
+                <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>
+              </svg>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-6">
+              Het begon met een BBQ...
+            </h2>
+            <div class="space-y-4 text-lg text-gray-600 leading-relaxed">
+              <p>
+                Elk jaar organiseert onze vriendengroep een groot nieuwjaars-BBQ feest. Leuk, toch?
+                Tot je beseft hoeveel werk erbij komt kijken: uitnodigingen versturen, bijhouden wie komt,
+                dieetwensen verzamelen, een menu plannen, een inkooplijst maken, geld inzamelen...
+              </p>
+              <p>
+                Na wéér een WhatsApp-groep vol met "Ik ben vegetariër!" en "Hoeveel moet ik overmaken?"
+                besloten we: dit moet anders kunnen. Er moest een app zijn die dit voor ons regelt.
+              </p>
+              <p>
+                Spoiler alert: die was er niet. Dus bouwden we hem zelf.
+              </p>
+            </div>
+          </div>
+          <div class="animate-slide-up" style="animation-delay: 200ms;">
+            <div class="bg-gradient-mesh rounded-2xl p-8 text-white shadow-card">
+              <blockquote class="text-xl md:text-2xl font-medium mb-6 italic">
+                "We realiseerden ons dat elk feest dezelfde problemen heeft. Waarom zou iedereen
+                dit zelf moeten uitvogelen?"
+              </blockquote>
+              <p class="text-lg opacity-90">
+                En zo werd Party Pilot geboren — uit frustratie, vriendschap, en veel te veel
+                WhatsApp-berichten.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-3xl mx-auto text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-6 animate-slide-up">
+          Onze missie
+        </h2>
+        <p class="text-2xl md:text-3xl text-coral-600 font-semibold leading-relaxed animate-slide-up" style="animation-delay: 100ms;">
+          Elk feest verdient de perfecte voorbereiding
+        </p>
+        <p class="text-lg text-gray-600 mt-6 leading-relaxed animate-slide-up" style="animation-delay: 200ms;">
+          We geloven dat feesten geven niet stressvol hoeft te zijn. Met de juiste tools kan iedereen
+          een geweldig feest organiseren — en er zelf ook van genieten.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-4">
+          Wat ons drijft
+        </h2>
+        <p class="text-lg text-gray-600">
+          Deze drie principes staan centraal in alles wat we doen
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <!-- Value 1: No Stress -->
+        <div class="bg-white rounded-2xl shadow-card p-8 hover:shadow-card-hover transition-shadow duration-300 animate-slide-up">
+          <div class="w-16 h-16 rounded-xl bg-coral-100 flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/>
+              <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+              <path d="M12 2v2"/>
+              <path d="M12 22v-2"/>
+              <path d="m17 20.66-1-1.73"/>
+              <path d="M11 10.27 7 3.34"/>
+              <path d="m20.66 17-1.73-1"/>
+              <path d="m3.34 7 1.73 1"/>
+              <path d="M14 12h8"/>
+              <path d="M2 12h2"/>
+              <path d="m20.66 7-1.73 1"/>
+              <path d="m3.34 17 1.73-1"/>
+              <path d="m17 3.34-1 1.73"/>
+              <path d="m11 13.73-4 6.93"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-charcoal mb-4">
+            Geen stress
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed">
+            Wij automatiseren het saaie werk zodat jij je kunt focussen op wat écht belangrijk is:
+            genieten van je feest en tijd doorbrengen met je gasten.
+          </p>
+        </div>
+
+        <!-- Value 2: Together -->
+        <div class="bg-white rounded-2xl shadow-card p-8 hover:shadow-card-hover transition-shadow duration-300 animate-slide-up" style="animation-delay: 100ms;">
+          <div class="w-16 h-16 rounded-xl bg-turquoise-100 flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-charcoal mb-4">
+            Samen genieten
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed">
+            Een feest is leuker als iedereen meedoet. Daarom betrekken we gasten bij de planning
+            en maken we het feest zelf interactiever met quiz, voorspellingen en meer.
+          </p>
+        </div>
+
+        <!-- Value 3: Smart Technology -->
+        <div class="bg-white rounded-2xl shadow-card p-8 hover:shadow-card-hover transition-shadow duration-300 animate-slide-up" style="animation-delay: 200ms;">
+          <div class="w-16 h-16 rounded-xl bg-sunshine-100 flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FFE66D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/>
+              <rect width="16" height="12" x="4" y="8" rx="2"/>
+              <path d="M2 14h2"/>
+              <path d="M20 14h2"/>
+              <path d="M15 13v2"/>
+              <path d="M9 13v2"/>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-charcoal mb-4">
+            Slimme technologie
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed">
+            Van AI-taakverdeling tot automatische portieberekening — we gebruiken moderne technologie
+            om feestorganiseren simpeler en leuker te maken.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team Section -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto text-center">
+        <div class="animate-slide-up">
+          <h2 class="text-3xl md:text-4xl font-bold text-charcoal mb-6">
+            Het team
+          </h2>
+          <p class="text-lg text-gray-600 leading-relaxed mb-8">
+            Party Pilot wordt gebouwd door een team van feestliefhebbers en technologie-enthousiastelingen.
+            We combineren jarenlange ervaring in softwareontwikkeling met een passie voor het organiseren
+            van onvergetelijke feesten.
+          </p>
+          <p class="text-lg text-gray-600 leading-relaxed">
+            Elk teamlid heeft wel eens het hoofd gebroken over hoe je 30 mensen met verschillende dieetwensen
+            te eten geeft, of hoe je een quiz organiseert zonder handmatige scoretellingen. Die frustratie
+            drijft ons om Party Pilot elke dag beter te maken.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Join Us CTA -->
+  <section class="py-16 md:py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <div class="bg-gradient-cta rounded-3xl p-8 md:p-12 text-white text-center shadow-card">
+          <h2 class="text-3xl md:text-4xl font-bold mb-6">
+            Doe mee aan de feestrevolutie
+          </h2>
+          <p class="text-lg md:text-xl mb-8 opacity-90 leading-relaxed max-w-2xl mx-auto">
+            Sluit je aan bij duizenden feestorganisatoren die Party Pilot al gebruiken.
+            Start vandaag nog gratis en ervaar zelf het verschil.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/waitlist"
+              class="inline-block bg-white text-coral-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-all duration-200 shadow-button hover:shadow-button-hover"
+            >
+              Start gratis
+            </a>
+            <a
+              href="/contact"
+              class="inline-block bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-all duration-200"
+            >
+              Neem contact op
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</PageLayout>

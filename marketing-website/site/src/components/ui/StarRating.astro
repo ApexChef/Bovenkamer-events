@@ -1,0 +1,60 @@
+---
+/**
+ * Star Rating Component
+ * Displays star rating with optional number
+ */
+
+import type { StarRatingProps } from '../../types';
+import { Star } from 'lucide-react';
+
+interface Props extends StarRatingProps {}
+
+const {
+  rating,
+  maxRating = 5,
+  size = 'md',
+  showNumber = false,
+  class: className = '',
+} = Astro.props;
+
+// Clamp rating between 0 and maxRating
+const clampedRating = Math.min(Math.max(rating, 0), maxRating);
+
+// Size classes for stars
+const sizeClasses = {
+  sm: 'w-4 h-4',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6',
+};
+
+const starSize = sizeClasses[size];
+
+// Generate array of stars
+const stars = Array.from({ length: maxRating }, (_, index) => {
+  const starValue = index + 1;
+  const filled = starValue <= clampedRating;
+  const partial = starValue - 0.5 === clampedRating;
+  return { filled, partial };
+});
+---
+
+<div class={`flex items-center gap-1 ${className}`}>
+  <div class="flex items-center gap-0.5" aria-label={`${clampedRating} van ${maxRating} sterren`}>
+    {stars.map((star) => (
+      <Star
+        className={`${starSize} ${
+          star.filled
+            ? 'fill-sunshine-500 text-sunshine-500'
+            : star.partial
+            ? 'fill-sunshine-500 text-sunshine-500 opacity-50'
+            : 'fill-none text-gray-300'
+        }`}
+      />
+    ))}
+  </div>
+  {showNumber && (
+    <span class="text-sm text-gray-600 ml-1">
+      {clampedRating.toFixed(1)}/{maxRating}
+    </span>
+  )}
+</div>

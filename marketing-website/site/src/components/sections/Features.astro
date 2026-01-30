@@ -1,0 +1,65 @@
+---
+/**
+ * Features Section
+ * Feature grid with title, subtitle, and feature cards
+ */
+
+import FeatureCard from '../ui/FeatureCard.astro';
+import { featuredFeatures } from '../../data/features';
+import type { Feature } from '../../types';
+
+interface Props {
+  title?: string;
+  subtitle?: string;
+  features?: Feature[];
+  class?: string;
+}
+
+const {
+  title = 'Alles wat je nodig hebt voor het perfecte feest',
+  subtitle = 'Van planning tot party — features voor de Feestregisseur én de Feestganger',
+  features = featuredFeatures,
+  class: className = '',
+} = Astro.props;
+---
+
+<section class={`py-16 md:py-24 ${className}`}>
+  <div class="container mx-auto px-4">
+    <!-- Section Header -->
+    <div class="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mb-4">
+        {title}
+      </h2>
+      <p class="text-lg md:text-xl text-gray-600 leading-relaxed">
+        {subtitle}
+      </p>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
+      {features.map((feature, index) => (
+        <FeatureCard
+          icon={feature.icon}
+          title={feature.title}
+          description={feature.description}
+          index={index}
+          class="animate-slide-up"
+        />
+      ))}
+    </div>
+
+    <!-- View All Link -->
+    <div class="text-center">
+      <a
+        href="/functies"
+        class="inline-flex items-center gap-2 text-lg font-semibold text-coral-600 hover:text-coral-700 transition-colors duration-200 group"
+      >
+        <span>Bekijk alle functies</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform duration-200">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
