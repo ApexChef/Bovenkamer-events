@@ -48,6 +48,10 @@ function AdminParticipantsContent() {
   const [isLoadingPoints, setIsLoadingPoints] = useState(true);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
+  // Generate assignments
+  const [isGeneratingAssignments, setIsGeneratingAssignments] = useState(false);
+  const [assignmentMessage, setAssignmentMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Add participant form
   const [newName, setNewName] = useState('');
   const [newEmailHint, setNewEmailHint] = useState('');
@@ -163,6 +167,34 @@ function AdminParticipantsContent() {
     }
   };
 
+  const handleGenerateAssignments = async () => {
+    setIsGeneratingAssignments(true);
+    setAssignmentMessage(null);
+
+    try {
+      const response = await fetch('/api/admin/assignments/generate', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message || 'Kon toewijzingen niet genereren');
+
+      setAssignmentMessage({
+        type: 'success',
+        text: `${data.generated} toewijzingen gegenereerd${data.failed > 0 ? ` (${data.failed} mislukt)` : ''}`,
+      });
+    } catch (err) {
+      console.error('Error generating assignments:', err);
+      setAssignmentMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Kon toewijzingen niet genereren',
+      });
+    } finally {
+      setIsGeneratingAssignments(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-deep-green p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -171,10 +203,34 @@ function AdminParticipantsContent() {
           <Link href="/admin" className="text-gold hover:text-gold/80 text-sm mb-4 inline-block">
             &larr; Terug naar admin dashboard
           </Link>
-          <h1 className="text-4xl font-serif text-gold mb-2">Verwachte Deelnemers</h1>
-          <p className="text-cream/70">
-            Beheer de lijst van verwachte deelnemers voor het evenement
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-serif text-gold mb-2">Verwachte Deelnemers</h1>
+              <p className="text-cream/70">
+                Beheer de lijst van verwachte deelnemers voor het evenement
+              </p>
+            </div>
+            <Button
+              onClick={handleGenerateAssignments}
+              disabled={isGeneratingAssignments}
+              variant="ghost"
+            >
+              {isGeneratingAssignments ? 'Genereren...' : 'Genereer Toewijzingen'}
+            </Button>
+          </div>
+          {assignmentMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-4 p-4 rounded-lg ${
+                assignmentMessage.type === 'success'
+                  ? 'bg-success-green/20 text-success-green'
+                  : 'bg-warm-red/20 text-warm-red'
+              }`}
+            >
+              {assignmentMessage.text}
+            </motion.div>
+          )}
         </div>
 
         {/* Add Participant Form */}

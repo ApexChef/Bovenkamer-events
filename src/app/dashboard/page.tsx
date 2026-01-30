@@ -23,7 +23,7 @@ interface LeaderboardData {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
+  const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, setAIAssignment, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
   const { isAuthenticated, currentUser, _hasHydrated: authHydrated } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +78,9 @@ export default function DashboardPage() {
               quiz: !!data.completedSections.quiz,
             });
           }
+          if (data.profile.aiAssignment) {
+            setAIAssignment(data.profile.aiAssignment);
+          }
           if (data.predictionEvaluation) {
             setPredictionEvaluation(data.predictionEvaluation);
           }
@@ -87,7 +90,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error syncing profile from database:', error);
     }
-  }, [formData.email, profileSynced, setFormData, setCompletedSections]);
+  }, [formData.email, profileSynced, setFormData, setCompletedSections, setAIAssignment]);
 
   // Fetch profile from DB to sync any changes
   useEffect(() => {

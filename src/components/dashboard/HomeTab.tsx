@@ -188,9 +188,9 @@ export function HomeTab({
         </motion.div>
       )}
 
-      {/* AI Assignment - Only show if profile is complete and feature enabled */}
+      {/* AI Assignment - Show when assignment exists and feature enabled */}
       <FeatureToggle feature="show_ai_assignment">
-        {isProfileComplete && aiAssignment && (
+        {aiAssignment && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -240,26 +240,6 @@ export function HomeTab({
           </motion.div>
         )}
 
-        {/* Placeholder when profile not complete but would show assignment */}
-        {!isProfileComplete && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="border-dashed border-cream/20 bg-dark-wood/20">
-              <CardContent className="py-8 text-center">
-                <Sparkles className="w-8 h-8 text-cream/30 mx-auto mb-3" />
-                <p className="text-cream/50 text-sm font-medium">
-                  Jouw officiële toewijzing
-                </p>
-                <p className="text-cream/30 text-xs mt-1">
-                  Vul eerst je profiel aan om je toewijzing te ontvangen
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
       </FeatureToggle>
 
       {/* Prediction Evaluation Card */}
