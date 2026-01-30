@@ -295,6 +295,38 @@ export function HomeTab({
         )}
       </FeatureToggle>
 
+      {/* Boy Boom Rating CTA */}
+      <FeatureToggle feature="show_ratings">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <Link href="/rate">
+            <Card className="border-gold/40 bg-gradient-to-br from-gold/10 via-yellow-500/5 to-transparent hover:border-gold/60 transition-all cursor-pointer group overflow-hidden">
+              <CardContent className="py-4 relative">
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-gold to-yellow-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <span className="text-2xl">⭐</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-cream font-semibold group-hover:text-gold transition-colors">
+                        Boy Boom Beoordeling
+                      </span>
+                    </div>
+                    <p className="text-xs text-cream/60 mt-1">
+                      Geef je beoordeling voor de locatie en gastvrijheid
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
+      </FeatureToggle>
+
       {/* Burger Stack Game CTA - Lower priority, fun engagement */}
       <FeatureToggle feature="show_burger_game">
         <motion.div

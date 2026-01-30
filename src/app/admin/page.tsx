@@ -43,6 +43,7 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   show_predictions: 'Voorspellingen',
   show_live_ranking: 'Live Ranking',
   show_prediction_evaluation: 'Voorspellingen Evaluatie',
+  show_ratings: 'Boy Boom Beoordeling',
 };
 
 interface AdminItem {

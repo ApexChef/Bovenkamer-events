@@ -122,6 +122,7 @@ function getFeatureDescription(key: FeatureKey): string {
     show_predictions: 'Toon voorspellingen sectie',
     show_live_ranking: 'Toon live ranking menu item',
     show_prediction_evaluation: 'Toon AI-evaluatie van voorspellingen op dashboard',
+    show_ratings: 'Toon Boy Boom beoordeling op dashboard',
   };
   return descriptions[key] || key;
 }
