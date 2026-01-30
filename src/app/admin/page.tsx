@@ -142,6 +142,14 @@ function AdminPageContent() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/admin/formulieren">
+            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
+              <CardContent className="py-6 text-center">
+                <p className="text-gold font-semibold mb-1">Formulieren</p>
+                <p className="text-cream/50 text-sm">Formulieren en vragen beheren</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Feature Toggles */}
