@@ -252,21 +252,6 @@ export interface QuizAnswer {
   answered_at: string;
 }
 
-export interface Rating {
-  id: string;
-  user_id: string;
-  location_rating: number;
-  hospitality_rating: number;
-  fire_quality_rating: number;
-  parking_rating: number;
-  overall_rating: number;
-  best_aspect?: string;
-  improvement_suggestion?: string;
-  is_worthy: boolean;
-  worthy_explanation?: string;
-  created_at: string;
-}
-
 // Protein distribution (percentages that sum to 100%)
 // Renamed from "MeatDistribution" as it includes fish and vegetarian options
 export interface MeatDistribution {
@@ -636,6 +621,7 @@ export interface FBReportData {
     completed: number; // Users who filled preferences
     totalParticipants: number; // Total active participants
     totalPersons: number; // Participants + partners
+    missingParticipants: string[]; // Names of participants who haven't filled preferences
   };
   persons: PersonPreference[]; // Combined self + partner preferences
 }
@@ -783,52 +769,8 @@ export interface FBExportRow {
 }
 
 // =============================================================================
-// PREDICTION QUESTION TYPES (US-019)
+// FIELD OPTION TYPES (shared between forms)
 // =============================================================================
-
-/**
- * Question types supported by prediction system
- */
-export type PredictionQuestionType =
-  | 'slider'
-  | 'select_participant'
-  | 'boolean'
-  | 'time'
-  | 'select_options';
-
-/**
- * Display categories for grouping questions
- */
-export type PredictionCategory = 'consumption' | 'social' | 'other';
-
-/**
- * Base prediction question structure from database
- */
-export interface PredictionQuestion {
-  id: string;
-  key: string;
-  label: string;
-  type: PredictionQuestionType;
-  category: PredictionCategory;
-  options: PredictionQuestionOptions;
-  points_exact: number;
-  points_close: number;
-  points_direction: number;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Type-specific options (discriminated union)
- */
-export type PredictionQuestionOptions =
-  | SliderOptions
-  | SelectParticipantOptions
-  | BooleanOptions
-  | TimeOptions
-  | SelectOptionsOptions;
 
 /**
  * Options for slider-type questions
@@ -885,4 +827,564 @@ export interface SelectChoice {
   value: string;
   label: string;
   emoji?: string;
+}
+
+// =============================================================================
+// DYNAMIC FORM TYPES (US-020)
+// =============================================================================
+
+/**
+ * All field types supported by the form system.
+ * Includes US-019 types (slider, select_participant, boolean, time, select_options)
+ * and US-020 types (star_rating, text_short, text_long, checkbox_group, radio_group).
+ */
+export type FormFieldType =
+  | 'slider'
+  | 'select_participant'
+  | 'boolean'
+  | 'time'
+  | 'select_options'
+  | 'star_rating'
+  | 'text_short'
+  | 'text_long'
+  | 'checkbox_group'
+  | 'radio_group';
+
+// New option types for US-020
+
+export interface StarRatingOptions {
+  type: 'star_rating';
+  maxStars: number;
+  default?: number;
+}
+
+export interface TextShortOptions {
+  type: 'text_short';
+  maxLength?: number;
+}
+
+export interface TextLongOptions {
+  type: 'text_long';
+  maxLength?: number;
+  rows?: number;
+}
+
+export interface CheckboxGroupOptions {
+  type: 'checkbox_group';
+  choices: SelectChoice[];
+}
+
+export interface RadioGroupOptions {
+  type: 'radio_group';
+  choices: SelectChoice[];
+}
+
+/**
+ * Discriminated union of all field option types.
+ * Use type guards below to narrow based on field_type.
+ */
+export type FormFieldOptions =
+  | SliderOptions
+  | SelectParticipantOptions
+  | BooleanOptions
+  | TimeOptions
+  | SelectOptionsOptions
+  | StarRatingOptions
+  | TextShortOptions
+  | TextLongOptions
+  | CheckboxGroupOptions
+  | RadioGroupOptions;
+
+// --- Entity Types ---
+
+export interface FormDefinition {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  active_version_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormVersion {
+  id: string;
+  form_definition_id: string;
+  version_number: number;
+  is_published: boolean;
+  published_at?: string;
+  changelog?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormSection {
+  id: string;
+  form_version_id: string;
+  key: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  type: 'step' | 'section';
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormField {
+  id: string;
+  form_section_id: string;
+  key: string;
+  label: string;
+  description?: string;
+  placeholder?: string;
+  field_type: FormFieldType;
+  options: FormFieldOptions;
+  is_required: boolean;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormResponse {
+  id: string;
+  user_id: string;
+  form_version_id: string;
+  status: 'draft' | 'submitted';
+  submitted_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormFieldResponse {
+  id: string;
+  form_response_id: string;
+  form_field_id: string;
+  text?: string;
+  number?: number;
+  boolean?: boolean;
+  json?: unknown;
+  participant_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- API Types ---
+
+/**
+ * Complete form structure as returned by GET /api/forms/[key]
+ */
+export interface FormStructure {
+  definition: FormDefinition;
+  version: FormVersion;
+  sections: FormSectionWithFields[];
+}
+
+export interface FormSectionWithFields extends FormSection {
+  fields: FormField[];
+}
+
+/**
+ * Request body for POST /api/forms/[key]/respond
+ */
+export interface SubmitFormRequest {
+  answers: Record<string, unknown>;
+}
+
+/**
+ * Response from form submission
+ */
+export interface SubmitFormResult {
+  success: boolean;
+  response_id: string;
+  message: string;
+}
+
+/**
+ * User's existing response as returned by GET /api/forms/[key]/response
+ */
+export interface UserFormResponse {
+  response: FormResponse;
+  answers: Record<string, unknown>;
+}
+
+// --- Type Guards ---
+
+export function isStarRatingOptions(options: FormFieldOptions): options is StarRatingOptions {
+  return (options as StarRatingOptions).type === 'star_rating';
+}
+
+export function isTextShortOptions(options: FormFieldOptions): options is TextShortOptions {
+  return (options as TextShortOptions).type === 'text_short';
+}
+
+export function isTextLongOptions(options: FormFieldOptions): options is TextLongOptions {
+  return (options as TextLongOptions).type === 'text_long';
+}
+
+export function isCheckboxGroupOptions(options: FormFieldOptions): options is CheckboxGroupOptions {
+  return (options as CheckboxGroupOptions).type === 'checkbox_group';
+}
+
+export function isRadioGroupOptions(options: FormFieldOptions): options is RadioGroupOptions {
+  return (options as RadioGroupOptions).type === 'radio_group';
+}
+
+export function isSliderFieldOptions(options: FormFieldOptions): options is SliderOptions {
+  return (options as SliderOptions).type === 'slider';
+}
+
+export function isBooleanFieldOptions(options: FormFieldOptions): options is BooleanOptions {
+  return (options as BooleanOptions).type === 'boolean';
+}
+
+export function isTimeFieldOptions(options: FormFieldOptions): options is TimeOptions {
+  return (options as TimeOptions).type === 'time';
+}
+
+export function isSelectOptionsFieldOptions(options: FormFieldOptions): options is SelectOptionsOptions {
+  return (options as SelectOptionsOptions).type === 'select_options';
+}
+
+export function isSelectParticipantFieldOptions(options: FormFieldOptions): options is SelectParticipantOptions {
+  return (options as SelectParticipantOptions).type === 'select_participant';
+}
+
+// =============================================================================
+// MENU & SHOPPING LIST TYPES (US-014 v2)
+// =============================================================================
+
+/**
+ * Event entity
+ */
+export interface MenuEvent {
+  id: string;
+  name: string;
+  eventType: 'bbq' | 'diner' | 'lunch' | 'borrel' | 'receptie' | 'overig';
+  eventDate: string | null; // ISO date string
+  totalPersons: number | null;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  notes: string | null;
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}
+
+/**
+ * Event with course count (for list view)
+ */
+export interface EventWithCourseCount extends MenuEvent {
+  courseCount: number;
+}
+
+/**
+ * Event course entity
+ */
+export interface EventCourse {
+  id: string;
+  eventId: string;
+  name: string;
+  sortOrder: number;
+  gramsPerPerson: number;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Menu item entity
+ */
+export interface MenuItem {
+  id: string;
+  courseId: string;
+  name: string;
+  itemType: 'protein' | 'side' | 'fixed';
+  category: string | null;
+  yieldPercentage: number; // 0-100
+  wasteDescription: string | null;
+  unitWeightGrams: number | null;
+  unitLabel: string | null;
+  roundingGrams: number | null;
+  distributionPercentage: number | null; // Protein only
+  gramsPerPerson: number | null; // Fixed only
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Event course with menu items
+ */
+export interface EventCourseWithItems extends EventCourse {
+  menuItems: MenuItem[];
+}
+
+/**
+ * Event with full details (courses and items)
+ */
+export interface EventWithDetails extends MenuEvent {
+  courses: EventCourseWithItems[];
+}
+
+/**
+ * Shopping list item (calculated result)
+ */
+export interface ShoppingListItem {
+  menuItemId: string;
+  name: string;
+  itemType: 'protein' | 'side' | 'fixed';
+  category: string | null;
+  edibleGrams: number;
+  brutoGrams: number;
+  purchaseQuantity: number;
+  purchaseUnits: number | null; // For fixed units (e.g., 13 hamburgers)
+  receivedQuantity: number | null; // Actually received (from purchase order lines)
+  surplus: number | null; // receivedQuantity - purchaseQuantity (positive = over, negative = short)
+  unit: string; // 'g', 'kg', 'stuks', etc.
+  unitLabel: string | null;
+  calculation: {
+    // Common fields
+    yieldPercentage: number;
+    brutoGrams: number;
+    purchaseQuantity: number;
+
+    // Protein-specific
+    totalCourseGrams?: number;
+    categoryPercentage?: number;
+    categoryGrams?: number;
+    distributionPercentage?: number;
+    itemEdibleGrams?: number;
+
+    // Side-specific
+    numberOfSides?: number;
+    perItemGrams?: number;
+
+    // Fixed-specific
+    gramsPerPerson?: number;
+    totalPersons?: number;
+
+    // Unit-specific
+    unitWeightGrams?: number | null;
+    roundingGrams?: number | null;
+    purchaseUnits?: number | null;
+  };
+}
+
+/**
+ * Shopping list for a single course
+ */
+export interface ShoppingListCourse {
+  courseId: string;
+  courseName: string;
+  gramsPerPerson: number;
+  items: ShoppingListItem[];
+  subtotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+    totalReceivedGrams: number | null;
+    totalSurplusGrams: number | null;
+  };
+}
+
+/**
+ * Meat distribution breakdown for a protein course
+ */
+export interface MeatDistributionBreakdown {
+  courseId: string;
+  courseName: string;
+  totalCourseGrams: number;
+  categories: Array<{
+    category: string;
+    percentage: number;      // avg distribution %
+    gramsNeeded: number;     // percentage × totalCourseGrams
+  }>;
+}
+
+/**
+ * Complete shopping list for an event
+ */
+export interface ShoppingList {
+  courses: ShoppingListCourse[];
+  grandTotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+    totalReceivedGrams: number | null;
+    totalSurplusGrams: number | null;
+  };
+}
+
+/**
+ * Shopping list API response
+ */
+export interface ShoppingListResponse {
+  event: {
+    id: string;
+    name: string;
+    totalPersons: number;
+  };
+  averageMeatDistribution: MeatDistribution;
+  meatDistributionBreakdown: MeatDistributionBreakdown[];
+  courses: ShoppingListCourse[];
+  grandTotal: {
+    totalEdibleGrams: number;
+    totalBrutoGrams: number;
+    totalPurchaseGrams: number;
+    totalReceivedGrams: number | null;
+    totalSurplusGrams: number | null;
+  };
+}
+
+/**
+ * Form data for creating event
+ */
+export interface CreateEventData {
+  name: string;
+  eventType: MenuEvent['eventType'];
+  eventDate: string | null;
+  totalPersons: number | null;
+  status: MenuEvent['status'];
+  notes: string;
+}
+
+/**
+ * Form data for creating course
+ */
+export interface CreateCourseData {
+  name: string;
+  sortOrder: number;
+  gramsPerPerson: number;
+  notes: string;
+}
+
+/**
+ * Form data for creating menu item
+ */
+export interface CreateMenuItemData {
+  name: string;
+  itemType: MenuItem['itemType'];
+  category: string | null;
+  yieldPercentage: number;
+  wasteDescription: string;
+  unitWeightGrams: number | null;
+  unitLabel: string;
+  roundingGrams: number | null;
+  distributionPercentage: number | null;
+  gramsPerPerson: number | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+// =============================================================================
+// PURCHASE ORDER TYPES (US-014 Phase 3)
+// =============================================================================
+
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'received' | 'invoiced';
+export type POLineCategory = 'food' | 'drink' | 'condiment' | 'herb' | 'non_food' | 'other';
+
+/**
+ * Purchase order entity
+ */
+export interface PurchaseOrder {
+  id: string;
+  eventId: string;
+  supplier: string;
+  orderDate: string | null;
+  expectedDeliveryDate: string | null;
+  status: PurchaseOrderStatus;
+  invoiceReference: string | null;
+  invoiceDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Purchase order with aggregate summary (for list view)
+ */
+export interface PurchaseOrderSummary extends PurchaseOrder {
+  lineCount: number;
+  totalPrice: number | null;
+  linkedItemCount: number;
+  unlinkedItemCount: number;
+}
+
+/**
+ * Purchase order line entity
+ */
+export interface PurchaseOrderLine {
+  id: string;
+  purchaseOrderId: string;
+  menuItemId: string | null;
+  name: string;
+  description: string | null;
+  lineCategory: POLineCategory;
+  orderedQuantity: number | null;
+  receivedQuantity: number | null;
+  unitLabel: string | null;
+  unitPrice: number | null;
+  totalPrice: number | null;
+  supplierArticleNr: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * PO line with menu item context (for detail view)
+ */
+export interface PurchaseOrderLineWithMenuItem extends PurchaseOrderLine {
+  menuItemName: string | null;
+  menuItemCourse: string | null;
+}
+
+/**
+ * Full purchase order with all lines
+ */
+export interface PurchaseOrderWithLines extends PurchaseOrder {
+  lines: PurchaseOrderLineWithMenuItem[];
+}
+
+/**
+ * Form data for creating/updating a purchase order
+ */
+export interface CreatePurchaseOrderData {
+  supplier: string;
+  orderDate: string | null;
+  expectedDeliveryDate: string | null;
+  status: PurchaseOrderStatus;
+  invoiceReference: string;
+  invoiceDate: string | null;
+  notes: string;
+}
+
+/**
+ * Form data for creating/updating a PO line
+ */
+export interface CreatePOLineData {
+  menuItemId: string | null;
+  name: string;
+  description: string;
+  lineCategory: POLineCategory;
+  orderedQuantity: number | null;
+  receivedQuantity: number | null;
+  unitLabel: string;
+  unitPrice: number | null;
+  totalPrice: number | null;
+  supplierArticleNr: string;
+  notes: string;
+}
+
+/**
+ * Aggregated procurement data per menu item (from PO lines)
+ */
+export interface MenuItemProcurement {
+  menuItemId: string;
+  totalReceivedQuantity: number;
+  totalOrderedQuantity: number;
+  lineCount: number;
+  suppliers: string[];
 }

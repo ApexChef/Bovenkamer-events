@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { useAuthStore, useRegistrationStore, usePredictionsStore } from '@/lib/store';
+import { useAuthStore, useRegistrationStore } from '@/lib/store';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,12 +14,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { currentUser, logout } = useAuthStore();
   const { reset: resetRegistration } = useRegistrationStore();
-  const { reset: resetPredictions } = usePredictionsStore();
 
   const handleLogout = () => {
-    // Clear all user data from stores
     resetRegistration();
-    resetPredictions();
     logout();
     router.push('/login');
   };

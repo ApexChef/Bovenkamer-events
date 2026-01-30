@@ -149,6 +149,26 @@ export async function GET(request: NextRequest) {
     }
 
     // =========================================================================
+    // QUERY 5: Missing Participants (no preferences yet)
+    // =========================================================================
+
+    const completedUserIds = (userPrefs || []).map((p: any) => p.user_id);
+
+    const { data: allParticipants, error: participantsError } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('role', 'participant')
+      .eq('is_active', true);
+
+    if (participantsError) {
+      console.error('Error fetching participants:', participantsError);
+    }
+
+    const missingParticipants = (allParticipants || [])
+      .filter((p: any) => !completedUserIds.includes(p.id))
+      .map((p: any) => p.name || 'Onbekend');
+
+    // =========================================================================
     // DATA TRANSFORMATION
     // =========================================================================
 
@@ -219,6 +239,7 @@ export async function GET(request: NextRequest) {
         completed: normalizedUserPrefs.length,
         totalParticipants: totalParticipants || 0,
         totalPersons: persons.length,
+        missingParticipants,
       },
       persons,
     };

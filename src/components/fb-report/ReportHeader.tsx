@@ -10,6 +10,7 @@ interface ReportHeaderProps {
     completed: number;
     totalParticipants: number;
     totalPersons: number;
+    missingParticipants: string[];
   };
   onRefresh: () => void;
   onPrint: () => void;
@@ -142,8 +143,8 @@ export function ReportHeader({
               </div>
               <div className="text-cream/80 text-sm print:text-black">
                 {completionStatus.totalParticipants - completionStatus.completed} deelnemers hebben
-                hun voorkeuren nog niet ingevuld. Het rapport is gebaseerd op de huidige data en kan
-                nog wijzigen.
+                hun voorkeuren nog niet ingevuld: <strong className="text-cream">{completionStatus.missingParticipants.join(', ')}</strong>.
+                Het rapport is gebaseerd op de huidige data en kan nog wijzigen.
               </div>
             </div>
           </div>

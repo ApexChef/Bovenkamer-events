@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRegistrationStore, usePredictionsStore, useAuthStore } from '@/lib/store';
+import { useRegistrationStore, useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { HomeTab, PredictionsTab, LeaderboardTab, MiniLeaderboard } from '@/components/dashboard';
 import { FeatureToggle } from '@/components/FeatureToggle';
@@ -24,10 +24,10 @@ interface LeaderboardData {
 export default function DashboardPage() {
   const router = useRouter();
   const { formData, aiAssignment, isComplete, setFormData, setCompletedSections, _hasHydrated: registrationHydrated, getProfileCompletion } = useRegistrationStore();
-  const { isSubmitted: predictionsSubmitted } = usePredictionsStore();
-  const { isAuthenticated, _hasHydrated: authHydrated } = useAuthStore();
+  const { isAuthenticated, currentUser, _hasHydrated: authHydrated } = useAuthStore();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [predictionsSubmitted, setPredictionsSubmitted] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [profileSynced, setProfileSynced] = useState(false);
 
@@ -92,7 +92,7 @@ export default function DashboardPage() {
     }
   }, [isComplete, formData.email, profileSynced, syncProfileFromDb]);
 
-  // Fetch leaderboard data
+  // Fetch leaderboard data + predictions status
   useEffect(() => {
     if (isComplete && formData.email) {
       fetch(`/api/leaderboard?email=${encodeURIComponent(formData.email)}`)
@@ -102,8 +102,21 @@ export default function DashboardPage() {
           setIsLoading(false);
         })
         .catch(() => setIsLoading(false));
+
+      // Check if predictions have been submitted via the form system
+      const email = currentUser?.email || formData.email;
+      if (email) {
+        fetch(`/api/forms/predictions/response?email=${encodeURIComponent(email)}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.response?.status === 'submitted') {
+              setPredictionsSubmitted(true);
+            }
+          })
+          .catch(() => {});
+      }
     }
-  }, [isComplete, formData.email]);
+  }, [isComplete, formData.email, currentUser?.email]);
 
   // Refresh leaderboard data (must be before any conditional returns)
   const refreshLeaderboard = useCallback(async () => {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { RegistrationFormData, QuizAnswers, AIAssignment, Predictions, AuthUser, AuthCache, SkillSelections, SkillCategoryKey } from '@/types';
+import { RegistrationFormData, QuizAnswers, AIAssignment, AuthUser, AuthCache, SkillSelections, SkillCategoryKey } from '@/types';
 
 // Profile sections for progressive registration
 export interface ProfileSections {
@@ -339,48 +339,6 @@ export const useRegistrationStore = create<RegistrationState>()(
 
 // Event start time - predictions are locked after this
 export const EVENT_START = new Date('2026-01-31T16:00:00');
-
-// Predictions store
-interface PredictionsState {
-  predictions: Record<string, string | number | boolean | undefined>;
-  isDraft: boolean;        // true = saved as draft, can still edit
-  isSubmitted: boolean;    // true = definitively submitted
-  setPrediction: (key: string, value: string | number | boolean) => void;
-  saveDraft: () => void;
-  submitFinal: () => void;
-  canEdit: () => boolean;  // false after event starts
-  reset: () => void;
-}
-
-export const usePredictionsStore = create<PredictionsState>()(
-  persist(
-    (set, get) => ({
-      predictions: {},
-      isDraft: false,
-      isSubmitted: false,
-
-      setPrediction: (key, value) =>
-        set((state) => ({
-          predictions: { ...state.predictions, [key]: value },
-        })),
-
-      saveDraft: () => set({ isDraft: true }),
-
-      submitFinal: () => set({ isSubmitted: true, isDraft: false }),
-
-      canEdit: () => {
-        const now = new Date();
-        // Can edit until event starts (even after submission)
-        return now < EVENT_START;
-      },
-
-      reset: () => set({ predictions: {}, isDraft: false, isSubmitted: false }),
-    }),
-    {
-      name: 'bovenkamer-predictions',
-    }
-  )
-);
 
 // Auth store with localStorage caching (30-day expiry)
 interface AuthState {
