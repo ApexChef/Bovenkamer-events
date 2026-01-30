@@ -16,6 +16,7 @@ import { transformEvent, transformCourse, transformMenuItem } from '@/lib/menu-t
 import {
   getAverageMeatDistribution,
   calculateShoppingList,
+  calculateMeatDistributionBreakdown,
 } from '@/lib/menu-calculations';
 import { PersonPreference, MeatDistribution } from '@/types';
 
@@ -152,6 +153,13 @@ export async function GET(
       avgMeatDistribution
     );
 
+    // Calculate meat distribution breakdown for protein courses
+    const meatDistributionBreakdown = coursesWithItems
+      .map((course) =>
+        calculateMeatDistributionBreakdown(course, event.total_persons, avgMeatDistribution)
+      )
+      .filter((b): b is NonNullable<typeof b> => b !== null);
+
     return NextResponse.json({
       event: {
         id: event.id,
@@ -159,6 +167,7 @@ export async function GET(
         totalPersons: event.total_persons,
       },
       averageMeatDistribution: avgMeatDistribution,
+      meatDistributionBreakdown,
       courses: shoppingList.courses,
       grandTotal: shoppingList.grandTotal,
     });

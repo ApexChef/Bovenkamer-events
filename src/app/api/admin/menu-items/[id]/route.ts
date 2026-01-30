@@ -91,6 +91,10 @@ export async function PATCH(
       updateData.sort_order = body.sortOrder;
     }
 
+    if (body.purchasedQuantity !== undefined) {
+      updateData.purchased_quantity = body.purchasedQuantity ?? null;
+    }
+
     if (body.isActive !== undefined) {
       updateData.is_active = body.isActive;
     }
@@ -146,6 +150,13 @@ export async function DELETE(
 
     const supabase = createServerClient();
 
+    // Fetch item before delete so we can redistribute siblings
+    const { data: itemToDelete } = await supabase
+      .from('menu_items')
+      .select('id, course_id, item_type, category')
+      .eq('id', params.id)
+      .single();
+
     const { error } = await supabase
       .from('menu_items')
       .delete()
@@ -157,6 +168,26 @@ export async function DELETE(
         { error: 'DATABASE_ERROR', message: 'Kon menu-item niet verwijderen' },
         { status: 500 }
       );
+    }
+
+    // Auto-redistribute: recalculate distribution for remaining protein items in same course+category
+    if (itemToDelete && itemToDelete.item_type === 'protein' && itemToDelete.category) {
+      const { data: remainingItems } = await supabase
+        .from('menu_items')
+        .select('id')
+        .eq('course_id', itemToDelete.course_id)
+        .eq('item_type', 'protein')
+        .eq('category', itemToDelete.category)
+        .eq('is_active', true);
+
+      if (remainingItems && remainingItems.length > 0) {
+        const newPct = parseFloat((100 / remainingItems.length).toFixed(2));
+        const remainingIds = remainingItems.map((item: any) => item.id);
+        await supabase
+          .from('menu_items')
+          .update({ distribution_percentage: newPct })
+          .in('id', remainingIds);
+      }
     }
 
     return NextResponse.json({

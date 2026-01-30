@@ -24,6 +24,7 @@ import {
   ShoppingListItem,
   ShoppingListCourse,
   ShoppingList,
+  MeatDistributionBreakdown,
 } from '@/types';
 
 // =============================================================================
@@ -132,6 +133,17 @@ export function getAverageMeatDistribution(
 }
 
 /**
+ * Calculates surplus from purchased vs needed quantity
+ */
+function calculateSurplus(
+  purchasedQuantity: number | null,
+  purchaseQuantity: number
+): number | null {
+  if (purchasedQuantity === null) return null;
+  return purchasedQuantity - purchaseQuantity;
+}
+
+/**
  * Calculates purchase quantity for a protein menu item
  *
  * Algorithm:
@@ -142,13 +154,6 @@ export function getAverageMeatDistribution(
  * 5. Round to purchase quantity:
  *    - If unitWeightGrams: ceil(bruto / unitWeight) × unitWeight
  *    - Else: ceil(bruto / roundingGrams) × roundingGrams
- *
- * Example:
- * - Course: 450g per person, 18 persons = 8100g total
- * - Category: beef, avg 45% = 3645g beef budget
- * - Item: Picanha, 50% of beef = 1822.5g edible
- * - Yield: 85% → 1822.5 / 0.85 = 2144g bruto
- * - Rounding: 100g → ceil(2144 / 100) × 100 = 2200g purchase
  *
  * @param menuItem - The protein menu item
  * @param totalCourseGrams - Total edible grams for the course
@@ -206,6 +211,8 @@ export function calculateProteinItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
+    purchasedQuantity: menuItem.purchasedQuantity ?? null,
+    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -226,19 +233,6 @@ export function calculateProteinItem(
 
 /**
  * Calculates purchase quantity for a side menu item
- *
- * Algorithm:
- * 1. Count number of side items in the course
- * 2. Divide total course grams evenly: total / numberOfSides
- * 3. Calculate bruto: edible / (yieldPercentage / 100)
- * 4. Round to purchase quantity
- *
- * Example:
- * - Course: 450g per person, 18 persons = 8100g total
- * - Number of sides: 2 (courgette, salad)
- * - Per item: 8100 / 2 = 4050g edible
- * - Yield: 90% → 4050 / 0.90 = 4500g bruto
- * - Rounding: 100g → ceil(4500 / 100) × 100 = 4500g purchase
  *
  * @param menuItem - The side menu item
  * @param totalCourseGrams - Total edible grams for the course
@@ -285,6 +279,8 @@ export function calculateSideItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
+    purchasedQuantity: menuItem.purchasedQuantity ?? null,
+    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -303,17 +299,6 @@ export function calculateSideItem(
 
 /**
  * Calculates purchase quantity for a fixed menu item
- *
- * Algorithm:
- * 1. Calculate total edible: persons × item.gramsPerPerson
- * 2. Calculate bruto: edible / (yieldPercentage / 100)
- * 3. Round to purchase quantity
- *
- * Example:
- * - Item: Stokbrood, 80g per person
- * - Persons: 18 → 18 × 80 = 1440g edible
- * - Yield: 100% → 1440 / 1.00 = 1440g bruto
- * - Unit: 250g per stuk → ceil(1440 / 250) = 6 stuks = 1500g purchase
  *
  * @param menuItem - The fixed menu item
  * @param totalPersons - Total number of persons
@@ -358,6 +343,8 @@ export function calculateFixedItem(
     brutoGrams,
     purchaseQuantity,
     purchaseUnits,
+    purchasedQuantity: menuItem.purchasedQuantity ?? null,
+    surplus: calculateSurplus(menuItem.purchasedQuantity ?? null, purchaseQuantity),
     unit: menuItem.unitWeightGrams ? menuItem.unitLabel || 'stuks' : 'g',
     unitLabel: menuItem.unitLabel,
     calculation: {
@@ -371,6 +358,30 @@ export function calculateFixedItem(
       purchaseUnits,
       purchaseQuantity,
     },
+  };
+}
+
+/**
+ * Sums purchased and surplus totals for a list of shopping items.
+ * Returns null if no items have purchasedQuantity data.
+ */
+function sumPurchasedAndSurplus(items: ShoppingListItem[]): {
+  totalPurchasedGrams: number | null;
+  totalSurplusGrams: number | null;
+} {
+  const itemsWithData = items.filter((item) => item.purchasedQuantity !== null);
+  if (itemsWithData.length === 0) {
+    return { totalPurchasedGrams: null, totalSurplusGrams: null };
+  }
+  return {
+    totalPurchasedGrams: itemsWithData.reduce(
+      (sum, item) => sum + (item.purchasedQuantity ?? 0),
+      0
+    ),
+    totalSurplusGrams: itemsWithData.reduce(
+      (sum, item) => sum + (item.surplus ?? 0),
+      0
+    ),
   };
 }
 
@@ -420,10 +431,13 @@ export function calculateCourseShoppingList(
   });
 
   // Calculate subtotals
+  const { totalPurchasedGrams, totalSurplusGrams } = sumPurchasedAndSurplus(items);
   const subtotal = {
     totalEdibleGrams: items.reduce((sum, item) => sum + item.edibleGrams, 0),
     totalBrutoGrams: items.reduce((sum, item) => sum + item.brutoGrams, 0),
     totalPurchaseGrams: items.reduce((sum, item) => sum + item.purchaseQuantity, 0),
+    totalPurchasedGrams,
+    totalSurplusGrams,
   };
 
   return {
@@ -432,6 +446,44 @@ export function calculateCourseShoppingList(
     gramsPerPerson: course.gramsPerPerson,
     items,
     subtotal,
+  };
+}
+
+/**
+ * Calculates meat distribution breakdown for a protein course.
+ * Shows per-category the percentage and kilograms needed.
+ *
+ * @param course - Course with items
+ * @param totalPersons - Total persons
+ * @param avgMeatDistribution - Average meat distribution percentages
+ * @returns Breakdown per category, or null if no protein items
+ */
+export function calculateMeatDistributionBreakdown(
+  course: EventCourseWithItems,
+  totalPersons: number,
+  avgMeatDistribution: MeatDistribution
+): MeatDistributionBreakdown | null {
+  const hasProteinItems = course.menuItems.some(
+    (item) => item.itemType === 'protein'
+  );
+  if (!hasProteinItems) return null;
+
+  const totalCourseGrams = totalPersons * course.gramsPerPerson;
+
+  const categories = PROTEIN_CATEGORIES.map((category) => {
+    const pct = avgMeatDistribution[category as keyof MeatDistribution];
+    return {
+      category,
+      percentage: pct,
+      gramsNeeded: totalCourseGrams * (pct / 100),
+    };
+  }).filter((c) => c.percentage > 0);
+
+  return {
+    courseId: course.id,
+    courseName: course.name,
+    totalCourseGrams,
+    categories,
   };
 }
 
@@ -453,6 +505,10 @@ export function calculateShoppingList(
     calculateCourseShoppingList(course, totalPersons, avgMeatDistribution)
   );
 
+  // Aggregate purchased/surplus across all courses
+  const allItems = courseShoppingLists.flatMap((c) => c.items);
+  const { totalPurchasedGrams, totalSurplusGrams } = sumPurchasedAndSurplus(allItems);
+
   // Calculate grand total
   const grandTotal = {
     totalEdibleGrams: courseShoppingLists.reduce(
@@ -467,6 +523,8 @@ export function calculateShoppingList(
       (sum, course) => sum + course.subtotal.totalPurchaseGrams,
       0
     ),
+    totalPurchasedGrams,
+    totalSurplusGrams,
   };
 
   return {

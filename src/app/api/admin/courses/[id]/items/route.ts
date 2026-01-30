@@ -159,6 +159,7 @@ export async function POST(
         rounding_grams: body.roundingGrams ?? 100,
         distribution_percentage: body.distributionPercentage ?? null,
         grams_per_person: body.gramsPerPerson ?? null,
+        purchased_quantity: body.purchasedQuantity ?? null,
         sort_order: body.sortOrder ?? 0,
         is_active: body.isActive ?? true,
       })
@@ -173,7 +174,34 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ menuItem: transformMenuItem(data) }, { status: 201 });
+    // Auto-redistribute: if protein item, recalculate distribution for all protein items in same course+category
+    if (body.itemType === 'protein' && body.category) {
+      const { data: siblingItems } = await supabase
+        .from('menu_items')
+        .select('id')
+        .eq('course_id', params.id)
+        .eq('item_type', 'protein')
+        .eq('category', body.category)
+        .eq('is_active', true);
+
+      if (siblingItems && siblingItems.length > 0) {
+        const newPct = parseFloat((100 / siblingItems.length).toFixed(2));
+        const siblingIds = siblingItems.map((item: any) => item.id);
+        await supabase
+          .from('menu_items')
+          .update({ distribution_percentage: newPct })
+          .in('id', siblingIds);
+      }
+    }
+
+    // Re-fetch the item after potential redistribution update
+    const { data: updatedItem } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('id', data.id)
+      .single();
+
+    return NextResponse.json({ menuItem: transformMenuItem(updatedItem || data) }, { status: 201 });
   } catch (error) {
     console.error('Create menu item error:', error);
     return NextResponse.json(

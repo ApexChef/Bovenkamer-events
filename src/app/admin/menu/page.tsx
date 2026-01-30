@@ -16,6 +16,7 @@ import type {
   CreateCourseData,
   CreateMenuItemData,
   MeatDistribution,
+  MeatDistributionBreakdown,
   ShoppingListResponse,
 } from '@/types';
 
@@ -443,6 +444,7 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
     roundingGrams: null,
     distributionPercentage: null,
     gramsPerPerson: null,
+    purchasedQuantity: null,
     sortOrder: existingCount + 1,
     isActive: true,
   });
@@ -462,6 +464,7 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
         roundingGrams: menuItem.roundingGrams,
         distributionPercentage: menuItem.distributionPercentage,
         gramsPerPerson: menuItem.gramsPerPerson,
+        purchasedQuantity: menuItem.purchasedQuantity,
         sortOrder: menuItem.sortOrder,
         isActive: menuItem.isActive,
       });
@@ -477,6 +480,7 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
         roundingGrams: null,
         distributionPercentage: null,
         gramsPerPerson: null,
+        purchasedQuantity: null,
         sortOrder: existingCount + 1,
         isActive: true,
       });
@@ -644,6 +648,18 @@ function MenuItemDialog({ isOpen, onClose, courseId, menuItem, existingCount, on
             onChange={(e) => setFormData({ ...formData, gramsPerPerson: e.target.value ? parseInt(e.target.value) : null })}
             hint="Vast aantal gram per persoon"
             required
+          />
+        )}
+
+        {menuItem && (
+          <Input
+            label="Ingekochte hoeveelheid (gram)"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.purchasedQuantity?.toString() || ''}
+            onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value ? parseFloat(e.target.value) : null })}
+            hint="Daadwerkelijk ingekocht (uit factuur)"
           />
         )}
 
@@ -1002,65 +1018,152 @@ function ShoppingListSection({ eventId, totalPersons, hasCourses, refreshTrigger
 
         {/* Courses */}
         <div className="space-y-6">
-          {data.courses.map((course) => (
-            <div key={course.courseId}>
-              <h4 className="font-semibold text-gold mb-2">
-                {course.courseName} ({course.gramsPerPerson}g/p.p.)
-              </h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gold/20">
-                      <th className="text-left py-2 px-2 text-gold/70 font-normal text-xs">Item</th>
-                      <th className="text-center py-2 px-2 text-gold/70 font-normal text-xs">Type</th>
-                      <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Netto</th>
-                      <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Bruto</th>
-                      <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Inkoop</th>
-                      <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Eenheid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {course.items.map((item) => (
-                      <tr key={item.menuItemId} className="border-b border-gold/10">
-                        <td className="py-2 px-2 text-cream">{item.name}</td>
-                        <td className="text-center py-2 px-2">
-                          <span className={`text-xs px-2 py-0.5 rounded ${typeColors[item.itemType]}`}>
-                            {typeLabels[item.itemType]}
-                          </span>
-                        </td>
-                        <td className="text-right py-2 px-2 text-cream/70">{formatGrams(item.edibleGrams)}</td>
-                        <td className="text-right py-2 px-2 text-cream/70">{formatGrams(item.brutoGrams)}</td>
-                        <td className="text-right py-2 px-2 text-cream font-medium">
-                          {formatGrams(item.purchaseQuantity)}
-                        </td>
-                        <td className="text-right py-2 px-2 text-cream/70">
-                          {item.purchaseUnits ? `${item.purchaseUnits} ${item.unitLabel || 'stuks'}` : item.unit}
-                        </td>
+          {data.courses.map((course) => {
+            // Find meat distribution breakdown for this course
+            const breakdown = data.meatDistributionBreakdown?.find(
+              (b: MeatDistributionBreakdown) => b.courseId === course.courseId
+            );
+
+            return (
+              <div key={course.courseId}>
+                <h4 className="font-semibold text-gold mb-2">
+                  {course.courseName} ({course.gramsPerPerson}g/p.p.)
+                </h4>
+
+                {/* Meat distribution breakdown for protein courses */}
+                {breakdown && (
+                  <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 mb-3">
+                    <h5 className="text-xs font-semibold text-blue-300 mb-2">
+                      Vleesverdeling {course.courseName} ({formatGrams(breakdown.totalCourseGrams)} totaal)
+                    </h5>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-1 text-xs">
+                      {breakdown.categories.map((cat: MeatDistributionBreakdown['categories'][number]) => (
+                        <div key={cat.category} className="flex items-center gap-2">
+                          <span className="text-cream/70 w-20">{categoryLabels[cat.category]}</span>
+                          <span className="text-cream/50 w-12 text-right">{cat.percentage.toFixed(1)}%</span>
+                          <span className="text-cream/40 mx-1">&rarr;</span>
+                          <span className="text-cream font-medium">{formatGrams(cat.gramsNeeded)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gold/20">
+                        <th className="text-left py-2 px-2 text-gold/70 font-normal text-xs">Item</th>
+                        <th className="text-center py-2 px-2 text-gold/70 font-normal text-xs">Type</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Netto</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Bruto</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Nodig</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Ingekocht</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Over</th>
+                        <th className="text-right py-2 px-2 text-gold/70 font-normal text-xs">Eenheid</th>
                       </tr>
-                    ))}
-                    <tr className="border-t-2 border-gold/30 font-semibold">
-                      <td className="py-2 px-2 text-gold" colSpan={2}>Subtotaal</td>
-                      <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalEdibleGrams)}</td>
-                      <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalBrutoGrams)}</td>
-                      <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalPurchaseGrams)}</td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {course.items.map((item) => (
+                        <tr key={item.menuItemId} className="border-b border-gold/10">
+                          <td className="py-2 px-2 text-cream">{item.name}</td>
+                          <td className="text-center py-2 px-2">
+                            <span className={`text-xs px-2 py-0.5 rounded ${typeColors[item.itemType]}`}>
+                              {typeLabels[item.itemType]}
+                            </span>
+                          </td>
+                          <td className="text-right py-2 px-2 text-cream/70">{formatGrams(item.edibleGrams)}</td>
+                          <td className="text-right py-2 px-2 text-cream/70">{formatGrams(item.brutoGrams)}</td>
+                          <td className="text-right py-2 px-2 text-cream font-medium">
+                            {formatGrams(item.purchaseQuantity)}
+                          </td>
+                          <td className={`text-right py-2 px-2 font-medium ${
+                            item.purchasedQuantity === null
+                              ? 'text-cream/40'
+                              : item.purchasedQuantity >= item.purchaseQuantity
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                          }`}>
+                            {item.purchasedQuantity !== null ? formatGrams(item.purchasedQuantity) : '-'}
+                          </td>
+                          <td className={`text-right py-2 px-2 font-medium ${
+                            item.surplus === null
+                              ? 'text-cream/40'
+                              : item.surplus >= 0
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                          }`}>
+                            {item.surplus !== null
+                              ? `${item.surplus >= 0 ? '+' : ''}${formatGrams(item.surplus)}`
+                              : '-'}
+                          </td>
+                          <td className="text-right py-2 px-2 text-cream/70">
+                            {item.purchaseUnits ? `${item.purchaseUnits} ${item.unitLabel || 'stuks'}` : item.unit}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-gold/30 font-semibold">
+                        <td className="py-2 px-2 text-gold" colSpan={2}>Subtotaal</td>
+                        <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalEdibleGrams)}</td>
+                        <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalBrutoGrams)}</td>
+                        <td className="text-right py-2 px-2 text-gold">{formatGrams(course.subtotal.totalPurchaseGrams)}</td>
+                        <td className="text-right py-2 px-2 text-gold">
+                          {course.subtotal.totalPurchasedGrams !== null ? formatGrams(course.subtotal.totalPurchasedGrams) : '-'}
+                        </td>
+                        <td className={`text-right py-2 px-2 font-semibold ${
+                          course.subtotal.totalSurplusGrams === null
+                            ? 'text-cream/40'
+                            : course.subtotal.totalSurplusGrams >= 0
+                              ? 'text-green-400'
+                              : 'text-red-400'
+                        }`}>
+                          {course.subtotal.totalSurplusGrams !== null
+                            ? `${course.subtotal.totalSurplusGrams >= 0 ? '+' : ''}${formatGrams(course.subtotal.totalSurplusGrams)}`
+                            : '-'}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Grand total */}
           <div className="border-t-2 border-gold/50 pt-4">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left py-1 px-2 text-gold/70 font-normal text-xs"></th>
+                    <th className="text-right py-1 px-2 text-gold/70 font-normal text-xs">Netto</th>
+                    <th className="text-right py-1 px-2 text-gold/70 font-normal text-xs">Bruto</th>
+                    <th className="text-right py-1 px-2 text-gold/70 font-normal text-xs">Nodig</th>
+                    <th className="text-right py-1 px-2 text-gold/70 font-normal text-xs">Ingekocht</th>
+                    <th className="text-right py-1 px-2 text-gold/70 font-normal text-xs">Over</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr className="font-bold text-gold">
                     <td className="py-2 px-2">Totaal</td>
                     <td className="text-right py-2 px-2">{formatGrams(data.grandTotal.totalEdibleGrams)}</td>
                     <td className="text-right py-2 px-2">{formatGrams(data.grandTotal.totalBrutoGrams)}</td>
                     <td className="text-right py-2 px-2 text-lg">{formatGrams(data.grandTotal.totalPurchaseGrams)}</td>
+                    <td className="text-right py-2 px-2">
+                      {data.grandTotal.totalPurchasedGrams !== null ? formatGrams(data.grandTotal.totalPurchasedGrams) : '-'}
+                    </td>
+                    <td className={`text-right py-2 px-2 ${
+                      data.grandTotal.totalSurplusGrams === null
+                        ? 'text-cream/40'
+                        : data.grandTotal.totalSurplusGrams >= 0
+                          ? 'text-green-400'
+                          : 'text-red-400'
+                    }`}>
+                      {data.grandTotal.totalSurplusGrams !== null
+                        ? `${data.grandTotal.totalSurplusGrams >= 0 ? '+' : ''}${formatGrams(data.grandTotal.totalSurplusGrams)}`
+                        : '-'}
+                    </td>
                   </tr>
                 </tbody>
               </table>

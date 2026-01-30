@@ -1108,6 +1108,7 @@ export interface MenuItem {
   roundingGrams: number | null;
   distributionPercentage: number | null; // Protein only
   gramsPerPerson: number | null; // Fixed only
+  purchasedQuantity: number | null; // Actually purchased (grams, from invoice)
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -1140,6 +1141,8 @@ export interface ShoppingListItem {
   brutoGrams: number;
   purchaseQuantity: number;
   purchaseUnits: number | null; // For fixed units (e.g., 13 hamburgers)
+  purchasedQuantity: number | null; // Actually purchased (from invoice)
+  surplus: number | null; // purchasedQuantity - purchaseQuantity (positive = over, negative = short)
   unit: string; // 'g', 'kg', 'stuks', etc.
   unitLabel: string | null;
   calculation: {
@@ -1182,7 +1185,23 @@ export interface ShoppingListCourse {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
+    totalPurchasedGrams: number | null;
+    totalSurplusGrams: number | null;
   };
+}
+
+/**
+ * Meat distribution breakdown for a protein course
+ */
+export interface MeatDistributionBreakdown {
+  courseId: string;
+  courseName: string;
+  totalCourseGrams: number;
+  categories: Array<{
+    category: string;
+    percentage: number;      // avg distribution %
+    gramsNeeded: number;     // percentage × totalCourseGrams
+  }>;
 }
 
 /**
@@ -1194,6 +1213,8 @@ export interface ShoppingList {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
+    totalPurchasedGrams: number | null;
+    totalSurplusGrams: number | null;
   };
 }
 
@@ -1207,11 +1228,14 @@ export interface ShoppingListResponse {
     totalPersons: number;
   };
   averageMeatDistribution: MeatDistribution;
+  meatDistributionBreakdown: MeatDistributionBreakdown[];
   courses: ShoppingListCourse[];
   grandTotal: {
     totalEdibleGrams: number;
     totalBrutoGrams: number;
     totalPurchaseGrams: number;
+    totalPurchasedGrams: number | null;
+    totalSurplusGrams: number | null;
   };
 }
 
@@ -1251,6 +1275,7 @@ export interface CreateMenuItemData {
   roundingGrams: number | null;
   distributionPercentage: number | null;
   gramsPerPerson: number | null;
+  purchasedQuantity: number | null;
   sortOrder: number;
   isActive: boolean;
 }

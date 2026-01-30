@@ -68,6 +68,9 @@ export function transformMenuItem(row: any): MenuItem {
       ? parseFloat(row.distribution_percentage)
       : null,
     gramsPerPerson: row.grams_per_person,
+    purchasedQuantity: row.purchased_quantity
+      ? parseFloat(row.purchased_quantity)
+      : null,
     sortOrder: row.sort_order,
     isActive: row.is_active,
     createdAt: row.created_at,
