@@ -215,7 +215,7 @@ export default function EtenDrinkenPage() {
     personType: PersonType,
     _name: string
   ) => (
-    <div className="space-y-6">
+    <div className="space-y-6 pointer-events-none">
 
       {/* Dieetwensen */}
       <Input
@@ -272,14 +272,6 @@ export default function EtenDrinkenPage() {
         />
       </div>
 
-      <Button
-        onClick={() => savePreferences(personType)}
-        disabled={isSaving}
-        isLoading={isSaving}
-        className="w-full"
-      >
-        Opslaan
-      </Button>
     </div>
   );
 
@@ -289,7 +281,7 @@ export default function EtenDrinkenPage() {
     personType: PersonType,
     _name: string
   ) => (
-    <div className="space-y-6">
+    <div className="space-y-6 pointer-events-none">
 
       {/* Bubbels */}
       <div className="space-y-3">
@@ -514,14 +506,6 @@ export default function EtenDrinkenPage() {
         />
       </div>
 
-      <Button
-        onClick={() => savePreferences(personType)}
-        disabled={isSaving}
-        isLoading={isSaving}
-        className="w-full"
-      >
-        Opslaan
-      </Button>
     </div>
   );
 
@@ -536,10 +520,12 @@ export default function EtenDrinkenPage() {
           <h1 className="text-2xl font-bold text-gold">Eten & Drinken</h1>
         </div>
 
-        <p className="text-cream/70">
-          Vul je eet- en drinkvoorkeuren in zodat we de BBQ perfect kunnen voorbereiden.
-          {hasPartner && ' Vergeet niet ook de voorkeuren van je partner in te vullen!'}
-        </p>
+        <div className="bg-gold/10 border border-gold/30 rounded-lg p-4">
+          <p className="text-gold font-semibold">De bestelling is gesloten</p>
+          <p className="text-cream/60 text-sm mt-1">
+            Hieronder zie je wat je hebt opgegeven. Aanpassen is niet meer mogelijk.
+          </p>
+        </div>
 
         {/* Status overview */}
         <Card className="bg-dark-wood border-gold/30">
