@@ -8,6 +8,16 @@ import { Button, Card, CardHeader, CardTitle, CardContent, Input, TextArea, Sele
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { DynamicField } from '@/components/forms/dynamic/DynamicField';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Pencil,
+  CircleCheck,
+  CircleX,
+  Asterisk,
+  ArrowUpDown,
+} from 'lucide-react';
 import type {
   FormDefinition,
   FormVersion,
@@ -109,6 +119,9 @@ function FormDetailContent() {
 
   // Accordion open sections
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+
+  // Sort mode
+  const [sortMode, setSortMode] = useState(false);
 
   // Field edit modal
   const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -486,21 +499,26 @@ function FormDetailContent() {
                     className="overflow-hidden"
                   >
                     {/* Section actions */}
-                    <div className="px-5 py-2 flex gap-2 border-t border-gold/10">
-                      <Button
-                        variant="ghost"
-                        onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up'); }}
-                        disabled={saving || sIdx === 0}
-                      >
-                        &#9650; Omhoog
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down'); }}
-                        disabled={saving || sIdx === sortedSections.length - 1}
-                      >
-                        &#9660; Omlaag
-                      </Button>
+                    <div className="px-5 py-2 flex items-center gap-2 border-t border-gold/10">
+                      {sortMode && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up'); }}
+                            disabled={saving || sIdx === 0}
+                          >
+                            <ChevronUp className="w-4 h-4 mr-1 inline" /> Omhoog
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down'); }}
+                            disabled={saving || sIdx === sortedSections.length - 1}
+                          >
+                            <ChevronDown className="w-4 h-4 mr-1 inline" /> Omlaag
+                          </Button>
+                          <div className="w-px h-5 bg-gold/20 mx-1" />
+                        </>
+                      )}
                       <Button
                         variant="ghost"
                         onClick={(e) => {
@@ -513,68 +531,102 @@ function FormDetailContent() {
                       </Button>
                     </div>
 
-                    {/* Fields list */}
+                    {/* Fields table */}
                     <div className="px-5 pb-4">
                       {sortedFields.length === 0 ? (
                         <p className="text-cream/40 text-sm py-3">Geen velden in deze sectie.</p>
                       ) : (
-                        <div className="space-y-1">
-                          {sortedFields.map((field, fIdx) => (
-                            <div
-                              key={field.id}
-                              className={`flex items-center gap-3 py-2 px-3 rounded-lg border border-gold/5 ${
-                                !field.is_active ? 'opacity-40' : 'hover:bg-dark-wood/30'
-                              }`}
-                            >
-                              <span className="text-cream/30 text-xs font-mono w-32 truncate">{field.key}</span>
-                              <span className="text-cream flex-1 text-sm">{field.label}</span>
-                              <span className="text-cream/40 text-xs w-24 text-center">
-                                {FIELD_TYPES.find(t => t.value === field.field_type)?.label || field.field_type}
-                              </span>
-                              {field.is_required && (
-                                <span className="text-gold text-xs">verplicht</span>
-                              )}
-                              {!field.is_active && (
-                                <span className="text-warm-red/60 text-xs">inactief</span>
-                              )}
-                              <div className="flex gap-1 ml-2">
-                                <button
-                                  type="button"
-                                  onClick={() => moveField(section.id, field.id, 'up')}
-                                  disabled={saving || fIdx === 0}
-                                  className="text-cream/30 hover:text-cream disabled:opacity-30 text-xs px-1"
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-gold/20">
+                                {sortMode && <th className="w-8" />}
+                                <th className="text-left py-2 px-2 text-gold/60 font-normal text-xs uppercase tracking-wider">Veld</th>
+                                <th className="text-center py-2 px-2 text-gold/60 font-normal text-xs uppercase tracking-wider w-32">Type</th>
+                                <th className="text-center py-2 px-2 text-gold/60 font-normal text-xs uppercase tracking-wider w-12" title="Verplicht">
+                                  <Asterisk className="w-3.5 h-3.5 mx-auto text-gold/60" />
+                                </th>
+                                <th className="text-center py-2 px-2 text-gold/60 font-normal text-xs uppercase tracking-wider w-12" title="Actief">
+                                  <CircleCheck className="w-3.5 h-3.5 mx-auto text-gold/60" />
+                                </th>
+                                <th className="w-20" />
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sortedFields.map((field, fIdx) => (
+                                <tr
+                                  key={field.id}
+                                  className={`border-b border-gold/5 ${
+                                    !field.is_active ? 'opacity-40' : 'hover:bg-dark-wood/30'
+                                  }`}
                                 >
-                                  &#9650;
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => moveField(section.id, field.id, 'down')}
-                                  disabled={saving || fIdx === sortedFields.length - 1}
-                                  className="text-cream/30 hover:text-cream disabled:opacity-30 text-xs px-1"
-                                >
-                                  &#9660;
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingField({ ...field });
-                                    setEditingFieldSectionId(section.id);
-                                  }}
-                                  className="text-gold/60 hover:text-gold text-xs px-1"
-                                >
-                                  Bewerk
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleFieldActive(field.id, field.is_active)}
-                                  disabled={saving}
-                                  className="text-cream/30 hover:text-cream text-xs px-1"
-                                >
-                                  {field.is_active ? 'Uit' : 'Aan'}
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                                  {sortMode && (
+                                    <td className="py-2 px-1">
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => moveField(section.id, field.id, 'up')}
+                                          disabled={saving || fIdx === 0}
+                                          className="text-cream/30 hover:text-gold disabled:opacity-20 transition-colors"
+                                        >
+                                          <ChevronUp className="w-3.5 h-3.5" />
+                                        </button>
+                                        <GripVertical className="w-3.5 h-3.5 text-cream/20" />
+                                        <button
+                                          type="button"
+                                          onClick={() => moveField(section.id, field.id, 'down')}
+                                          disabled={saving || fIdx === sortedFields.length - 1}
+                                          className="text-cream/30 hover:text-gold disabled:opacity-20 transition-colors"
+                                        >
+                                          <ChevronDown className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  )}
+                                  <td className="py-2.5 px-2 text-cream">{field.label}</td>
+                                  <td className="py-2.5 px-2 text-center">
+                                    <span className="text-cream/50 text-xs">
+                                      {FIELD_TYPES.find(t => t.value === field.field_type)?.label || field.field_type}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-2 text-center">
+                                    {field.is_required ? (
+                                      <Asterisk className="w-4 h-4 mx-auto text-gold" />
+                                    ) : (
+                                      <span className="text-cream/15">-</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleFieldActive(field.id, field.is_active)}
+                                      disabled={saving}
+                                      className="transition-colors"
+                                    >
+                                      {field.is_active ? (
+                                        <CircleCheck className="w-4 h-4 mx-auto text-success-green" />
+                                      ) : (
+                                        <CircleX className="w-4 h-4 mx-auto text-warm-red/60" />
+                                      )}
+                                    </button>
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingField({ ...field });
+                                        setEditingFieldSectionId(section.id);
+                                      }}
+                                      className="text-gold/40 hover:text-gold transition-colors"
+                                      title="Bewerken"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
 
@@ -600,13 +652,21 @@ function FormDetailContent() {
         })}
       </div>
 
-      {/* Add section button */}
-      <div className="mt-4">
+      {/* Bottom actions */}
+      <div className="mt-4 flex items-center gap-3">
         <Button
           variant="ghost"
           onClick={() => setShowNewSection(true)}
         >
           + Sectie toevoegen
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => setSortMode(prev => !prev)}
+          className={sortMode ? 'text-gold border-gold/30' : ''}
+        >
+          <ArrowUpDown className="w-4 h-4 mr-1.5 inline" />
+          {sortMode ? 'Sorteren uit' : 'Sorteren'}
         </Button>
       </div>
 
