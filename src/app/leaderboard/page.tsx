@@ -11,6 +11,7 @@ import {
   Filter,
   X,
   ChevronLeft,
+  ChevronDown,
   BarChart3,
   Users,
   TrendingUp,
@@ -26,6 +27,11 @@ interface LeaderboardEntry {
   name: string;
   email: string;
   points: number;
+  registrationPoints: number;
+  predictionPoints: number;
+  quizPoints: number;
+  gamePoints: number;
+  bonusPoints: number;
   birthYear: number | null;
   gender: string | null;
   jkvJoinYear: number | null;
@@ -59,6 +65,8 @@ export default function LeaderboardPage() {
   const [stats, setStats] = useState<LeaderboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   // Filters (hidden for now - not enough data)
   const showFilters = false; // Disabled until we have more data
@@ -414,6 +422,15 @@ export default function LeaderboardPage() {
                   const isTop3 = index < 3;
                   const currentYear = new Date().getFullYear();
                   const age = entry.birthYear ? currentYear - entry.birthYear : null;
+                  const isExpanded = expandedUserId === entry.userId;
+
+                  const categories = [
+                    { label: 'Registratie', points: entry.registrationPoints, max: 300, color: 'text-green-400' },
+                    { label: 'Voorspellingen', points: entry.predictionPoints, max: null, color: 'text-blue-400' },
+                    { label: 'Quiz', points: entry.quizPoints, max: null, color: 'text-purple-400' },
+                    { label: 'Game', points: entry.gamePoints, max: null, color: 'text-orange-400' },
+                    { label: 'Bonus', points: entry.bonusPoints, max: 5, color: 'text-yellow-400' },
+                  ];
 
                   return (
                     <motion.div
@@ -421,52 +438,88 @@ export default function LeaderboardPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.02 }}
-                      className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      className={`rounded-lg transition-colors ${
                         isCurrentUser
                           ? 'bg-gold/20 border border-gold/30'
                           : 'bg-dark-wood/30 hover:bg-dark-wood/50'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            index === 0
-                              ? 'bg-yellow-500 text-dark-wood'
-                              : index === 1
-                              ? 'bg-gray-300 text-dark-wood'
-                              : index === 2
-                              ? 'bg-amber-600 text-dark-wood'
-                              : 'bg-dark-wood text-cream/70 border border-gold/10'
-                          }`}
-                        >
-                          {isTop3 ? (
-                            <Medal className="w-4 h-4" />
-                          ) : (
-                            entry.rank
-                          )}
-                        </div>
-                        <div>
-                          <span className={`${isCurrentUser ? 'text-gold font-semibold' : 'text-cream'}`}>
-                            {getFirstName(entry.name)}
-                            {isCurrentUser && <span className="text-gold/70 text-xs ml-1">(jij)</span>}
-                          </span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {age && (
-                              <span className="text-xs text-cream/40 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {age} jr
-                              </span>
-                            )}
-                            {entry.musicDecade && (
-                              <span className="text-xs text-cream/40 flex items-center gap-1">
-                                <Music className="w-3 h-3" />
-                                {entry.musicDecade}
-                              </span>
+                      <button
+                        onClick={() => setExpandedUserId(isExpanded ? null : entry.userId)}
+                        className="w-full flex items-center justify-between p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              index === 0
+                                ? 'bg-yellow-500 text-dark-wood'
+                                : index === 1
+                                ? 'bg-gray-300 text-dark-wood'
+                                : index === 2
+                                ? 'bg-amber-600 text-dark-wood'
+                                : 'bg-dark-wood text-cream/70 border border-gold/10'
+                            }`}
+                          >
+                            {isTop3 ? (
+                              <Medal className="w-4 h-4" />
+                            ) : (
+                              entry.rank
                             )}
                           </div>
+                          <div className="text-left">
+                            <span className={`${isCurrentUser ? 'text-gold font-semibold' : 'text-cream'}`}>
+                              {getFirstName(entry.name)}
+                              {isCurrentUser && <span className="text-gold/70 text-xs ml-1">(jij)</span>}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {age && (
+                                <span className="text-xs text-cream/40 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {age} jr
+                                </span>
+                              )}
+                              {entry.musicDecade && (
+                                <span className="text-xs text-cream/40 flex items-center gap-1">
+                                  <Music className="w-3 h-3" />
+                                  {entry.musicDecade}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-gold font-bold">{entry.points}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gold font-bold">{entry.points}</span>
+                          <ChevronDown className={`w-4 h-4 text-cream/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-3 pb-3 pt-1 border-t border-gold/10">
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {categories.map(cat => (
+                                  <div key={cat.label} className="bg-deep-green/50 rounded p-2">
+                                    <p className="text-xs text-cream/50">{cat.label}</p>
+                                    <p className={`text-sm font-semibold ${cat.color}`}>
+                                      {cat.points}
+                                      {cat.max !== null && (
+                                        <span className="text-cream/30 font-normal">/{cat.max}</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}

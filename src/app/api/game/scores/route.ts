@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
     }
 
-    // Update user's game_points with their best score
+    // Update user's game_points with their best score (+ recalculate total_points)
     const { data: bestScore } = await supabase
       .from('game_scores')
       .select('score')
@@ -175,10 +175,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (bestScore) {
-      await supabase
-        .from('users')
-        .update({ game_points: bestScore.score })
-        .eq('id', user.userId);
+      await supabase.rpc('set_game_points', {
+        p_user_id: user.userId,
+        p_score: bestScore.score,
+      });
     }
 
     return NextResponse.json({
