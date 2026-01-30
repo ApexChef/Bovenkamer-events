@@ -59,8 +59,8 @@ export function DynamicForm({
 
         // Load form structure and existing answers in parallel
         const [formRes, answersRes] = await Promise.all([
-          fetch(`/api/forms/${formKey}`),
-          email ? fetch(`/api/forms/${formKey}/response?email=${encodeURIComponent(email)}`) : null,
+          fetch(`/api/forms/${formKey}`, { cache: 'no-store' }),
+          email ? fetch(`/api/forms/${formKey}/response?email=${encodeURIComponent(email)}`, { cache: 'no-store' }) : null,
         ]);
 
         if (!formRes.ok) {

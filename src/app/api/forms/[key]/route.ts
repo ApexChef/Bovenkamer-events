@@ -11,6 +11,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import type { FormStructure, FormSectionWithFields } from '@/types';
 
+// Disable Next.js caching — form structure can change via admin
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { key: string } }
