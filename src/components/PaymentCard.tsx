@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, Button } from '@/components/ui';
+import { Euro } from 'lucide-react';
 
 interface PaymentRecord {
   id: string;
@@ -21,6 +22,46 @@ function formatCentsToEuros(cents: number): string {
     style: 'currency',
     currency: 'EUR',
   }).format(cents / 100);
+}
+
+function getRelativePaymentTime(paidAt: string): { label: string; footnote: string } {
+  const paid = new Date(paidAt);
+  const now = new Date();
+  const diffMs = now.getTime() - paid.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+
+  const isToday = paid.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = paid.toDateString() === yesterday.toDateString();
+
+  let label: string;
+  if (diffMin < 5) {
+    label = 'Zojuist betaald';
+  } else if (diffMin < 60) {
+    label = `${diffMin} minuten geleden betaald`;
+  } else if (diffHours === 1) {
+    label = 'Een uur geleden betaald';
+  } else if (isToday && paid.getHours() < 12) {
+    label = 'Vanochtend betaald';
+  } else if (isToday) {
+    label = 'Vanmiddag betaald';
+  } else if (isYesterday) {
+    label = 'Gisteren betaald';
+  } else {
+    label = `Betaald op ${paid.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`;
+  }
+
+  const footnote = paid.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return { label, footnote };
 }
 
 interface PaymentCardProps {
@@ -111,22 +152,22 @@ export function PaymentCard({ userId, userName, hasPartner = false, partnerName 
   const status = payment?.status || 'pending';
   const displayAmount = payment?.amount_cents || totalAmountCents;
 
-  // Minimal card when paid
+  // Card when paid — show details, relative time, and amount
   if (status === 'paid') {
     const paidText = hasPartner && partnerName
       ? `Jij en ${partnerName} zijn helemaal geregeld`
       : 'Je bent helemaal geregeld';
 
+    const timeInfo = payment?.paid_at ? getRelativePaymentTime(payment.paid_at) : null;
+
     return (
       <Card className="border-success-green/30 bg-dark-wood">
         <CardContent className="py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-success-green/20 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-success-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="w-10 h-10 bg-success-green/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <Euro className="w-5 h-5 text-success-green" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-success-green font-semibold">
                 {firstName ? `Bedankt ${firstName}!` : 'Bedankt!'}
               </p>
@@ -134,6 +175,20 @@ export function PaymentCard({ userId, userName, hasPartner = false, partnerName 
                 {paidText}
               </p>
             </div>
+          </div>
+
+          {/* Payment details */}
+          <div className="mt-3 pt-3 border-t border-cream/10 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-cream/40">Betaald via Tikkie</span>
+              <span className="text-cream/70 font-medium">{formatCentsToEuros(displayAmount)}</span>
+            </div>
+            {timeInfo && (
+              <div>
+                <p className="text-cream/50 text-xs">{timeInfo.label}</p>
+                <p className="text-cream/30 text-[10px] mt-0.5">{timeInfo.footnote}</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -143,14 +198,14 @@ export function PaymentCard({ userId, userName, hasPartner = false, partnerName 
   // Minimal card when processing (user said they paid, admin hasn't confirmed)
   if (status === 'processing') {
     return (
-      <Card className="border-blue-400/30 bg-dark-wood">
+      <Card className="border-orange-400/30 bg-dark-wood">
         <CardContent className="py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-400/20 rounded-full flex items-center justify-center">
-              <span className="text-blue-400 text-lg">◐</span>
+            <div className="w-10 h-10 bg-orange-400/20 rounded-full flex items-center justify-center">
+              <Euro className="w-5 h-5 text-orange-400" />
             </div>
             <div>
-              <p className="text-blue-400 font-semibold">
+              <p className="text-orange-400 font-semibold">
                 {firstName ? `Top ${firstName}!` : 'Top!'}
               </p>
               <p className="text-cream/50 text-xs">
@@ -170,16 +225,21 @@ export function PaymentCard({ userId, userName, hasPartner = false, partnerName 
 
   return (
     <>
-      <Card>
+      <Card className="border-warm-red/30 bg-dark-wood">
         <CardContent className="py-4">
           <div className="space-y-3">
-            <div>
-              <p className="text-cream font-semibold">
-                {firstName ? `Hoi ${firstName}, nog even tikken!` : 'Nog even tikken!'}
-              </p>
-              <p className="text-cream/50 text-xs mt-0.5">
-                {ctaSubtext}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-warm-red/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <Euro className="w-5 h-5 text-warm-red" />
+              </div>
+              <div>
+                <p className="text-cream font-semibold">
+                  {firstName ? `Hoi ${firstName}, nog even tikken!` : 'Nog even tikken!'}
+                </p>
+                <p className="text-cream/50 text-xs mt-0.5">
+                  {ctaSubtext}
+                </p>
+              </div>
             </div>
 
             <Button
