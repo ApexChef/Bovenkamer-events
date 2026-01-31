@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/AuthGuard';
+import type { FormStructure, FormSectionWithFields, FormField, BooleanOptions, SliderOptions, TimeOptions } from '@/types';
 
 interface FormResponseRow {
   form_key: string;
@@ -42,21 +43,6 @@ interface FormApiResponse {
   raw: FormResponseRow[];
 }
 
-interface ActualResults {
-  wineBottles?: number;
-  beerCrates?: number;
-  meatKilos?: number;
-  firstSleeper?: string;
-  spontaneousSinger?: string;
-  firstToLeave?: string;
-  lastToLeave?: string;
-  loudestLaugher?: string;
-  longestStoryTeller?: string;
-  somethingBurned?: boolean;
-  outsideTemp?: number;
-  lastGuestTime?: string;
-}
-
 interface Participant {
   value: string;
   label: string;
@@ -80,12 +66,32 @@ function getFieldColumns(raw: FormResponseRow[]): { key: string; label: string; 
     .map(([key, v]) => ({ key, label: v.label, fieldType: v.fieldType }));
 }
 
-const TIME_OPTIONS = Array.from({ length: 15 }, (_, i) => {
-  const hour = 20 + Math.floor(i / 2);
-  const minutes = (i % 2) * 30;
-  const time = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  return { value: time, label: time };
-});
+/** Generate time options from a time field's options (minHour/maxHour). */
+function generateTimeOptions(opts: TimeOptions): { value: number; label: string }[] {
+  const minH = opts.minHour;
+  const maxH = opts.maxHour;
+  // Time wraps around midnight: e.g. 19:00 -> 06:00
+  // Generate half-hour slots as slider values 0, 1, 2, ...
+  const items: { value: number; label: string }[] = [];
+  let hour = minH;
+  let idx = 0;
+  const limit = 48; // safety limit
+  while (idx < limit) {
+    const h = hour % 24;
+    items.push({ value: idx, label: `${h.toString().padStart(2, '0')}:00` });
+    items.push({ value: idx + 1, label: `${h.toString().padStart(2, '0')}:30` });
+    idx += 2;
+    hour++;
+    // Stop after we've passed maxHour (handling wrap-around)
+    if (maxH > minH) {
+      if (hour > maxH) break;
+    } else {
+      // Wraps past midnight, e.g. 19 -> 6
+      if (hour >= 24 + maxH + 1) break;
+    }
+  }
+  return items;
+}
 
 export default function AdminPredictionsPage() {
   return (
@@ -98,8 +104,9 @@ export default function AdminPredictionsPage() {
 function AdminPredictionsContent() {
   const [activeTab, setActiveTab] = useState<'overview' | 'results' | 'live' | 'scores'>('overview');
   const [formData, setFormData] = useState<FormApiResponse | null>(null);
+  const [formStructure, setFormStructure] = useState<FormStructure | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [actualResults, setActualResults] = useState<ActualResults>({});
+  const [actualResults, setActualResults] = useState<Record<string, unknown>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -112,14 +119,19 @@ function AdminPredictionsContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [formRes, participantsRes, resultsRes] = await Promise.all([
+        const [formRes, structureRes, participantsRes, resultsRes] = await Promise.all([
           fetch('/api/admin/forms/predictions/responses'),
+          fetch('/api/forms/predictions'),
           fetch('/api/participants'),
           fetch('/api/admin/predictions/results'),
         ]);
 
         if (formRes.ok) {
           setFormData(await formRes.json());
+        }
+
+        if (structureRes.ok) {
+          setFormStructure(await structureRes.json());
         }
 
         if (participantsRes.ok) {
@@ -165,7 +177,7 @@ function AdminPredictionsContent() {
   };
 
   // Quick save for live mode (auto-saves on change)
-  const handleQuickSave = async (newResults: ActualResults) => {
+  const handleQuickSave = useCallback(async (newResults: Record<string, unknown>) => {
     setActualResults(newResults);
     setIsSaving(true);
 
@@ -184,7 +196,7 @@ function AdminPredictionsContent() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, []);
 
   // Calculate and award points
   const handleCalculatePoints = async () => {
@@ -238,15 +250,58 @@ function AdminPredictionsContent() {
     }
   };
 
+  // Update a single result value
+  const updateResult = useCallback((key: string, value: unknown) => {
+    setActualResults((prev) => {
+      const next = { ...prev };
+      if (value === undefined || value === '') {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+  }, []);
+
+  // Update a single result value with auto-save (for live mode)
+  const updateResultLive = useCallback((key: string, value: unknown) => {
+    setActualResults((prev) => {
+      const next = { ...prev };
+      if (value === undefined || value === '') {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      handleQuickSave(next);
+      return next;
+    });
+  }, [handleQuickSave]);
+
   // Derive field columns and stats from form response data
   const fieldColumns = formData ? getFieldColumns(formData.raw) : [];
   const participantMap = new Map(participants.map((p) => [p.value, p.label]));
 
+  // All active fields from the form structure (for Results/Live tabs)
+  const allFields: { section: FormSectionWithFields; field: FormField }[] = [];
+  if (formStructure) {
+    for (const section of formStructure.sections) {
+      for (const field of section.fields) {
+        allFields.push({ section, field });
+      }
+    }
+  }
+
+  // Count non-undefined results for fields that exist in the form
+  const resultKeys = new Set(allFields.map((f) => f.field.key));
+  const resultsEnteredCount = Object.keys(actualResults).filter(
+    (k) => resultKeys.has(k) && actualResults[k] !== undefined && actualResults[k] !== null,
+  ).length;
+
   const stats = {
     total: formData?.total_responses ?? 0,
     withPredictions: formData?.responses.filter((r) => r.fields.length > 0).length ?? 0,
-    resultsEntered: Object.keys(actualResults).length,
-    totalFields: fieldColumns.length,
+    resultsEntered: resultsEnteredCount,
+    totalFields: allFields.length,
   };
 
   /** Format a display value based on field type */
@@ -268,6 +323,22 @@ function AdminPredictionsContent() {
     }
     return row.display_value || '-';
   };
+
+  /** Check if a result value is filled in */
+  const isResultFilled = (key: string): boolean => {
+    const val = actualResults[key];
+    return val !== undefined && val !== null && val !== '';
+  };
+
+  // Group fields by section for rendering
+  const sectionGroups: { section: FormSectionWithFields; fields: FormField[] }[] = [];
+  if (formStructure) {
+    for (const section of formStructure.sections) {
+      if (section.fields.length > 0) {
+        sectionGroups.push({ section, fields: section.fields });
+      }
+    }
+  }
 
   return (
     <main className="min-h-screen py-8 px-4">
@@ -429,7 +500,7 @@ function AdminPredictionsContent() {
             </Card>
           </>
         ) : activeTab === 'results' ? (
-          /* Results Tab */
+          /* Results Tab - Dynamic */
           <Card>
             <CardHeader>
               <CardTitle>Werkelijke Uitkomsten</CardTitle>
@@ -437,175 +508,22 @@ function AdminPredictionsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Consumption */}
-                <div className="border-b border-gold/10 pb-6">
-                  <h3 className="text-gold font-semibold mb-4">Consumptie</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Flessen wijn</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={actualResults.wineBottles ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, wineBottles: parseInt(e.target.value) || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                        placeholder="Aantal"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Kratten bier</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={actualResults.beerCrates ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, beerCrates: parseInt(e.target.value) || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                        placeholder="Aantal"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Kilo&apos;s vlees</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={actualResults.meatKilos ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, meatKilos: parseFloat(e.target.value) || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                        placeholder="Kg"
-                      />
+                {sectionGroups.map((group, groupIdx) => (
+                  <div key={group.section.key} className={groupIdx < sectionGroups.length - 1 ? 'border-b border-gold/10 pb-6' : 'pb-6'}>
+                    <h3 className="text-gold font-semibold mb-4">{group.section.label}</h3>
+                    <div className={`grid grid-cols-1 ${group.fields.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+                      {group.fields.map((field) => (
+                        <ResultFieldInput
+                          key={field.key}
+                          field={field}
+                          value={actualResults[field.key]}
+                          onChange={(value) => updateResult(field.key, value)}
+                          participants={participants}
+                        />
+                      ))}
                     </div>
                   </div>
-                </div>
-
-                {/* Social */}
-                <div className="border-b border-gold/10 pb-6">
-                  <h3 className="text-gold font-semibold mb-4">Sociale Voorspellingen</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie viel als eerste in slaap?</label>
-                      <select
-                        value={actualResults.firstSleeper ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, firstSleeper: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie begon spontaan te zingen?</label>
-                      <select
-                        value={actualResults.spontaneousSinger ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, spontaneousSinger: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie vertrok als eerste?</label>
-                      <select
-                        value={actualResults.firstToLeave ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, firstToLeave: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie ging als laatste naar huis?</label>
-                      <select
-                        value={actualResults.lastToLeave ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, lastToLeave: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie was de luidste lacher?</label>
-                      <select
-                        value={actualResults.loudestLaugher ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, loudestLaugher: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Wie vertelde het langste verhaal?</label>
-                      <select
-                        value={actualResults.longestStoryTeller ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, longestStoryTeller: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {participants.map((p) => (
-                          <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Other */}
-                <div className="pb-6">
-                  <h3 className="text-gold font-semibold mb-4">Overige Uitkomsten</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Werd er iets aangebrand?</label>
-                      <select
-                        value={actualResults.somethingBurned === undefined ? '' : actualResults.somethingBurned.toString()}
-                        onChange={(e) => setActualResults({ ...actualResults, somethingBurned: e.target.value === '' ? undefined : e.target.value === 'true' })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        <option value="true">Ja</option>
-                        <option value="false">Nee</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Buitentemperatuur (°C)</label>
-                      <input
-                        type="number"
-                        min="-20"
-                        max="20"
-                        value={actualResults.outsideTemp ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, outsideTemp: parseInt(e.target.value) })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                        placeholder="Graden"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-cream/70 text-sm mb-2">Hoe laat vertrok de laatste gast?</label>
-                      <select
-                        value={actualResults.lastGuestTime ?? ''}
-                        onChange={(e) => setActualResults({ ...actualResults, lastGuestTime: e.target.value || undefined })}
-                        className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none"
-                      >
-                        <option value="">Selecteer...</option>
-                        {TIME_OPTIONS.map((t) => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
+                ))}
 
                 {/* Save Button */}
                 <div className="pt-4 border-t border-gold/10">
@@ -617,7 +535,7 @@ function AdminPredictionsContent() {
             </CardContent>
           </Card>
         ) : activeTab === 'live' ? (
-          /* Live Mode Tab - Quick updates during the event */
+          /* Live Mode Tab - Dynamic */
           <div className="space-y-6">
             {/* Live Mode Header */}
             <Card className="bg-gradient-to-r from-warm-red/20 to-gold/20 border-warm-red/50">
@@ -643,245 +561,26 @@ function AdminPredictionsContent() {
               </CardContent>
             </Card>
 
-            {/* Quick Input Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Wine */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.wineBottles !== undefined ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🍷 Flessen wijn</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={actualResults.wineBottles ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, wineBottles: parseInt(e.target.value) || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream text-2xl text-center focus:border-gold focus:outline-none"
-                      placeholder="?"
+            {/* Dynamic Cards grouped by section */}
+            {sectionGroups.map((group) => (
+              <div key={group.section.key}>
+                <h3 className="text-gold font-semibold mb-3 text-sm uppercase tracking-wider">
+                  {group.section.label}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {group.fields.map((field) => (
+                    <LiveFieldCard
+                      key={field.key}
+                      field={field}
+                      value={actualResults[field.key]}
+                      isFilled={isResultFilled(field.key)}
+                      onChange={(value) => updateResultLive(field.key, value)}
+                      participants={participants}
                     />
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Beer */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.beerCrates !== undefined ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🍺 Kratten bier</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={actualResults.beerCrates ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, beerCrates: parseInt(e.target.value) || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream text-2xl text-center focus:border-gold focus:outline-none"
-                      placeholder="?"
-                    />
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Meat */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.meatKilos !== undefined ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🥩 Kilo vlees</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={actualResults.meatKilos ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, meatKilos: parseFloat(e.target.value) || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream text-2xl text-center focus:border-gold focus:outline-none"
-                      placeholder="?"
-                    />
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* First Sleeper */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.firstSleeper ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">😴 Eerste slaper</label>
-                    <select
-                      value={actualResults.firstSleeper ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, firstSleeper: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Spontaneous Singer */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.spontaneousSinger ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🎤 Spontane zanger</label>
-                    <select
-                      value={actualResults.spontaneousSinger ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, spontaneousSinger: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* First to Leave */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.firstToLeave ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🚶 Eerste vertrekker</label>
-                    <select
-                      value={actualResults.firstToLeave ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, firstToLeave: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Loudest Laugher */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.loudestLaugher ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">😂 Luidste lacher</label>
-                    <select
-                      value={actualResults.loudestLaugher ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, loudestLaugher: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Longest Story */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.longestStoryTeller ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">📖 Langste verhaal</label>
-                    <select
-                      value={actualResults.longestStoryTeller ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, longestStoryTeller: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Something Burned */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.somethingBurned !== undefined ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🔥 Iets aangebrand?</label>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleQuickSave({ ...actualResults, somethingBurned: true })}
-                        className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
-                          actualResults.somethingBurned === true
-                            ? 'bg-warm-red text-cream'
-                            : 'bg-dark-wood/50 text-cream/60 hover:bg-dark-wood'
-                        }`}
-                      >
-                        Ja 🔥
-                      </button>
-                      <button
-                        onClick={() => handleQuickSave({ ...actualResults, somethingBurned: false })}
-                        className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
-                          actualResults.somethingBurned === false
-                            ? 'bg-success-green text-cream'
-                            : 'bg-dark-wood/50 text-cream/60 hover:bg-dark-wood'
-                        }`}
-                      >
-                        Nee ✓
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Temperature */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.outsideTemp !== undefined ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🌡️ Buitentemperatuur</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="-20"
-                        max="20"
-                        value={actualResults.outsideTemp ?? ''}
-                        onChange={(e) => handleQuickSave({ ...actualResults, outsideTemp: parseInt(e.target.value) })}
-                        className="flex-1 bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream text-2xl text-center focus:border-gold focus:outline-none"
-                        placeholder="?"
-                      />
-                      <span className="text-cream text-xl">°C</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Last to Leave */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.lastToLeave ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🚪 Laatste vertrekker</label>
-                    <select
-                      value={actualResults.lastToLeave ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, lastToLeave: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {participants.map((p) => (
-                        <option key={p.value} value={p.value}>{p.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Last Guest Time */}
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Card className={actualResults.lastGuestTime ? 'border-success-green/50' : ''}>
-                  <CardContent className="py-4">
-                    <label className="block text-gold font-semibold mb-2">🕐 Laatste gast weg</label>
-                    <select
-                      value={actualResults.lastGuestTime ?? ''}
-                      onChange={(e) => handleQuickSave({ ...actualResults, lastGuestTime: e.target.value || undefined })}
-                      className="w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none"
-                    >
-                      <option value="">Nog niet bekend...</option>
-                      {TIME_OPTIONS.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
+                  ))}
+                </div>
+              </div>
+            ))}
 
             {/* Quick Actions */}
             <Card>
@@ -980,4 +679,262 @@ function AdminPredictionsContent() {
       </div>
     </main>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic field input for Results tab
+// ---------------------------------------------------------------------------
+
+function ResultFieldInput({
+  field,
+  value,
+  onChange,
+  participants,
+}: {
+  field: FormField;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  participants: Participant[];
+}) {
+  const inputClass = 'w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-2 text-cream focus:border-gold focus:outline-none';
+
+  switch (field.field_type) {
+    case 'slider':
+    case 'star_rating': {
+      const opts = field.options as SliderOptions;
+      return (
+        <div>
+          <label className="block text-cream/70 text-sm mb-2">{field.label}</label>
+          <input
+            type="number"
+            min={opts.min}
+            max={opts.max}
+            step={opts.unit?.includes('kg') ? 0.1 : 1}
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange(v === '' ? undefined : parseFloat(v));
+            }}
+            className={inputClass}
+            placeholder={opts.unit ? `${opts.min}–${opts.max}${opts.unit}` : 'Aantal'}
+          />
+        </div>
+      );
+    }
+    case 'select_participant':
+      return (
+        <div>
+          <label className="block text-cream/70 text-sm mb-2">{field.label}</label>
+          <select
+            value={(value as string) ?? ''}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            className={inputClass}
+          >
+            <option value="">Selecteer...</option>
+            {participants.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+      );
+    case 'boolean': {
+      const boolOpts = field.options as BooleanOptions;
+      return (
+        <div>
+          <label className="block text-cream/70 text-sm mb-2">{field.label}</label>
+          <select
+            value={value === undefined || value === null ? '' : String(value)}
+            onChange={(e) => onChange(e.target.value === '' ? undefined : e.target.value === 'true')}
+            className={inputClass}
+          >
+            <option value="">Selecteer...</option>
+            <option value="true">{boolOpts.trueLabel || 'Ja'}</option>
+            <option value="false">{boolOpts.falseLabel || 'Nee'}</option>
+          </select>
+        </div>
+      );
+    }
+    case 'time': {
+      const timeOpts = field.options as TimeOptions;
+      const timeOptions = generateTimeOptions(timeOpts);
+      return (
+        <div>
+          <label className="block text-cream/70 text-sm mb-2">{field.label}</label>
+          <select
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+            className={inputClass}
+          >
+            <option value="">Selecteer...</option>
+            {timeOptions.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    default:
+      return (
+        <div>
+          <label className="block text-cream/70 text-sm mb-2">{field.label}</label>
+          <input
+            type="text"
+            value={(value as string) ?? ''}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            className={inputClass}
+          />
+        </div>
+      );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic field card for Live Mode tab
+// ---------------------------------------------------------------------------
+
+function LiveFieldCard({
+  field,
+  value,
+  isFilled,
+  onChange,
+  participants,
+}: {
+  field: FormField;
+  value: unknown;
+  isFilled: boolean;
+  onChange: (value: unknown) => void;
+  participants: Participant[];
+}) {
+  const liveInputClass = 'w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream text-2xl text-center focus:border-gold focus:outline-none';
+  const liveSelectClass = 'w-full bg-dark-wood/50 border border-gold/30 rounded-lg px-4 py-3 text-cream focus:border-gold focus:outline-none';
+
+  switch (field.field_type) {
+    case 'slider':
+    case 'star_rating': {
+      const opts = field.options as SliderOptions;
+      return (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Card className={isFilled ? 'border-success-green/50' : ''}>
+            <CardContent className="py-4">
+              <label className="block text-gold font-semibold mb-2">{field.label}</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={opts.min}
+                  max={opts.max}
+                  step={opts.unit?.includes('kg') ? 0.1 : 1}
+                  value={value !== undefined && value !== null ? String(value) : ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    onChange(v === '' ? undefined : parseFloat(v));
+                  }}
+                  className={liveInputClass}
+                  placeholder="?"
+                />
+                {opts.unit && <span className="text-cream text-xl">{opts.unit.trim()}</span>}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+    }
+    case 'select_participant':
+      return (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Card className={isFilled ? 'border-success-green/50' : ''}>
+            <CardContent className="py-4">
+              <label className="block text-gold font-semibold mb-2">{field.label}</label>
+              <select
+                value={(value as string) ?? ''}
+                onChange={(e) => onChange(e.target.value || undefined)}
+                className={liveSelectClass}
+              >
+                <option value="">Nog niet bekend...</option>
+                {participants.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+    case 'boolean': {
+      const boolOpts = field.options as BooleanOptions;
+      const trueLabel = boolOpts.trueLabel || 'Ja';
+      const falseLabel = boolOpts.falseLabel || 'Nee';
+      const trueEmoji = boolOpts.trueEmoji || '';
+      const falseEmoji = boolOpts.falseEmoji || '✓';
+      return (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Card className={isFilled ? 'border-success-green/50' : ''}>
+            <CardContent className="py-4">
+              <label className="block text-gold font-semibold mb-2">{field.label}</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onChange(true)}
+                  className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                    value === true
+                      ? 'bg-warm-red text-cream'
+                      : 'bg-dark-wood/50 text-cream/60 hover:bg-dark-wood'
+                  }`}
+                >
+                  {trueLabel} {trueEmoji}
+                </button>
+                <button
+                  onClick={() => onChange(false)}
+                  className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                    value === false
+                      ? 'bg-success-green text-cream'
+                      : 'bg-dark-wood/50 text-cream/60 hover:bg-dark-wood'
+                  }`}
+                >
+                  {falseLabel} {falseEmoji}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+    }
+    case 'time': {
+      const timeOpts = field.options as TimeOptions;
+      const timeOptions = generateTimeOptions(timeOpts);
+      return (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Card className={isFilled ? 'border-success-green/50' : ''}>
+            <CardContent className="py-4">
+              <label className="block text-gold font-semibold mb-2">{field.label}</label>
+              <select
+                value={value !== undefined && value !== null ? String(value) : ''}
+                onChange={(e) => onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                className={liveSelectClass}
+              >
+                <option value="">Nog niet bekend...</option>
+                {timeOptions.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+    }
+    default:
+      return (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Card className={isFilled ? 'border-success-green/50' : ''}>
+            <CardContent className="py-4">
+              <label className="block text-gold font-semibold mb-2">{field.label}</label>
+              <input
+                type="text"
+                value={(value as string) ?? ''}
+                onChange={(e) => onChange(e.target.value || undefined)}
+                className={liveInputClass}
+                placeholder="?"
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+      );
+  }
 }

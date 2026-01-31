@@ -2,10 +2,8 @@
  * File: src/app/api/admin/predictions/calculate/route.ts
  * Purpose: Admin endpoint for calculating and awarding prediction points
  *
- * Scoring:
- * - Exact match: 50 points
- * - Close (±10% for numbers): 25 points
- * - Nearby (±25% for numbers): 10 points
+ * Scoring uses the shared scoring module which reads field definitions
+ * from the dynamic form system.
  *
  * Security:
  * - Requires admin role
@@ -14,106 +12,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getUserFromRequest, isAdmin } from '@/lib/auth/jwt';
-import { Predictions } from '@/types';
-
-interface ActualResults {
-  wineBottles?: number;
-  beerCrates?: number;
-  meatKilos?: number;
-  firstSleeper?: string;
-  spontaneousSinger?: string;
-  firstToLeave?: string;
-  lastToLeave?: string;
-  loudestLaugher?: string;
-  longestStoryTeller?: string;
-  somethingBurned?: boolean;
-  outsideTemp?: number;
-  lastGuestTime?: number;  // Slider value: 0=19:00, 22=06:00
-}
-
-// Calculate points for a single prediction
-function calculatePredictionPoints(
-  prediction: Predictions,
-  actual: ActualResults
-): { total: number; breakdown: Record<string, number> } {
-  let total = 0;
-  const breakdown: Record<string, number> = {};
-
-  // Helper for numeric comparisons
-  const scoreNumeric = (predicted: number | undefined, actual: number | undefined, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-
-    const diff = Math.abs(predicted - actual);
-    const percentDiff = actual !== 0 ? (diff / actual) * 100 : (diff === 0 ? 0 : 100);
-
-    if (diff === 0) {
-      breakdown[key] = 50;
-      total += 50;
-    } else if (percentDiff <= 10) {
-      breakdown[key] = 25;
-      total += 25;
-    } else if (percentDiff <= 25) {
-      breakdown[key] = 10;
-      total += 10;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  // Helper for exact match (strings, booleans)
-  const scoreExact = (predicted: unknown, actual: unknown, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-
-    if (predicted === actual) {
-      breakdown[key] = 50;
-      total += 50;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  // Helper for time comparison (give points for being close)
-  // lastGuestTime is now a slider value: 0=19:00, each unit = 30 min, max 22=06:00
-  const scoreTime = (predicted: number | undefined, actual: number | undefined, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-
-    // Each unit is 30 minutes, so diff of 1 = 30 minutes apart
-    const diff = Math.abs(predicted - actual);
-
-    if (diff === 0) {
-      breakdown[key] = 50;
-      total += 50;
-    } else if (diff <= 1) {
-      // Within 30 minutes (1 slider unit)
-      breakdown[key] = 25;
-      total += 25;
-    } else if (diff <= 2) {
-      // Within 1 hour (2 slider units)
-      breakdown[key] = 10;
-      total += 10;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  // Score each prediction
-  scoreNumeric(prediction.wineBottles, actual.wineBottles, 'wineBottles');
-  scoreNumeric(prediction.beerCrates, actual.beerCrates, 'beerCrates');
-  scoreNumeric(prediction.meatKilos, actual.meatKilos, 'meatKilos');
-
-  scoreExact(prediction.firstSleeper, actual.firstSleeper, 'firstSleeper');
-  scoreExact(prediction.spontaneousSinger, actual.spontaneousSinger, 'spontaneousSinger');
-  scoreExact(prediction.firstToLeave, actual.firstToLeave, 'firstToLeave');
-  scoreExact(prediction.lastToLeave, actual.lastToLeave, 'lastToLeave');
-  scoreExact(prediction.loudestLaugher, actual.loudestLaugher, 'loudestLaugher');
-  scoreExact(prediction.longestStoryTeller, actual.longestStoryTeller, 'longestStoryTeller');
-
-  scoreExact(prediction.somethingBurned, actual.somethingBurned, 'somethingBurned');
-  scoreNumeric(prediction.outsideTemp, actual.outsideTemp, 'outsideTemp');
-  scoreTime(prediction.lastGuestTime, actual.lastGuestTime, 'lastGuestTime');
-
-  return { total, breakdown };
-}
+import {
+  fetchPredictionFields,
+  fetchUserPredictions,
+  calculatePredictionScore,
+} from '@/lib/predictions/scoring';
 
 export async function POST(request: NextRequest) {
   try {
@@ -148,45 +51,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const actualResults: ActualResults = resultsData.results;
+    const actualResults: Record<string, unknown> = resultsData.results;
 
-    // Fetch all registrations with predictions
-    const { data: registrations, error: regError } = await supabase
-      .from('registrations')
-      .select(`
-        id,
-        user_id,
-        predictions
-      `);
+    // Fetch field definitions from the form system
+    const fields = await fetchPredictionFields(supabase);
 
-    if (regError) {
-      console.error('Error fetching registrations:', regError);
+    if (fields.length === 0) {
       return NextResponse.json(
         {
-          error: 'DATABASE_ERROR',
-          message: 'Kon registraties niet ophalen',
+          error: 'NO_FIELDS',
+          message: 'Geen voorspellingsvelden gevonden in het formuliersysteem.',
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
+
+    // Fetch user predictions from the form system
+    const userPredictions = await fetchUserPredictions(supabase);
 
     let usersProcessed = 0;
     let totalPointsAwarded = 0;
 
     // Calculate and award points for each user
-    for (const reg of registrations || []) {
-      if (!reg.predictions || Object.keys(reg.predictions).length === 0) {
+    for (const user of userPredictions) {
+      if (Object.keys(user.answers).length === 0) {
         continue;
       }
 
-      const { total, breakdown } = calculatePredictionPoints(reg.predictions as Predictions, actualResults);
+      const { total, breakdown } = calculatePredictionScore(fields, user.answers, actualResults);
 
       if (total > 0) {
         // Check if points already awarded for predictions
         const { data: existingPoints } = await supabase
           .from('points_ledger')
           .select('id')
-          .eq('user_id', reg.user_id)
+          .eq('user_id', user.userId)
           .eq('source', 'prediction_results')
           .single();
 
@@ -201,7 +100,7 @@ export async function POST(request: NextRequest) {
 
         // Insert (new or replacement) points entry — trigger syncs users table
         await supabase.from('points_ledger').insert({
-          user_id: reg.user_id,
+          user_id: user.userId,
           source: 'prediction_results',
           points: total,
           description: `Voorspellingen punten: ${JSON.stringify(breakdown)}`,

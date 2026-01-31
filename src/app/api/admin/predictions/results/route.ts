@@ -10,21 +10,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getUserFromRequest, isAdmin } from '@/lib/auth/jwt';
 
-interface ActualResults {
-  wineBottles?: number;
-  beerCrates?: number;
-  meatKilos?: number;
-  firstSleeper?: string;
-  spontaneousSinger?: string;
-  firstToLeave?: string;
-  lastToLeave?: string;
-  loudestLaugher?: string;
-  longestStoryTeller?: string;
-  somethingBurned?: boolean;
-  outsideTemp?: number;
-  lastGuestTime?: string;
-}
-
 // GET: Fetch actual results
 export async function GET(request: NextRequest) {
   try {
@@ -91,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { results }: { results: ActualResults } = await request.json();
+    const { results }: { results: Record<string, unknown> } = await request.json();
     const supabase = createServerClient();
 
     // Check if results record exists

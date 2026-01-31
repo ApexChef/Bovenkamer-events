@@ -1,40 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getUserFromRequest, isAdmin } from '@/lib/auth/jwt';
-import { AIAssignment, Predictions } from '@/types';
+import { AIAssignment } from '@/types';
+import {
+  fetchPredictionFields,
+  fetchUserPredictions,
+  calculatePredictionScore,
+  getMaxPoints,
+  isScorable,
+  type ScoringField,
+} from '@/lib/predictions/scoring';
 
-interface PredictionField {
-  key: string;
-  label: string;
-  type: 'numeric' | 'person' | 'boolean' | 'time';
-}
-
-const PREDICTION_FIELDS: PredictionField[] = [
-  { key: 'wineBottles', label: 'Flessen wijn', type: 'numeric' },
-  { key: 'beerCrates', label: 'Kratten bier', type: 'numeric' },
-  { key: 'meatKilos', label: "Kilo's vlees", type: 'numeric' },
-  { key: 'firstSleeper', label: 'Eerste slaper', type: 'person' },
-  { key: 'spontaneousSinger', label: 'Spontane zanger', type: 'person' },
-  { key: 'firstToLeave', label: 'Eerste vertrekker', type: 'person' },
-  { key: 'lastToLeave', label: 'Laatste vertrekker', type: 'person' },
-  { key: 'loudestLaugher', label: 'Luidste lacher', type: 'person' },
-  { key: 'longestStoryTeller', label: 'Langste verhaal', type: 'person' },
-  { key: 'somethingBurned', label: 'Iets aangebrand', type: 'boolean' },
-  { key: 'outsideTemp', label: 'Buitentemperatuur', type: 'numeric' },
-  { key: 'lastGuestTime', label: 'Laatste gast vertrokken', type: 'time' },
-];
-
-function formatPredictionValue(value: unknown, type: string, participantMap: Map<string, string>): string {
+function formatPredictionValue(
+  value: unknown,
+  fieldType: string,
+  participantMap: Map<string, string>,
+): string {
   if (value === undefined || value === null) return '(niet ingevuld)';
-  if (type === 'boolean') return value ? 'Ja' : 'Nee';
-  if (type === 'person') return participantMap.get(String(value)) || String(value);
+  if (fieldType === 'boolean') return value ? 'Ja' : 'Nee';
+  if (fieldType === 'select_participant') return participantMap.get(String(value)) || String(value);
   return String(value);
 }
 
 function buildEvaluationPrompt(
   userName: string,
   originalAssignment: AIAssignment | null,
-  predictions: Predictions,
+  fields: ScoringField[],
+  userPredictions: Record<string, unknown>,
   actualResults: Record<string, unknown>,
   breakdown: Record<string, number>,
   totalPoints: number,
@@ -43,14 +35,16 @@ function buildEvaluationPrompt(
   totalUsers: number,
   participantMap: Map<string, string>,
 ): string {
-  const predictionLines = PREDICTION_FIELDS.map((field) => {
-    const predicted = (predictions as Record<string, unknown>)[field.key];
-    const actual = actualResults[field.key];
-    const points = breakdown[field.key] ?? 0;
-    const predStr = formatPredictionValue(predicted, field.type, participantMap);
-    const actStr = formatPredictionValue(actual, field.type, participantMap);
-    return `- ${field.label}: voorspeld "${predStr}", werkelijk "${actStr}" → ${points} punten`;
-  }).join('\n');
+  const predictionLines = fields
+    .filter((f) => isScorable(f.fieldType))
+    .map((field) => {
+      const predicted = userPredictions[field.key];
+      const actual = actualResults[field.key];
+      const points = breakdown[field.key] ?? 0;
+      const predStr = formatPredictionValue(predicted, field.fieldType, participantMap);
+      const actStr = formatPredictionValue(actual, field.fieldType, participantMap);
+      return `- ${field.label}: voorspeld "${predStr}", werkelijk "${actStr}" → ${points} punten`;
+    }).join('\n');
 
   const originalTitle = originalAssignment?.officialTitle
     ? `- Originele functietitel: "${originalAssignment.officialTitle}"`
@@ -111,55 +105,6 @@ function generateFallbackEvaluation(name: string, totalPoints: number, maxPoints
   }
 }
 
-// Reuse scoring logic from calculate route
-function getBreakdown(
-  predictions: Predictions,
-  actual: Record<string, unknown>,
-): { total: number; breakdown: Record<string, number> } {
-  let total = 0;
-  const breakdown: Record<string, number> = {};
-
-  const scoreNumeric = (predicted: number | undefined, actualVal: number | undefined, key: string) => {
-    if (predicted === undefined || actualVal === undefined) return;
-    const diff = Math.abs(predicted - actualVal);
-    const percentDiff = actualVal !== 0 ? (diff / actualVal) * 100 : (diff === 0 ? 0 : 100);
-    if (diff === 0) { breakdown[key] = 50; total += 50; }
-    else if (percentDiff <= 10) { breakdown[key] = 25; total += 25; }
-    else if (percentDiff <= 25) { breakdown[key] = 10; total += 10; }
-    else { breakdown[key] = 0; }
-  };
-
-  const scoreExact = (predicted: unknown, actualVal: unknown, key: string) => {
-    if (predicted === undefined || actualVal === undefined) return;
-    if (predicted === actualVal) { breakdown[key] = 50; total += 50; }
-    else { breakdown[key] = 0; }
-  };
-
-  const scoreTime = (predicted: number | undefined, actualVal: number | undefined, key: string) => {
-    if (predicted === undefined || actualVal === undefined) return;
-    const diff = Math.abs(predicted - actualVal);
-    if (diff === 0) { breakdown[key] = 50; total += 50; }
-    else if (diff <= 1) { breakdown[key] = 25; total += 25; }
-    else if (diff <= 2) { breakdown[key] = 10; total += 10; }
-    else { breakdown[key] = 0; }
-  };
-
-  scoreNumeric(predictions.wineBottles, actual.wineBottles as number | undefined, 'wineBottles');
-  scoreNumeric(predictions.beerCrates, actual.beerCrates as number | undefined, 'beerCrates');
-  scoreNumeric(predictions.meatKilos, actual.meatKilos as number | undefined, 'meatKilos');
-  scoreExact(predictions.firstSleeper, actual.firstSleeper, 'firstSleeper');
-  scoreExact(predictions.spontaneousSinger, actual.spontaneousSinger, 'spontaneousSinger');
-  scoreExact(predictions.firstToLeave, actual.firstToLeave, 'firstToLeave');
-  scoreExact(predictions.lastToLeave, actual.lastToLeave, 'lastToLeave');
-  scoreExact(predictions.loudestLaugher, actual.loudestLaugher, 'loudestLaugher');
-  scoreExact(predictions.longestStoryTeller, actual.longestStoryTeller, 'longestStoryTeller');
-  scoreExact(predictions.somethingBurned, actual.somethingBurned, 'somethingBurned');
-  scoreNumeric(predictions.outsideTemp, actual.outsideTemp as number | undefined, 'outsideTemp');
-  scoreTime(predictions.lastGuestTime, actual.lastGuestTime as number | undefined, 'lastGuestTime');
-
-  return { total, breakdown };
-}
-
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -192,24 +137,33 @@ export async function POST(request: NextRequest) {
 
     const actualResults: Record<string, unknown> = resultsData.results;
 
-    // 2. Fetch all registrations with predictions + user data
-    const { data: registrations, error: regError } = await supabase
-      .from('registrations')
-      .select('user_id, predictions, ai_assignment');
+    // 2. Fetch field definitions from the form system
+    const fields = await fetchPredictionFields(supabase);
 
-    if (regError) {
+    if (fields.length === 0) {
       return NextResponse.json(
-        { error: 'DATABASE_ERROR', message: 'Kon registraties niet ophalen' },
-        { status: 500 },
+        { error: 'NO_FIELDS', message: 'Geen voorspellingsvelden gevonden.' },
+        { status: 400 },
       );
     }
 
-    // 4. Fetch user names
+    // 3. Fetch user predictions from the form system
+    const userPredictions = await fetchUserPredictions(supabase);
+
+    // 4. Fetch user names and original AI assignments
     const { data: users } = await supabase
       .from('users')
       .select('id, name');
 
     const userNameMap = new Map((users || []).map((u) => [u.id, u.name]));
+
+    const { data: registrations } = await supabase
+      .from('registrations')
+      .select('user_id, ai_assignment');
+
+    const assignmentMap = new Map(
+      (registrations || []).map((r) => [r.user_id, r.ai_assignment as AIAssignment | null]),
+    );
 
     // 5. Fetch participant list for formatting person fields
     const { data: participantsRaw } = await supabase
@@ -220,23 +174,26 @@ export async function POST(request: NextRequest) {
     const participantMap = new Map((participantsRaw || []).map((p) => [p.id, p.name]));
 
     // 6. Calculate scores and rankings for all users
+    const maxPoints = getMaxPoints(fields);
+
     const scoredUsers: {
       userId: string;
       name: string;
-      predictions: Predictions;
+      answers: Record<string, unknown>;
       aiAssignment: AIAssignment | null;
       total: number;
       breakdown: Record<string, number>;
     }[] = [];
 
-    for (const reg of registrations || []) {
-      if (!reg.predictions || Object.keys(reg.predictions).length === 0) continue;
-      const { total, breakdown } = getBreakdown(reg.predictions as Predictions, actualResults);
+    for (const user of userPredictions) {
+      if (Object.keys(user.answers).length === 0) continue;
+
+      const { total, breakdown } = calculatePredictionScore(fields, user.answers, actualResults);
       scoredUsers.push({
-        userId: reg.user_id,
-        name: userNameMap.get(reg.user_id) || 'Onbekend',
-        predictions: reg.predictions as Predictions,
-        aiAssignment: reg.ai_assignment as AIAssignment | null,
+        userId: user.userId,
+        name: userNameMap.get(user.userId) || user.userName,
+        answers: user.answers,
+        aiAssignment: assignmentMap.get(user.userId) || null,
         total,
         breakdown,
       });
@@ -245,7 +202,6 @@ export async function POST(request: NextRequest) {
     // Sort by score descending for ranking
     scoredUsers.sort((a, b) => b.total - a.total);
 
-    const maxPoints = PREDICTION_FIELDS.length * 50; // 12 fields × 50 max each
     const totalUsers = scoredUsers.length;
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -265,7 +221,8 @@ export async function POST(request: NextRequest) {
           const prompt = buildEvaluationPrompt(
             user.name,
             user.aiAssignment,
-            user.predictions,
+            fields,
+            user.answers,
             actualResults,
             user.breakdown,
             user.total,

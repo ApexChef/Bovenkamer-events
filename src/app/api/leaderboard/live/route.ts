@@ -10,106 +10,12 @@
 
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { Predictions } from '@/types';
-
-interface ActualResults {
-  wineBottles?: number;
-  beerCrates?: number;
-  meatKilos?: number;
-  firstSleeper?: string;
-  spontaneousSinger?: string;
-  firstToLeave?: string;
-  lastToLeave?: string;
-  loudestLaugher?: string;
-  longestStoryTeller?: string;
-  somethingBurned?: boolean;
-  outsideTemp?: number;
-  lastGuestTime?: number;  // Slider value: 0=19:00, 22=06:00
-}
-
-const PREDICTION_KEYS = [
-  'wineBottles', 'beerCrates', 'meatKilos',
-  'firstSleeper', 'spontaneousSinger', 'firstToLeave', 'lastToLeave',
-  'loudestLaugher', 'longestStoryTeller',
-  'somethingBurned', 'outsideTemp', 'lastGuestTime'
-];
-
-// Calculate points for a single prediction (duplicate from calculate endpoint for speed)
-function calculateLivePoints(
-  prediction: Predictions,
-  actual: ActualResults
-): { total: number; breakdown: Record<string, number> } {
-  let total = 0;
-  const breakdown: Record<string, number> = {};
-
-  const scoreNumeric = (predicted: number | undefined, actual: number | undefined, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-    const diff = Math.abs(predicted - actual);
-    const percentDiff = actual !== 0 ? (diff / actual) * 100 : (diff === 0 ? 0 : 100);
-
-    if (diff === 0) {
-      breakdown[key] = 50;
-      total += 50;
-    } else if (percentDiff <= 10) {
-      breakdown[key] = 25;
-      total += 25;
-    } else if (percentDiff <= 25) {
-      breakdown[key] = 10;
-      total += 10;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  const scoreExact = (predicted: unknown, actual: unknown, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-    if (predicted === actual) {
-      breakdown[key] = 50;
-      total += 50;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  // lastGuestTime is now a slider value: 0=19:00, each unit = 30 min, max 22=06:00
-  const scoreTime = (predicted: number | undefined, actual: number | undefined, key: string) => {
-    if (predicted === undefined || actual === undefined) return;
-    // Each unit is 30 minutes, so diff of 1 = 30 minutes apart
-    const diff = Math.abs(predicted - actual);
-
-    if (diff === 0) {
-      breakdown[key] = 50;
-      total += 50;
-    } else if (diff <= 1) {
-      // Within 30 minutes (1 slider unit)
-      breakdown[key] = 25;
-      total += 25;
-    } else if (diff <= 2) {
-      // Within 1 hour (2 slider units)
-      breakdown[key] = 10;
-      total += 10;
-    } else {
-      breakdown[key] = 0;
-    }
-  };
-
-  scoreNumeric(prediction.wineBottles, actual.wineBottles, 'wineBottles');
-  scoreNumeric(prediction.beerCrates, actual.beerCrates, 'beerCrates');
-  scoreNumeric(prediction.meatKilos, actual.meatKilos, 'meatKilos');
-
-  scoreExact(prediction.firstSleeper, actual.firstSleeper, 'firstSleeper');
-  scoreExact(prediction.spontaneousSinger, actual.spontaneousSinger, 'spontaneousSinger');
-  scoreExact(prediction.firstToLeave, actual.firstToLeave, 'firstToLeave');
-  scoreExact(prediction.lastToLeave, actual.lastToLeave, 'lastToLeave');
-  scoreExact(prediction.loudestLaugher, actual.loudestLaugher, 'loudestLaugher');
-  scoreExact(prediction.longestStoryTeller, actual.longestStoryTeller, 'longestStoryTeller');
-
-  scoreExact(prediction.somethingBurned, actual.somethingBurned, 'somethingBurned');
-  scoreNumeric(prediction.outsideTemp, actual.outsideTemp, 'outsideTemp');
-  scoreTime(prediction.lastGuestTime, actual.lastGuestTime, 'lastGuestTime');
-
-  return { total, breakdown };
-}
+import {
+  fetchPredictionFields,
+  fetchUserPredictions,
+  calculatePredictionScore,
+  isScorable,
+} from '@/lib/predictions/scoring';
 
 export async function GET() {
   try {
@@ -126,15 +32,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    // Fetch registrations with predictions
-    const { data: registrations, error: regError } = await supabase
-      .from('registrations')
-      .select('user_id, predictions');
+    // Fetch field definitions from the form system
+    const fields = await fetchPredictionFields(supabase);
 
-    if (regError) {
-      console.error('Error fetching registrations:', regError);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
+    // Fetch user predictions from the form system
+    const userPredictions = await fetchUserPredictions(supabase);
+
+    // Build predictions lookup by userId
+    const predictionsByUser = new Map(
+      userPredictions.map((u) => [u.userId, u.answers]),
+    );
 
     // Fetch actual results
     const { data: resultsData } = await supabase
@@ -143,21 +50,24 @@ export async function GET() {
       .limit(1)
       .single();
 
-    const actualResults: ActualResults = resultsData?.results || {};
-    const resultsEntered = Object.keys(actualResults).filter(k => actualResults[k as keyof ActualResults] !== undefined).length;
+    const actualResults: Record<string, unknown> = resultsData?.results || {};
+    const resultsEntered = Object.keys(actualResults).filter(
+      (k) => actualResults[k] !== undefined && actualResults[k] !== null,
+    ).length;
+
+    // Count scorable fields
+    const totalFields = fields.filter((f) => isScorable(f.fieldType)).length;
 
     // Build leaderboard
     const leaderboard = users?.map(user => {
-      // Get registration predictions
-      const registration = registrations?.find(r => r.user_id === user.id);
-      const predictions = registration?.predictions as Predictions || {};
+      const predictions = predictionsByUser.get(user.id) || {};
 
       // Calculate live prediction points
       let predictionPoints = 0;
       let breakdown: Record<string, number> = {};
 
       if (Object.keys(predictions).length > 0 && Object.keys(actualResults).length > 0) {
-        const result = calculateLivePoints(predictions, actualResults);
+        const result = calculatePredictionScore(fields, predictions, actualResults);
         predictionPoints = result.total;
         breakdown = result.breakdown;
       }
@@ -190,7 +100,7 @@ export async function GET() {
       leaderboard,
       stats: {
         resultsEntered,
-        totalFields: PREDICTION_KEYS.length,
+        totalFields,
         lastUpdate: resultsData?.updated_at || new Date().toISOString(),
       },
     });
