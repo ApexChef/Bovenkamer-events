@@ -410,10 +410,22 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           authToken: null,
         });
-        // Clear all localStorage data
-        localStorage.removeItem(CACHE_KEY);
-        localStorage.removeItem('bovenkamer-registration');
-        localStorage.removeItem('bovenkamer-predictions');
+        // Clear ALL bovenkamer localStorage keys except remembered email
+        const rememberedEmail = localStorage.getItem('bovenkamer_remembered_email');
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('bovenkamer') || key === CACHE_KEY)) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        // Restore remembered email if it existed
+        if (rememberedEmail) {
+          localStorage.setItem('bovenkamer_remembered_email', rememberedEmail);
+        }
+        // Clear httpOnly JWT cookie via API (fire and forget)
+        fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
       },
 
       updateUser: (updates) => {

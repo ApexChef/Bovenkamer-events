@@ -175,10 +175,21 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (bestScore) {
-      await supabase.rpc('set_game_points', {
+      const { error: rpcError } = await supabase.rpc('set_game_points', {
         p_user_id: user.userId,
         p_score: bestScore.score,
       });
+      if (rpcError) {
+        console.error('set_game_points RPC error:', rpcError, '— falling back to direct update');
+        // Fallback: direct update if RPC function doesn't exist
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ game_points: bestScore.score })
+          .eq('id', user.userId);
+        if (updateError) {
+          console.error('Fallback game_points update error:', updateError);
+        }
+      }
     }
 
     return NextResponse.json({
