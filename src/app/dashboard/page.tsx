@@ -6,6 +6,7 @@ import { useRegistrationStore, useAuthStore } from '@/lib/store';
 import { DashboardLayout } from '@/components/layouts/DashboardLayout';
 import { HomeTab, PredictionsTab, LeaderboardTab, MiniLeaderboard } from '@/components/dashboard';
 import { FeatureToggle } from '@/components/FeatureToggle';
+import { PaymentCard } from '@/components/PaymentCard';
 import { AIAssignment } from '@/types';
 
 interface LeaderboardEntry {
@@ -186,14 +187,20 @@ export default function DashboardPage() {
               profileCompletion={profileCompletion}
             />
 
-            {/* Predictions */}
-            <FeatureToggle feature="show_predictions">
-              <PredictionsTab predictionsSubmitted={predictionsSubmitted} />
-            </FeatureToggle>
           </div>
 
           {/* Sidebar - 1 column on large screens */}
           <div className="space-y-6">
+            {/* Tikkie Payment */}
+            <FeatureToggle feature="show_payments">
+              <PaymentCard
+                userId={formData.email}
+                userName={formData.name}
+                hasPartner={formData.hasPartner}
+                partnerName={formData.partnerName}
+              />
+            </FeatureToggle>
+
             {/* Mini Leaderboard CTA */}
             <FeatureToggle feature="show_leaderboard_preview">
               <MiniLeaderboard

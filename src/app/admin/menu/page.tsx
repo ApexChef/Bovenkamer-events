@@ -5,13 +5,15 @@ import { motion } from 'framer-motion';
 import { AuthGuard } from '@/components/AuthGuard';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Select, TextArea } from '@/components/ui';
 import Link from 'next/link';
-import { Plus, Pencil, Trash2, ChevronRight, ShoppingCart, CalendarDays, Users, UtensilsCrossed, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronRight, ShoppingCart, CalendarDays, Users, UtensilsCrossed, Package, BookOpen, Eye, EyeOff } from 'lucide-react';
 import type {
   MenuEvent,
   EventWithCourseCount,
   EventWithDetails,
   EventCourse,
   MenuItem,
+  MenuCardCourse,
+  CreateMenuCardCourseData,
   CreateEventData,
   CreateCourseData,
   CreateMenuItemData,
@@ -1161,6 +1163,385 @@ function ShoppingListSection({ eventId, totalPersons, hasCourses, refreshTrigger
 }
 
 // =============================================================================
+// MENU CARD DIALOG
+// =============================================================================
+
+const ITEM_CATEGORY_OPTIONS = [
+  { value: '', label: '(geen)' },
+  { value: 'pork', label: 'Varken' },
+  { value: 'beef', label: 'Rund' },
+  { value: 'chicken', label: 'Kip' },
+  { value: 'game', label: 'Wild' },
+  { value: 'fish', label: 'Vis' },
+  { value: 'vegetarian', label: 'Vegetarisch' },
+];
+
+interface MenuCardDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  eventId: string;
+  course: MenuCardCourse | null;
+  existingCount: number;
+  onSave: () => void;
+}
+
+function MenuCardDialog({ isOpen, onClose, eventId, course, existingCount, onSave }: MenuCardDialogProps) {
+  const [formData, setFormData] = useState<CreateMenuCardCourseData>({
+    title: '',
+    subtitle: '',
+    items: '',
+    itemCategories: '',
+    wineRed: '',
+    wineWhite: '',
+    sortOrder: existingCount + 1,
+    isVisible: true,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (course) {
+      setFormData({
+        title: course.title,
+        subtitle: course.subtitle || '',
+        items: course.items,
+        itemCategories: course.itemCategories || '',
+        wineRed: course.wineRed || '',
+        wineWhite: course.wineWhite || '',
+        sortOrder: course.sortOrder,
+        isVisible: course.isVisible,
+      });
+    } else {
+      setFormData({
+        title: '',
+        subtitle: '',
+        items: '',
+        itemCategories: '',
+        wineRed: '',
+        wineWhite: '',
+        sortOrder: existingCount + 1,
+        isVisible: true,
+      });
+    }
+    setError('');
+  }, [course, existingCount, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSaving(true);
+
+    try {
+      const url = course
+        ? `/api/admin/menu-card/${course.id}`
+        : '/api/admin/menu-card';
+      const method = course ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(course ? formData : { ...formData, eventId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || data.error || 'Er is een fout opgetreden');
+      }
+
+      onSave();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Parse items to show per-item category selectors
+  const itemLines = formData.items.split('\n').filter(Boolean);
+  const categoryLines = formData.itemCategories.split('\n');
+
+  const handleCategoryChange = (index: number, value: string) => {
+    const cats = formData.items.split('\n').filter(Boolean).map((_, i) => {
+      if (i === index) return value;
+      return categoryLines[i]?.trim() || '';
+    });
+    setFormData({ ...formData, itemCategories: cats.join('\n') });
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={course ? 'Menukaart gang bewerken' : 'Menukaart gang toevoegen'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-warm-red/10 border border-warm-red/30 rounded-lg p-4">
+            <p className="text-warm-red text-sm">{error}</p>
+          </div>
+        )}
+
+        <Input
+          label="Titel"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          placeholder="Bijvoorbeeld: BBQ Vlees"
+          required
+        />
+
+        <Input
+          label="Subtitel"
+          value={formData.subtitle}
+          onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+          placeholder="Optionele beschrijving"
+        />
+
+        <TextArea
+          label="Items (1 per regel)"
+          value={formData.items}
+          onChange={(e) => setFormData({ ...formData, items: e.target.value })}
+          placeholder="Grilled Picanha&#10;Spare ribs met huisglazuur&#10;..."
+          rows={6}
+          required
+        />
+
+        {/* Per-item category selectors */}
+        {itemLines.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-cream/70 mb-2">
+              Eiwitcategorie per item
+            </label>
+            <p className="text-xs text-cream/40 mb-3">
+              Kies per item een categorie voor de personalisatie. Laat leeg als het item geen eiwitcategorie heeft.
+            </p>
+            <div className="space-y-2">
+              {itemLines.map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-cream/60 text-sm flex-1 truncate">{item}</span>
+                  <select
+                    value={categoryLines[i]?.trim() || ''}
+                    onChange={(e) => handleCategoryChange(i, e.target.value)}
+                    className="bg-dark-wood border border-gold/30 rounded px-2 py-1 text-sm text-cream focus:border-gold focus:outline-none"
+                  >
+                    {ITEM_CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Rode wijn suggestie"
+            value={formData.wineRed}
+            onChange={(e) => setFormData({ ...formData, wineRed: e.target.value })}
+            placeholder="Malbec uit Argentinië"
+          />
+          <Input
+            label="Witte wijn suggestie"
+            value={formData.wineWhite}
+            onChange={(e) => setFormData({ ...formData, wineWhite: e.target.value })}
+            placeholder="Sauvignon Blanc"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Volgorde"
+            type="number"
+            min="1"
+            value={formData.sortOrder.toString()}
+            onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 1 })}
+            required
+          />
+          <div className="flex items-end pb-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isVisible}
+                onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                className="w-4 h-4 rounded border-gold/30 bg-dark-wood text-gold focus:ring-gold"
+              />
+              <span className="text-sm text-cream/70">Zichtbaar op menukaart</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <Button type="submit" isLoading={isSaving}>
+            {course ? 'Bijwerken' : 'Toevoegen'}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Annuleren
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// =============================================================================
+// MENU CARD SECTION
+// =============================================================================
+
+interface MenuCardSectionProps {
+  eventId: string;
+}
+
+function MenuCardSection({ eventId }: MenuCardSectionProps) {
+  const [courses, setCourses] = useState<MenuCardCourse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<MenuCardCourse | null>(null);
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/menu-card?eventId=${eventId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(data.courses || []);
+      }
+    } catch (error) {
+      console.error('Error fetching menu card courses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  const handleAdd = () => {
+    setEditingCourse(null);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (course: MenuCardCourse) => {
+    setEditingCourse(course);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (course: MenuCardCourse) => {
+    if (window.confirm(`Weet je zeker dat je "${course.title}" wilt verwijderen?`)) {
+      fetch(`/api/admin/menu-card/${course.id}`, { method: 'DELETE' })
+        .then((res) => {
+          if (res.ok) fetchCourses();
+          else alert('Fout bij verwijderen');
+        });
+    }
+  };
+
+  const sortedCourses = [...courses].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display text-xl font-bold text-gold flex items-center gap-2">
+          <BookOpen className="w-5 h-5" />
+          Menukaart
+        </h3>
+        <Button size="sm" onClick={handleAdd}>
+          <Plus className="w-4 h-4 mr-1" />
+          Gang toevoegen
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin mx-auto" />
+        </div>
+      ) : sortedCourses.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <BookOpen className="w-12 h-12 text-cream/30 mx-auto mb-3" />
+            <p className="text-cream/60 text-sm">Nog geen menukaart gangen</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {sortedCourses.map((course) => {
+            const items = course.items.split('\n').filter(Boolean);
+            const categories = course.itemCategories?.split('\n') || [];
+
+            return (
+              <Card key={course.id}>
+                <CardContent className="py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-cream">{course.title}</h4>
+                        {!course.isVisible && (
+                          <span className="flex items-center gap-1 text-xs text-cream/40">
+                            <EyeOff className="w-3 h-3" />
+                            Verborgen
+                          </span>
+                        )}
+                        {course.isVisible && (
+                          <Eye className="w-3 h-3 text-green-400/60" />
+                        )}
+                      </div>
+                      {course.subtitle && (
+                        <p className="text-xs text-cream/50 italic mb-2">{course.subtitle}</p>
+                      )}
+                      <ul className="space-y-0.5">
+                        {items.map((item, i) => {
+                          const cat = categories[i]?.trim();
+                          return (
+                            <li key={i} className="flex items-center gap-2 text-sm text-cream/70">
+                              <span className="text-gold/40">·</span>
+                              <span>{item}</span>
+                              {cat && (
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-cream/10 text-cream/50">
+                                  {categoryLabels[cat] || cat}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {(course.wineRed || course.wineWhite) && (
+                        <div className="flex gap-4 mt-2 text-xs text-cream/40">
+                          {course.wineRed && <span>Rood: {course.wineRed}</span>}
+                          {course.wineWhite && <span>Wit: {course.wineWhite}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(course)}
+                        className="p-1.5 rounded hover:bg-gold/10 text-gold/60 hover:text-gold transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(course)}
+                        className="p-1.5 rounded hover:bg-warm-red/10 text-warm-red/60 hover:text-warm-red transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <MenuCardDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        eventId={eventId}
+        course={editingCourse}
+        existingCount={Math.max(0, ...courses.map((c) => c.sortOrder), 0)}
+        onSave={fetchCourses}
+      />
+    </div>
+  );
+}
+
+// =============================================================================
 // EVENT DETAIL COMPONENT
 // =============================================================================
 
@@ -1337,6 +1718,9 @@ function EventDetail({ event, onRefresh, onEditEvent, onDeleteEvent }: EventDeta
           </div>
         )}
       </div>
+
+      {/* Menu Card */}
+      <MenuCardSection eventId={event.id} />
 
       {/* Shopping List */}
       <ShoppingListSection

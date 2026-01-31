@@ -5,25 +5,46 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Wine, UtensilsCrossed, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import type { MenuEvent, EventCourseWithItems } from '@/types';
+import type { MenuEvent, MenuCardCourse, MeatDistribution } from '@/types';
 
 interface MenuData {
   event: MenuEvent | null;
-  courses: EventCourseWithItems[];
+  courses: MenuCardCourse[];
   winePreference: number | null;
+  userName: string | null;
+  meatDistribution: MeatDistribution | null;
 }
 
-function getWineSuggestion(pref: number): { label: string; description: string } {
-  if (pref < 25) {
-    return { label: 'Rode wijn', description: 'Op basis van jouw voorkeur schenken we bij voorkeur rode wijn voor je in.' };
-  }
-  if (pref < 50) {
-    return { label: 'Rode wijn (met een vleugje wit)', description: 'Je hebt een lichte voorkeur voor rood — we houden daar rekening mee.' };
-  }
-  if (pref < 75) {
-    return { label: 'Witte wijn (met een vleugje rood)', description: 'Je neigt naar wit, maar een rood tintje mag ook — goed om te weten!' };
-  }
-  return { label: 'Witte wijn', description: 'Op basis van jouw voorkeur schenken we bij voorkeur witte wijn voor je in.' };
+interface SplitResult {
+  included: { item: string; index: number }[];
+  missed: { item: string; index: number }[];
+}
+
+function splitItemsByPreference(
+  course: MenuCardCourse,
+  meatDistribution: MeatDistribution | null,
+): SplitResult | null {
+  if (!course.itemCategories || !meatDistribution) return null;
+
+  const items = course.items.split('\n').filter(Boolean);
+  const categories = course.itemCategories.split('\n');
+
+  const included: SplitResult['included'] = [];
+  const missed: SplitResult['missed'] = [];
+
+  items.forEach((item, i) => {
+    const category = categories[i]?.trim() as keyof MeatDistribution | undefined;
+    if (category && category in meatDistribution && meatDistribution[category] === 0) {
+      missed.push({ item, index: i });
+    } else {
+      included.push({ item, index: i });
+    }
+  });
+
+  // Only return a split if there are actually missed items
+  if (missed.length === 0) return null;
+
+  return { included, missed };
 }
 
 export default function MenuPage() {
@@ -89,7 +110,7 @@ export default function MenuPage() {
     );
   }
 
-  const { event, courses, winePreference } = data;
+  const { event, courses, winePreference, userName, meatDistribution } = data;
   const eventDate = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString('nl-NL', {
         weekday: 'long',
@@ -98,6 +119,14 @@ export default function MenuPage() {
         year: 'numeric',
       })
     : null;
+
+  // Determine wine text per course
+  function getWineText(course: MenuCardCourse): string | null {
+    if (winePreference === null || !userName) return null;
+    const wineText = winePreference < 50 ? course.wineRed : course.wineWhite;
+    if (!wineText) return null;
+    return `${userName}, wij schenken bij deze gang ${wineText}`;
+  }
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -129,70 +158,84 @@ export default function MenuPage() {
 
         {/* Courses */}
         <div className="space-y-6">
-          {courses.map((course, index) => (
-            <motion.div
-              key={course.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>{course.name}</CardTitle>
-                  {course.notes && (
-                    <p className="text-sm text-cream/50 mt-1">{course.notes}</p>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {course.menuItems.length === 0 ? (
-                    <p className="text-cream/40 italic text-sm">
-                      Wordt nog bekendgemaakt
-                    </p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {course.menuItems.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-start gap-2 text-cream/80"
-                        >
-                          <span className="text-gold/60 mt-1">•</span>
-                          <span>{item.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+          {courses.map((course, index) => {
+            const items = course.items.split('\n').filter(Boolean);
+            const wineText = getWineText(course);
+            const split = splitItemsByPreference(course, meatDistribution);
 
-        {/* Wine suggestion */}
-        {winePreference !== null && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 * (courses.length + 1) }}
-            className="mt-8"
-          >
-            <Card className="border-gold/30">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Wine className="w-6 h-6 text-gold" />
-                  <CardTitle>Jouw wijnsuggestie</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-cream font-semibold text-lg mb-1">
-                  {getWineSuggestion(winePreference).label}
-                </p>
-                <p className="text-cream/60 text-sm">
-                  {getWineSuggestion(winePreference).description}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+            return (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 * (index + 1) }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{course.title}</CardTitle>
+                    {course.subtitle && (
+                      <p className="text-sm text-cream/50 mt-1 italic">{course.subtitle}</p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {split ? (
+                      <>
+                        <ul className="space-y-2">
+                          {split.included.map(({ item, index: i }) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-cream/80"
+                            >
+                              <span className="text-gold/60 mt-1">·</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="border-t border-cream/10 pt-3">
+                          <p className="text-cream/40 italic text-sm mb-2">
+                            {userName}, helaas mis je deze heerlijke gerechten:
+                          </p>
+                          <ul className="space-y-1">
+                            {split.missed.map(({ item, index: i }) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-2 opacity-40 line-through decoration-cream/20"
+                              >
+                                <span className="text-gold/60 mt-1">·</span>
+                                <span className="text-cream/60">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </>
+                    ) : (
+                      <ul className="space-y-2">
+                        {items.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-cream/80"
+                          >
+                            <span className="text-gold/60 mt-1">·</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {wineText && (
+                      <div className="flex items-start gap-3 pt-3 border-t border-cream/10">
+                        <Wine className="w-4 h-4 text-gold/70 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-cream/60 italic">
+                          {wineText}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
 
         {/* Footer */}
         <div className="mt-12 text-center">

@@ -14,7 +14,7 @@
  * - Null-safe transformations
  */
 
-import { MenuEvent, EventCourse, MenuItem, PurchaseOrder, PurchaseOrderLine } from '@/types';
+import { MenuEvent, EventCourse, MenuItem, PurchaseOrder, PurchaseOrderLine, MenuCardCourse } from '@/types';
 
 /**
  * Transforms database event row to MenuEvent interface
@@ -70,6 +70,26 @@ export function transformMenuItem(row: any): MenuItem {
     gramsPerPerson: row.grams_per_person,
     sortOrder: row.sort_order,
     isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Transforms database menu_card_courses row to MenuCardCourse interface
+ */
+export function transformMenuCardCourse(row: any): MenuCardCourse {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    title: row.title,
+    subtitle: row.subtitle,
+    items: row.items,
+    itemCategories: row.item_categories ?? null,
+    wineRed: row.wine_red,
+    wineWhite: row.wine_white,
+    sortOrder: row.sort_order,
+    isVisible: row.is_visible,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

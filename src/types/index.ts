@@ -1390,6 +1390,36 @@ export interface CreatePOLineData {
   notes: string;
 }
 
+// =============================================================================
+// MENU CARD TYPES (guest-facing menu presentation)
+// =============================================================================
+
+export interface MenuCardCourse {
+  id: string;
+  eventId: string;
+  title: string;
+  subtitle: string | null;
+  items: string;         // newline-separated
+  itemCategories: string | null; // newline-separated, 1:1 with items
+  wineRed: string | null;
+  wineWhite: string | null;
+  sortOrder: number;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMenuCardCourseData {
+  title: string;
+  subtitle: string;
+  items: string;
+  itemCategories: string;
+  wineRed: string;
+  wineWhite: string;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
 /**
  * Aggregated procurement data per menu item (from PO lines)
  */

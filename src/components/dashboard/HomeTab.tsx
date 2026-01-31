@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   User,
@@ -10,11 +10,13 @@ import {
   Gamepad2,
   Trophy,
   TrendingUp,
+  UtensilsCrossed,
+  Target,
+  CheckCircle,
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 import { TOTAL_PROFILE_POINTS } from '@/lib/store';
 import { FeatureToggle } from '@/components/FeatureToggle';
-import { PaymentCard } from '@/components/PaymentCard';
 
 interface AIAssignment {
   officialTitle: string;
@@ -81,9 +83,11 @@ export function HomeTab({
   formData,
   aiAssignment,
   predictionEvaluation,
+  predictionsSubmitted,
   profileCompletion,
 }: HomeTabProps) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
+  const [showPredictionsModal, setShowPredictionsModal] = useState(false);
   const isProfileComplete = profileCompletion.percentage === 100;
 
   // Update countdown every second
@@ -297,53 +301,123 @@ export function HomeTab({
         )}
       </FeatureToggle>
 
-      {/* Boy Boom Rating CTA */}
-      <FeatureToggle feature="show_ratings">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
-          <Link href="/rate">
-            <Card className="border-gold/40 bg-gradient-to-br from-gold/10 via-yellow-500/5 to-transparent hover:border-gold/60 transition-all cursor-pointer group overflow-hidden">
-              <CardContent className="py-4 relative">
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gold to-yellow-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                    <span className="text-2xl">⭐</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-cream font-semibold group-hover:text-gold transition-colors">
-                        Boy Boom Beoordeling
-                      </span>
+      {/* CTA Tiles Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Predictions CTA */}
+        <FeatureToggle feature="show_predictions">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.34 }}
+          >
+            {predictionsSubmitted ? (
+              <Card className="border-success-green/30 bg-dark-wood h-full">
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-success-green/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-7 h-7 text-success-green" />
                     </div>
-                    <p className="text-xs text-cream/60 mt-1">
-                      Geef je beoordeling voor de locatie en gastvrijheid
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-success-green font-semibold">Voorspellingen gedaan</span>
+                      <p className="text-xs text-cream/50 mt-1">Resultaten na de BBQ</p>
+                    </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </motion.div>
-      </FeatureToggle>
+                </CardContent>
+              </Card>
+            ) : (
+              <button onClick={() => setShowPredictionsModal(true)} className="w-full text-left">
+                <Card className="border-purple-500/40 bg-gradient-to-br from-purple-500/10 via-indigo-500/5 to-transparent hover:border-purple-500/60 transition-all cursor-pointer group overflow-hidden h-full">
+                  <CardContent className="py-4 relative">
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                        <Target className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-cream font-semibold group-hover:text-purple-400 transition-colors">
+                            Voorspellingen
+                          </span>
+                          <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded-full">
+                            +5 punten
+                          </span>
+                        </div>
+                        <p className="text-xs text-cream/60 mt-1">
+                          Waag je gok over de Winterproef
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </button>
+            )}
+          </motion.div>
+        </FeatureToggle>
 
-      {/* Tikkie Payment */}
-      <FeatureToggle feature="show_payments">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.37 }}
-        >
-          <PaymentCard
-            userId={formData.email}
-            userName={formData.name}
-            hasPartner={formData.hasPartner}
-            partnerName={formData.partnerName}
-          />
-        </motion.div>
-      </FeatureToggle>
+        {/* Boy Boom Rating CTA */}
+        <FeatureToggle feature="show_ratings">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <Link href="/rate">
+              <Card className="border-gold/40 bg-gradient-to-br from-gold/10 via-yellow-500/5 to-transparent hover:border-gold/60 transition-all cursor-pointer group overflow-hidden h-full">
+                <CardContent className="py-4 relative">
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gold to-yellow-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                      <span className="text-2xl">⭐</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-cream font-semibold group-hover:text-gold transition-colors">
+                          Boy Boom Beoordeling
+                        </span>
+                      </div>
+                      <p className="text-xs text-cream/60 mt-1">
+                        Geef je beoordeling voor de locatie en gastvrijheid
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
+        </FeatureToggle>
+
+        {/* Menu CTA */}
+        <FeatureToggle feature="show_menu">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.36 }}
+          >
+            <Link href="/menu">
+              <Card className="border-gold/40 bg-gradient-to-br from-gold/10 via-yellow-500/5 to-transparent hover:border-gold/60 transition-all cursor-pointer group overflow-hidden h-full">
+                <CardContent className="py-4 relative">
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gold to-yellow-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                      <UtensilsCrossed className="w-7 h-7 text-dark-wood" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-cream font-semibold group-hover:text-gold transition-colors">
+                          Bekijk het Menu
+                        </span>
+                      </div>
+                      <p className="text-xs text-cream/60 mt-1">
+                        Ontdek wat er op tafel komt
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-cream/40 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
+        </FeatureToggle>
+      </div>
 
       {/* Burger Stack Game CTA - Lower priority, fun engagement */}
       <FeatureToggle feature="show_burger_game">
@@ -388,6 +462,60 @@ export function HomeTab({
           </Link>
         </motion.div>
       </FeatureToggle>
+
+      {/* Predictions Modal */}
+      <AnimatePresence>
+        {showPredictionsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+            onClick={() => setShowPredictionsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-dark-wood border border-gold/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="w-8 h-8 text-purple-400" />
+                </div>
+                <h3 className="font-display text-2xl text-gold mb-2">Voorspellingen</h3>
+                <p className="text-cream/70 text-sm mb-4">
+                  Voorspel wat er gaat gebeuren tijdens de Winterproef en verdien punten!
+                </p>
+
+                <div className="space-y-2 text-left mb-6 bg-dark-wood/50 rounded-lg p-4 border border-gold/10">
+                  <p className="text-cream/50 text-xs uppercase tracking-wider mb-2">Wat kun je voorspellen?</p>
+                  <p className="text-cream/60 text-sm">• Wie begint spontaan te zingen?</p>
+                  <p className="text-cream/60 text-sm">• Wie vertrekt als eerste?</p>
+                  <p className="text-cream/60 text-sm">• Hoeveel flessen wijn gaan er door?</p>
+                  <p className="text-cream/60 text-sm">• Hoe koud wordt het buiten?</p>
+                  <p className="text-cream/60 text-sm">• En meer...</p>
+                </div>
+
+                <Link href="/predictions" onClick={() => setShowPredictionsModal(false)}>
+                  <Button className="w-full">
+                    <Target className="w-4 h-4 mr-2" />
+                    Start Voorspellingen (+5 punten)
+                  </Button>
+                </Link>
+
+                <button
+                  onClick={() => setShowPredictionsModal(false)}
+                  className="mt-3 text-cream/50 hover:text-cream text-sm transition-colors"
+                >
+                  Doe ik later
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

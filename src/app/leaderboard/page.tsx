@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Trophy,
-  Medal,
   RefreshCw,
   Filter,
   X,
@@ -17,9 +15,12 @@ import {
   TrendingUp,
   Calendar,
   Music,
+  Search,
+  Award,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { useAuthStore } from '@/lib/store';
+import { MUSIC_GENRES } from '@/types';
 
 interface LeaderboardEntry {
   rank: number;
@@ -51,15 +52,35 @@ interface LeaderboardStats {
 type AgeFilter = 'all' | '20-29' | '30-39' | '40-49' | '50+';
 type MusicDecadeFilter = 'all' | '70s' | '80s' | '90s' | '00s' | '10s';
 type JkvFilter = 'all' | 'active' | 'alumni';
+type MusicGenreFilter = 'all' | string;
+type SortCategory = 'total' | 'registration' | 'prediction' | 'quiz' | 'game';
+
+const SORT_CATEGORIES: { value: SortCategory; label: string }[] = [
+  { value: 'total', label: 'Totaal' },
+  { value: 'registration', label: 'Registratie' },
+  { value: 'prediction', label: 'Voorspellingen' },
+  { value: 'quiz', label: 'Quiz' },
+  { value: 'game', label: 'Games' },
+];
 
 // Helper function to extract first name
 const getFirstName = (fullName: string): string => {
   return fullName.split(' ')[0];
 };
 
+// Helper to get points for a category
+const getCategoryPoints = (entry: LeaderboardEntry, category: SortCategory): number => {
+  switch (category) {
+    case 'total': return entry.points;
+    case 'registration': return entry.registrationPoints;
+    case 'prediction': return entry.predictionPoints;
+    case 'quiz': return entry.quizPoints;
+    case 'game': return entry.gamePoints;
+  }
+};
+
 export default function LeaderboardPage() {
-  const router = useRouter();
-  const { currentUser, isAuthenticated, _hasHydrated } = useAuthStore();
+  const { currentUser, _hasHydrated } = useAuthStore();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [stats, setStats] = useState<LeaderboardStats | null>(null);
@@ -68,11 +89,18 @@ export default function LeaderboardPage() {
 
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
-  // Filters (hidden for now - not enough data)
-  const showFilters = false; // Disabled until we have more data
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
   const [ageFilter, setAgeFilter] = useState<AgeFilter>('all');
   const [musicDecadeFilter, setMusicDecadeFilter] = useState<MusicDecadeFilter>('all');
   const [jkvFilter, setJkvFilter] = useState<JkvFilter>('all');
+  const [musicGenreFilter, setMusicGenreFilter] = useState<MusicGenreFilter>('all');
+
+  // Sort category
+  const [sortCategory, setSortCategory] = useState<SortCategory>('total');
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch leaderboard data
   const fetchLeaderboard = async () => {
@@ -102,54 +130,108 @@ export default function LeaderboardPage() {
     await fetchLeaderboard();
   };
 
-  // Filter leaderboard
+  // Filter and sort leaderboard
   const filteredLeaderboard = useMemo(() => {
     const currentYear = new Date().getFullYear();
+    const query = searchQuery.toLowerCase().trim();
 
-    return leaderboard.filter(entry => {
-      // Age filter
-      if (ageFilter !== 'all' && entry.birthYear) {
-        const age = currentYear - entry.birthYear;
-        switch (ageFilter) {
-          case '20-29': if (age < 20 || age > 29) return false; break;
-          case '30-39': if (age < 30 || age > 39) return false; break;
-          case '40-49': if (age < 40 || age > 49) return false; break;
-          case '50+': if (age < 50) return false; break;
+    return leaderboard
+      .filter(entry => {
+        // Search filter
+        if (query && !entry.name.toLowerCase().includes(query)) {
+          return false;
         }
-      } else if (ageFilter !== 'all' && !entry.birthYear) {
-        return false;
-      }
 
-      // Music decade filter
-      if (musicDecadeFilter !== 'all') {
-        if (entry.musicDecade !== musicDecadeFilter) return false;
-      }
+        // Age filter
+        if (ageFilter !== 'all' && entry.birthYear) {
+          const age = currentYear - entry.birthYear;
+          switch (ageFilter) {
+            case '20-29': if (age < 20 || age > 29) return false; break;
+            case '30-39': if (age < 30 || age > 39) return false; break;
+            case '40-49': if (age < 40 || age > 49) return false; break;
+            case '50+': if (age < 50) return false; break;
+          }
+        } else if (ageFilter !== 'all' && !entry.birthYear) {
+          return false;
+        }
 
-      // JKV filter
-      if (jkvFilter !== 'all') {
-        if (jkvFilter === 'active' && entry.jkvJoinYear === null) return false;
-        if (jkvFilter === 'alumni' && entry.bovenkamerJoinYear === null) return false;
-      }
+        // Music decade filter
+        if (musicDecadeFilter !== 'all') {
+          if (entry.musicDecade !== musicDecadeFilter) return false;
+        }
 
-      return true;
-    }).map((entry, index) => ({
-      ...entry,
-      rank: index + 1, // Re-rank after filtering
-    }));
-  }, [leaderboard, ageFilter, musicDecadeFilter, jkvFilter]);
+        // Music genre filter
+        if (musicGenreFilter !== 'all') {
+          if (entry.musicGenre !== musicGenreFilter) return false;
+        }
+
+        // JKV filter
+        if (jkvFilter !== 'all') {
+          if (jkvFilter === 'active' && entry.jkvJoinYear === null) return false;
+          if (jkvFilter === 'alumni' && entry.bovenkamerJoinYear === null) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => getCategoryPoints(b, sortCategory) - getCategoryPoints(a, sortCategory))
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
+  }, [leaderboard, ageFilter, musicDecadeFilter, musicGenreFilter, jkvFilter, sortCategory, searchQuery]);
 
   // Count active filters
-  const activeFilterCount = [ageFilter, musicDecadeFilter, jkvFilter].filter(f => f !== 'all').length;
+  const activeFilterCount = [ageFilter, musicDecadeFilter, jkvFilter, musicGenreFilter].filter(f => f !== 'all').length;
 
   // Clear all filters
   const clearFilters = () => {
     setAgeFilter('all');
     setMusicDecadeFilter('all');
     setJkvFilter('all');
+    setMusicGenreFilter('all');
   };
 
   // Get current user from filtered list
   const currentUserEntry = filteredLeaderboard.find(e => e.email === currentUser?.email);
+
+  // Awards
+  const awards = useMemo(() => {
+    if (leaderboard.length === 0) return [];
+
+    const categories: { key: SortCategory; emoji: string; title: string; getPoints: (e: LeaderboardEntry) => number }[] = [
+      { key: 'quiz', emoji: '🧠', title: 'Beste Quizzer', getPoints: e => e.quizPoints },
+      { key: 'prediction', emoji: '🔮', title: 'Voorspellingsmeester', getPoints: e => e.predictionPoints },
+      { key: 'registration', emoji: '📝', title: 'Registratie Kampioen', getPoints: e => e.registrationPoints },
+      { key: 'game', emoji: '🎮', title: 'Game Legende', getPoints: e => e.gamePoints },
+      { key: 'total' as SortCategory, emoji: '🌟', title: 'Bonus Koning', getPoints: e => e.bonusPoints },
+    ];
+
+    return categories
+      .map(cat => {
+        const sorted = [...leaderboard].sort((a, b) => cat.getPoints(b) - cat.getPoints(a));
+        const winner = sorted[0];
+        const points = cat.getPoints(winner);
+        if (points <= 0) return null;
+        return {
+          ...cat,
+          winnerName: getFirstName(winner.name),
+          winnerEmail: winner.email,
+          points,
+        };
+      })
+      .filter(Boolean) as {
+        key: SortCategory;
+        emoji: string;
+        title: string;
+        winnerName: string;
+        winnerEmail: string;
+        points: number;
+      }[];
+  }, [leaderboard]);
+
+  // Top 3 for podium
+  const top3 = filteredLeaderboard.slice(0, 3);
+  const restOfLeaderboard = filteredLeaderboard.slice(3);
 
   if (!_hasHydrated) {
     return (
@@ -180,7 +262,6 @@ export default function LeaderboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Filter button - hidden until we have more data
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-lg transition-colors relative ${
@@ -196,7 +277,6 @@ export default function LeaderboardPage() {
                 </span>
               )}
             </button>
-            */}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
@@ -256,6 +336,38 @@ export default function LeaderboardPage() {
                         }`}
                       >
                         {filter === 'all' ? 'Alle' : filter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Music Genre Filter */}
+                <div>
+                  <label className="text-xs text-cream/50 uppercase tracking-wide mb-2 block">
+                    Muziek Genre
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setMusicGenreFilter('all')}
+                      className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                        musicGenreFilter === 'all'
+                          ? 'bg-gold text-deep-green border-gold'
+                          : 'border-cream/20 text-cream/70 hover:border-gold/50'
+                      }`}
+                    >
+                      Alle
+                    </button>
+                    {MUSIC_GENRES.map(genre => (
+                      <button
+                        key={genre.value}
+                        onClick={() => setMusicGenreFilter(genre.value)}
+                        className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                          musicGenreFilter === genre.value
+                            ? 'bg-gold text-deep-green border-gold'
+                            : 'border-cream/20 text-cream/70 hover:border-gold/50'
+                        }`}
+                      >
+                        {genre.label}
                       </button>
                     ))}
                   </div>
@@ -340,32 +452,37 @@ export default function LeaderboardPage() {
           </div>
         )}
 
-        {/* Points Distribution Chart */}
-        {stats && (
+        {/* Awards Section */}
+        {awards.length > 0 && (
           <Card className="border-gold/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-gold" />
-                Punten Verdeling
+                <Award className="w-4 h-4 text-gold" />
+                Awards
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-end gap-2 h-32">
-                {stats.pointsDistribution.map((item, index) => {
-                  const maxCount = Math.max(...stats.pointsDistribution.map(d => d.count));
-                  const heightPercent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {awards.map(award => {
+                  const isCurrentUserWinner = award.winnerEmail === currentUser?.email;
                   return (
-                    <div key={item.range} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-xs text-gold font-medium">{item.count}</span>
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${heightPercent}%` }}
-                        transition={{ delay: index * 0.1, duration: 0.5 }}
-                        className="w-full bg-gradient-to-t from-gold/50 to-gold rounded-t min-h-[4px]"
-                      />
-                      <span className="text-xs text-cream/50">{item.range}</span>
-                    </div>
+                    <motion.div
+                      key={award.key}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={`text-center p-3 rounded-lg ${
+                        isCurrentUserWinner
+                          ? 'bg-gold/20 border border-gold/40 ring-1 ring-gold/30'
+                          : 'bg-dark-wood/30'
+                      }`}
+                    >
+                      <span className="text-2xl block mb-1">{award.emoji}</span>
+                      <p className="text-xs text-cream/50 mb-1">{award.title}</p>
+                      <p className={`text-sm font-semibold ${isCurrentUserWinner ? 'text-gold' : 'text-cream'}`}>
+                        {award.winnerName}
+                      </p>
+                      <p className="text-xs text-gold/70">{award.points} pt</p>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -373,7 +490,7 @@ export default function LeaderboardPage() {
           </Card>
         )}
 
-        {/* Current User Position (if not in top) */}
+        {/* Current User Position (if not in top 5) */}
         {currentUserEntry && currentUserEntry.rank > 5 && (
           <Card className="bg-gradient-to-r from-gold/15 to-gold/5 border-gold/30">
             <CardContent className="py-4">
@@ -388,13 +505,35 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-gold font-display text-2xl">{currentUserEntry.points}</p>
+                  <p className="text-gold font-display text-2xl">
+                    {getCategoryPoints(currentUserEntry, sortCategory)}
+                  </p>
                   <p className="text-cream/50 text-xs">punten</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cream/40" />
+          <input
+            type="text"
+            placeholder="Zoek op naam..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-3 bg-dark-wood/40 border border-gold/20 rounded-lg text-cream placeholder:text-cream/30 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 transition-colors text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-cream/40 hover:text-cream/70 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
         {/* Leaderboard List */}
         <Card className="border-gold/20">
@@ -410,127 +549,222 @@ export default function LeaderboardPage() {
             )}
           </CardHeader>
           <CardContent>
+            {/* Category Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1 scrollbar-hide">
+              {SORT_CATEGORIES.map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSortCategory(cat.value)}
+                  className={`px-4 py-1.5 text-sm rounded-full border whitespace-nowrap transition-colors flex-shrink-0 ${
+                    sortCategory === cat.value
+                      ? 'bg-gold text-deep-green border-gold font-semibold'
+                      : 'border-cream/20 text-cream/70 hover:border-gold/50'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin mx-auto" />
                 <p className="text-cream/50 mt-3 text-sm">Laden...</p>
               </div>
             ) : filteredLeaderboard.length > 0 ? (
-              <div className="space-y-2">
-                {filteredLeaderboard.slice(0, 20).map((entry, index) => {
-                  const isCurrentUser = entry.email === currentUser?.email;
-                  const isTop3 = index < 3;
-                  const currentYear = new Date().getFullYear();
-                  const age = entry.birthYear ? currentYear - entry.birthYear : null;
-                  const isExpanded = expandedUserId === entry.userId;
-
-                  const categories = [
-                    { label: 'Registratie', points: entry.registrationPoints, max: 300, color: 'text-green-400' },
-                    { label: 'Voorspellingen', points: entry.predictionPoints, max: null, color: 'text-blue-400' },
-                    { label: 'Quiz', points: entry.quizPoints, max: null, color: 'text-purple-400' },
-                    { label: 'Game', points: entry.gamePoints, max: null, color: 'text-orange-400' },
-                    { label: 'Bonus', points: entry.bonusPoints, max: 5, color: 'text-yellow-400' },
-                  ];
-
-                  return (
+              <>
+                {/* Podium for Top 3 */}
+                {top3.length >= 3 && (
+                  <motion.div
+                    className="flex items-end justify-center gap-3 sm:gap-4 mb-6 h-52 sm:h-60"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {/* Second Place */}
                     <motion.div
-                      key={entry.userId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.02 }}
-                      className={`rounded-lg transition-colors ${
-                        isCurrentUser
-                          ? 'bg-gold/20 border border-gold/30'
-                          : 'bg-dark-wood/30 hover:bg-dark-wood/50'
-                      }`}
+                      className="flex flex-col items-center"
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
                     >
-                      <button
-                        onClick={() => setExpandedUserId(isExpanded ? null : entry.userId)}
-                        className="w-full flex items-center justify-between p-3"
+                      <div className="text-3xl sm:text-4xl mb-1">🥈</div>
+                      <div
+                        className={`bg-gradient-to-b from-gray-300 to-gray-500 rounded-t-lg p-2 sm:p-3 w-20 sm:w-28 h-28 sm:h-32 flex flex-col items-center justify-end ${
+                          top3[1].email === currentUser?.email ? 'ring-2 ring-gold shadow-lg shadow-gold/20' : ''
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                              index === 0
-                                ? 'bg-yellow-500 text-dark-wood'
-                                : index === 1
-                                ? 'bg-gray-300 text-dark-wood'
-                                : index === 2
-                                ? 'bg-amber-600 text-dark-wood'
-                                : 'bg-dark-wood text-cream/70 border border-gold/10'
-                            }`}
-                          >
-                            {isTop3 ? (
-                              <Medal className="w-4 h-4" />
-                            ) : (
-                              entry.rank
-                            )}
-                          </div>
-                          <div className="text-left">
-                            <span className={`${isCurrentUser ? 'text-gold font-semibold' : 'text-cream'}`}>
-                              {getFirstName(entry.name)}
-                              {isCurrentUser && <span className="text-gold/70 text-xs ml-1">(jij)</span>}
-                            </span>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {age && (
-                                <span className="text-xs text-cream/40 flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {age} jr
-                                </span>
-                              )}
-                              {entry.musicDecade && (
-                                <span className="text-xs text-cream/40 flex items-center gap-1">
-                                  <Music className="w-3 h-3" />
-                                  {entry.musicDecade}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gold font-bold">{entry.points}</span>
-                          <ChevronDown className={`w-4 h-4 text-cream/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                        </div>
-                      </button>
+                        <p className="text-dark-wood font-bold text-center text-xs sm:text-sm truncate w-full">
+                          {getFirstName(top3[1].name)}
+                        </p>
+                        <p className="text-dark-wood/80 text-lg sm:text-2xl font-bold">
+                          {getCategoryPoints(top3[1], sortCategory)}
+                        </p>
+                      </div>
+                    </motion.div>
 
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-3 pb-3 pt-1 border-t border-gold/10">
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {categories.map(cat => (
-                                  <div key={cat.label} className="bg-deep-green/50 rounded p-2">
-                                    <p className="text-xs text-cream/50">{cat.label}</p>
-                                    <p className={`text-sm font-semibold ${cat.color}`}>
-                                      {cat.points}
-                                      {cat.max !== null && (
-                                        <span className="text-cream/30 font-normal">/{cat.max}</span>
-                                      )}
-                                    </p>
-                                  </div>
-                                ))}
+                    {/* First Place */}
+                    <motion.div
+                      className="flex flex-col items-center"
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <motion.div
+                        className="text-3xl sm:text-4xl mb-1"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          rotate: [0, -10, 10, 0],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 3,
+                        }}
+                      >
+                        👑
+                      </motion.div>
+                      <div
+                        className={`bg-gradient-to-b from-yellow-400 to-amber-600 rounded-t-lg p-2 sm:p-3 w-24 sm:w-32 h-36 sm:h-44 flex flex-col items-center justify-end shadow-lg shadow-gold/30 ${
+                          top3[0].email === currentUser?.email ? 'ring-2 ring-gold' : ''
+                        }`}
+                      >
+                        <p className="text-dark-wood font-bold text-center text-sm sm:text-lg truncate w-full">
+                          {getFirstName(top3[0].name)}
+                        </p>
+                        <p className="text-dark-wood text-2xl sm:text-3xl font-bold">
+                          {getCategoryPoints(top3[0], sortCategory)}
+                        </p>
+                      </div>
+                    </motion.div>
+
+                    {/* Third Place */}
+                    <motion.div
+                      className="flex flex-col items-center"
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <div className="text-3xl sm:text-4xl mb-1">🥉</div>
+                      <div
+                        className={`bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg p-2 sm:p-3 w-20 sm:w-28 h-20 sm:h-24 flex flex-col items-center justify-end ${
+                          top3[2].email === currentUser?.email ? 'ring-2 ring-gold shadow-lg shadow-gold/20' : ''
+                        }`}
+                      >
+                        <p className="text-cream font-bold text-center text-xs sm:text-sm truncate w-full">
+                          {getFirstName(top3[2].name)}
+                        </p>
+                        <p className="text-cream/90 text-lg sm:text-2xl font-bold">
+                          {getCategoryPoints(top3[2], sortCategory)}
+                        </p>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+
+                {/* Leaderboard List (from position 4 if podium shown, otherwise all) */}
+                <div className="space-y-2">
+                  {(top3.length >= 3 ? restOfLeaderboard : filteredLeaderboard).slice(0, 20).map((entry, index) => {
+                    const isCurrentUser = entry.email === currentUser?.email;
+                    const currentYear = new Date().getFullYear();
+                    const age = entry.birthYear ? currentYear - entry.birthYear : null;
+                    const isExpanded = expandedUserId === entry.userId;
+                    const displayPoints = getCategoryPoints(entry, sortCategory);
+
+                    const categories = [
+                      { label: 'Registratie', points: entry.registrationPoints, max: 300, color: 'text-green-400' },
+                      { label: 'Voorspellingen', points: entry.predictionPoints, max: null, color: 'text-blue-400' },
+                      { label: 'Quiz', points: entry.quizPoints, max: null, color: 'text-purple-400' },
+                      { label: 'Game', points: entry.gamePoints, max: null, color: 'text-orange-400' },
+                      { label: 'Bonus', points: entry.bonusPoints, max: 5, color: 'text-yellow-400' },
+                    ];
+
+                    return (
+                      <motion.div
+                        key={entry.userId}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.02 }}
+                        className={`rounded-lg transition-colors ${
+                          isCurrentUser
+                            ? 'bg-gold/20 border border-gold/30'
+                            : 'bg-dark-wood/30 hover:bg-dark-wood/50'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setExpandedUserId(isExpanded ? null : entry.userId)}
+                          className="w-full flex items-center justify-between p-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-dark-wood text-cream/70 border border-gold/10">
+                              {entry.rank}
+                            </div>
+                            <div className="text-left">
+                              <span className={`${isCurrentUser ? 'text-gold font-semibold' : 'text-cream'}`}>
+                                {getFirstName(entry.name)}
+                                {isCurrentUser && <span className="text-gold/70 text-xs ml-1">(jij)</span>}
+                              </span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {age && (
+                                  <span className="text-xs text-cream/40 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {age} jr
+                                  </span>
+                                )}
+                                {entry.musicDecade && (
+                                  <span className="text-xs text-cream/40 flex items-center gap-1">
+                                    <Music className="w-3 h-3" />
+                                    {entry.musicDecade}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gold font-bold">{displayPoints}</span>
+                            <ChevronDown className={`w-4 h-4 text-cream/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </button>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-3 pb-3 pt-1 border-t border-gold/10">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {categories.map(cat => (
+                                    <div key={cat.label} className="bg-deep-green/50 rounded p-2">
+                                      <p className="text-xs text-cream/50">{cat.label}</p>
+                                      <p className={`text-sm font-semibold ${cat.color}`}>
+                                        {cat.points}
+                                        {cat.max !== null && (
+                                          <span className="text-cream/30 font-normal">/{cat.max}</span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </>
             ) : (
               <div className="text-center py-12">
                 <Trophy className="w-12 h-12 text-gold/30 mx-auto mb-3" />
                 <p className="text-cream/50 mb-2">Geen deelnemers gevonden</p>
-                {activeFilterCount > 0 && (
+                {(activeFilterCount > 0 || searchQuery) && (
                   <button
-                    onClick={clearFilters}
+                    onClick={() => { clearFilters(); setSearchQuery(''); }}
                     className="text-gold text-sm hover:underline"
                   >
                     Wis filters

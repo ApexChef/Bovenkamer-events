@@ -32,8 +32,11 @@ function isSectionDataValid(section: string, data: Record<string, unknown>): boo
       return !!(data.musicDecade || data.musicGenre);
 
     case 'jkvHistorie':
-      // Require at least one year field to be set (and not 0)
-      return !!(data.jkvJoinYear || data.jkvExitYear || data.bovenkamerJoinYear);
+      // Require both years to be set and exit >= join
+      return !!(
+        typeof data.jkvJoinYear === 'number' && data.jkvJoinYear > 0 &&
+        typeof data.jkvExitYear === 'number' && data.jkvExitYear >= data.jkvJoinYear
+      );
 
     case 'borrelStats':
       // Require at least one borrel stat to be greater than 0
