@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Checklists - Winter BBQ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #1a1a1a; padding: 20px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #555; margin-bottom: 16px; }
+  h2 { font-size: 17px; margin-top: 18px; margin-bottom: 6px; border-bottom: 2px solid #1a1a1a; padding-bottom: 3px; }
+  h3 { font-size: 14px; margin-top: 12px; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+  th { background: #f0f0f0; font-weight: 600; }
+  .check { width: 22px; text-align: center; font-size: 15px; }
+  .done { background: #e8f5e9; }
+  .todo { background: #fff8e1; }
+  .shopping { background: #fce4ec; }
+  .shopping-table td:first-child { font-weight: 600; }
+  .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+  .cover .flame { font-size: 64px; margin-bottom: 12px; }
+  .cover h1 { font-size: 36px; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 2px; margin-bottom: 4px; border: none; }
+  .cover .location { font-size: 18px; font-family: Georgia, 'Times New Roman', serif; color: #555; margin-bottom: 24px; letter-spacing: 4px; text-transform: uppercase; }
+  .cover .divider { width: 200px; height: 2px; background: #1a1a1a; margin: 0 auto 24px; }
+  .cover .section-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .cover .meta { font-size: 15px; color: #333; margin-bottom: 4px; }
+  .cover .tagline { font-size: 14px; font-style: italic; color: #888; margin-top: 32px; }
+  @media print {
+    body { padding: 0; font-size: 12px; }
+    .page-break { page-break-before: always; }
+    .cover { height: 100vh; }
+    .done, .todo, .shopping { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="flame">&#x1F525;</div>
+  <h1>Winter Barbecue</h1>
+  <div class="location">De Bovenkamer</div>
+  <div class="divider"></div>
+  <div class="section-title">Checklists &amp; Boodschappen</div>
+  <div class="meta">31 januari 2026</div>
+  <div class="meta">19 personen</div>
+  <div class="tagline">&ldquo;Een goede kok vergeet niks &mdash; hij schrijft het op.&rdquo;</div>
+</div>
+
+<div class="page-break"></div>
+
+<h1>Checklists &mdash; Winter BBQ</h1>
+<p class="subtitle">31 januari 2026 &mdash; 19 personen</p>
+
+<!-- NOG TE HALEN -->
+<h2>Nog te Halen (boodschappen)</h2>
+<table class="shopping-table">
+  <tr><th>Item</th><th>Waar</th><th class="check">&#10003;</th></tr>
+  <tr class="shopping"><td>Stokbrood / ciabatta</td><td>Bakker / super</td><td class="check">&#9744;</td></tr>
+  <tr class="shopping"><td>Kappertjes</td><td>Super</td><td class="check">&#9744;</td></tr>
+  <tr class="shopping"><td>Rode ui</td><td>Super</td><td class="check">&#9744;</td></tr>
+  <tr class="shopping"><td>Grove mosterd</td><td>Super</td><td class="check">&#9744;</td></tr>
+  <tr class="shopping"><td>Toastjes / crackers</td><td>Super</td><td class="check">&#9744;</td></tr>
+  <tr class="shopping"><td>Honing (als niet in huis)</td><td>Super</td><td class="check">&#9744;</td></tr>
+</table>
+
+<!-- SMAAKMAKERS -->
+<div class="page-break"></div>
+<h2>Smaakmakers Checklist</h2>
+
+<h3>Basis</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Nodig voor</th></tr>
+  <tr class="todo"><td>Grof zeezout</td><td>&#9744; Check</td><td>Alles, finishing</td></tr>
+  <tr class="todo"><td>Fijn zeezout</td><td>&#9744; Check</td><td>Koken, marinades</td></tr>
+  <tr class="todo"><td>Zwarte peper (molen)</td><td>&#9744; Check</td><td>Alles</td></tr>
+  <tr class="todo"><td>Olijfolie (basis)</td><td>&#9744; Check</td><td>Marinades, grillen</td></tr>
+  <tr class="todo"><td>Olijfolie (finishing)</td><td>&#9744; Check</td><td>Afwerken vis, groenten</td></tr>
+  <tr class="done"><td>Roomboter</td><td>&#10003; 500g Hanos</td><td>Knoflookboter, rilettes</td></tr>
+</table>
+
+<h3>Citrus</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Nodig voor</th></tr>
+  <tr class="done"><td>Citroenen</td><td>&#10003; 0,5 kg Hanos</td><td>Sauzen, marinades, serveren</td></tr>
+  <tr class="done"><td>Limoenen</td><td>&#10003; 0,2 kg Hanos</td><td>Garnering</td></tr>
+</table>
+
+<h3>Verse kruiden</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Nodig voor</th></tr>
+  <tr class="done"><td>Dille</td><td>&#10003; 80g</td><td>Gravlax, rilettes, mosterd-dille saus</td></tr>
+  <tr class="done"><td>Peterselie plat</td><td>&#10003; 80g</td><td>Zeevruchten marinade, knoflookboter</td></tr>
+  <tr class="done"><td>Bieslook</td><td>&#10003; 80g</td><td>Pofaardappelen, finishing</td></tr>
+</table>
+
+<h3>Droge kruiden</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Nodig voor</th></tr>
+  <tr class="todo"><td>Knoflookpoeder</td><td>&#9744; Check</td><td>Diamanthaas kruiden</td></tr>
+  <tr class="todo"><td>Kaneel</td><td>&#9744; Check</td><td>Gegrilde ananas</td></tr>
+  <tr class="todo"><td>Chili flakes</td><td>&#9744; Check</td><td>Zeevruchten marinade</td></tr>
+  <tr class="todo"><td>Sesamzaadjes</td><td>&#9744; Check</td><td>HV &amp; sugar snaps salade</td></tr>
+</table>
+
+<h3>Overige smaakmakers</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Nodig voor</th></tr>
+  <tr class="done"><td>Knoflook vers</td><td>&#10003; 1 kg Hanos</td><td>Marinades, knoflookboter</td></tr>
+  <tr class="todo"><td>Honing</td><td>&#9744; Check/halen</td><td>Mosterd-dille saus, bospeen</td></tr>
+  <tr class="shopping"><td>Grove mosterd</td><td>&#9744; Nog halen</td><td>Mosterd-dille saus</td></tr>
+  <tr class="todo"><td>Appelazijn</td><td>&#9744; Check</td><td>Coleslaw</td></tr>
+  <tr class="done"><td>Ponzu yuzu</td><td>&#10003; Hanos</td><td>Tonijn sashimi</td></tr>
+  <tr class="shopping"><td>Kappertjes</td><td>&#9744; Nog halen</td><td>Gravlax</td></tr>
+  <tr class="shopping"><td>Rode ui</td><td>&#9744; Nog halen</td><td>Gravlax</td></tr>
+</table>
+
+<h3>Kant-en-klare sauzen (Hanos)</h3>
+<table>
+  <tr><th>Item</th><th>Status</th></tr>
+  <tr class="done"><td>Pepersaus</td><td>&#10003; 1 liter</td></tr>
+  <tr class="done"><td>B&eacute;arnaisesaus</td><td>&#10003; 1 liter</td></tr>
+  <tr class="done"><td>Chimichurri</td><td>&#10003; 450g</td></tr>
+  <tr class="done"><td>BBQ Sauce</td><td>&#10003; 553g</td></tr>
+</table>
+
+<!-- GEREEDSCHAP -->
+<div class="page-break"></div>
+<h2>Gereedschap Overzicht</h2>
+
+<h3>Messen</h3>
+<table>
+  <tr><th>Mes</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>Koksmes (groot)</td><td>Groenten, vlees portioneren</td><td class="check">&#9744;</td></tr>
+  <tr><td>Fileermes (lang, flexibel)</td><td>Gravlax snijden, zalmfilets</td><td class="check">&#9744;</td></tr>
+  <tr><td>Uitbeenmes / klein mes</td><td>Preciewerk, knoflook</td><td class="check">&#9744;</td></tr>
+  <tr><td>Broodmes (gekarteld)</td><td>Stokbrood</td><td class="check">&#9744;</td></tr>
+</table>
+
+<h3>Snijplanken</h3>
+<table>
+  <tr><th>Plank</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>Grote snijplank</td><td>Vleeswerk</td><td class="check">&#9744;</td></tr>
+  <tr><td>Aparte plank</td><td>Vis (kruisbesmetting voorkomen)</td><td class="check">&#9744;</td></tr>
+  <tr><td>Serveerplanken</td><td>Gravlax, charcuterie, kaas</td><td class="check">&#9744;</td></tr>
+</table>
+
+<h3>BBQ gereedschap</h3>
+<table>
+  <tr><th>Item</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>BBQ tang (lang)</td><td>Vlees keren</td><td class="check">&#9744;</td></tr>
+  <tr><td>BBQ spatel</td><td>Vis, burgers</td><td class="check">&#9744;</td></tr>
+  <tr><td>Vleesthermometer</td><td>Kerntemperatuur checken</td><td class="check">&#9744;</td></tr>
+  <tr><td>Grillmand / rooster</td><td>Kleine zeevruchten, groenten</td><td class="check">&#9744;</td></tr>
+  <tr><td>Satéprikkers</td><td>Gamba's, inktvis</td><td class="check">&#9744;</td></tr>
+  <tr><td>Borstel</td><td>Rooster schoonmaken</td><td class="check">&#9744;</td></tr>
+  <tr><td>Hittebestendige handschoenen</td><td>Hete pannen, gietijzer</td><td class="check">&#9744;</td></tr>
+</table>
+
+<h3>Gietijzer inzet</h3>
+<table>
+  <tr><th>Pan</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>Gietijzeren grillpan</td><td>Coquilles, tonijn sashimi kort aanzetten, gyoza's</td><td class="check">&#9744;</td></tr>
+  <tr><td>Gietijzeren koekenpan</td><td>Knoflookboter smelten, sauzen warm houden, bospeen finishen</td><td class="check">&#9744;</td></tr>
+  <tr><td>Shaving dish</td><td>Kaas serveren (T&ecirc;te de Moine!), of warm houden van vlees</td><td class="check">&#9744;</td></tr>
+</table>
+
+<h3>Keuken hulpmiddelen</h3>
+<table>
+  <tr><th>Item</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>Kommen (diverse maten)</td><td>Marinades, salades, mengen</td><td class="check">&#9744;</td></tr>
+  <tr><td>Zeef / vergiet</td><td>Blancheren groenten</td><td class="check">&#9744;</td></tr>
+  <tr><td>Garde</td><td>Dressings, sauzen</td><td class="check">&#9744;</td></tr>
+  <tr><td>Vork (groot)</td><td>Rilettes mengen, vlees uit pan</td><td class="check">&#9744;</td></tr>
+  <tr><td>Lepels (diverse)</td><td>Roeren, proeven</td><td class="check">&#9744;</td></tr>
+  <tr><td>Schuimspaan</td><td>Blancheren</td><td class="check">&#9744;</td></tr>
+  <tr><td>Rasp / zester</td><td>Citroenzest</td><td class="check">&#9744;</td></tr>
+  <tr><td>Knoflookpers</td><td>Knoflook</td><td class="check">&#9744;</td></tr>
+  <tr><td>Citruspers</td><td>Citroensap</td><td class="check">&#9744;</td></tr>
+  <tr><td>Keukenpapier</td><td>Droogdeppen vis/vlees</td><td class="check">&#9744;</td></tr>
+  <tr><td>Aluminiumfolie</td><td>Rusten vlees, pofaardappelen</td><td class="check">&#9744;</td></tr>
+  <tr><td>Huishoudfolie</td><td>Afdekken</td><td class="check">&#9744;</td></tr>
+</table>
+
+<h3>Serveer hulpmiddelen</h3>
+<table>
+  <tr><th>Item</th><th>Waarvoor</th><th class="check">&#10003;</th></tr>
+  <tr><td>Schaaltjes (klein)</td><td>Sauzen</td><td class="check">&#9744;</td></tr>
+  <tr><td>Schalen (groot)</td><td>Vlees, vis, groenten</td><td class="check">&#9744;</td></tr>
+  <tr><td>Diepe borden / kommen</td><td>Bouillabaisse-saus, coleslaw</td><td class="check">&#9744;</td></tr>
+  <tr><td>Lepels voor sauzen</td><td>Bij elke saus</td><td class="check">&#9744;</td></tr>
+  <tr><td>Broodmand</td><td>Stokbrood</td><td class="check">&#9744;</td></tr>
+  <tr><td>IJsemmer</td><td>Wijn koud houden</td><td class="check">&#9744;</td></tr>
+</table>
+
+</body>
+</html>

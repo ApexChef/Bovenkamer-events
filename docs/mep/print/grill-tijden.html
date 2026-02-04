@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Grill Volgorde & Tijden</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #1a1a1a; padding: 20px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #555; margin-bottom: 16px; }
+  h2 { font-size: 17px; margin-top: 20px; margin-bottom: 6px; padding: 6px 10px; color: #fff; border-radius: 3px; }
+  .fase1 { background: #6a1b9a; }
+  .fase2 { background: #1565c0; }
+  .fase3 { background: #e65100; }
+  .fase4 { background: #c62828; }
+  .fase5 { background: #2e7d32; }
+  .fase6 { background: #4e342e; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+  th { background: #f0f0f0; font-weight: 600; }
+  .note { font-style: italic; color: #555; margin: 4px 0 10px 0; }
+  .alert { background: #fff3e0; border: 2px solid #e65100; padding: 8px 10px; margin: 6px 0; border-radius: 4px; font-weight: 600; }
+  .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+  .cover .flame { font-size: 64px; margin-bottom: 12px; }
+  .cover h1 { font-size: 36px; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 2px; margin-bottom: 4px; border: none; }
+  .cover .location { font-size: 18px; font-family: Georgia, 'Times New Roman', serif; color: #555; margin-bottom: 24px; letter-spacing: 4px; text-transform: uppercase; }
+  .cover .divider { width: 200px; height: 2px; background: #1a1a1a; margin: 0 auto 24px; }
+  .cover .section-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .cover .meta { font-size: 15px; color: #333; margin-bottom: 4px; }
+  .cover .tagline { font-size: 14px; font-style: italic; color: #888; margin-top: 32px; }
+  @media print {
+    body { padding: 0; font-size: 12px; }
+    .cover { height: 100vh; }
+    h2 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fase1, .fase2, .fase3, .fase4, .fase5, .fase6 { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="flame">&#x1F525;</div>
+  <h1>Winter Barbecue</h1>
+  <div class="location">De Bovenkamer</div>
+  <div class="divider"></div>
+  <div class="section-title">Grill Volgorde &amp; Tijden</div>
+  <div class="meta">31 januari 2026</div>
+  <div class="meta">19 personen &mdash; Start 17:00</div>
+  <div class="tagline">&ldquo;Langzaam en laag of heet en snel &mdash; timing is alles.&rdquo;</div>
+</div>
+
+<div class="page-break"></div>
+
+<h1>Grill Volgorde &amp; Tijden</h1>
+<p class="subtitle">Winter BBQ &mdash; 31 januari 2026 &mdash; 19 personen</p>
+
+<!-- GANGENVOLGORDE SAMENVATTING -->
+<table style="margin-top: 10px;">
+  <tr><th>Gang</th><th>Tijd</th><th>Gerechten</th></tr>
+  <tr><td>1. Amuse</td><td>17:00</td><td>Charcuterie, rilettes, gravlax</td></tr>
+  <tr><td>2. Warm voorgerecht</td><td>19:00</td><td>Gamba's, coquilles, inktvis, gyoza</td></tr>
+  <tr><td>3. Hoofdgerecht</td><td>20:00</td><td>Vlees, vis, bijgerechten</td></tr>
+  <tr><td>4. Kaas</td><td>21:00</td><td>8 soorten + stokbrood</td></tr>
+  <tr><td>5. Dessert</td><td>22:00</td><td>Tiramisu + gegrilde ananas</td></tr>
+</table>
+
+<!-- FASE 1 -->
+<h2 class="fase1">Fase 1 &mdash; Amuse bij binnenkomst (17:00)</h2>
+<ul style="padding-left: 20px; margin-bottom: 10px;">
+  <li>Charcuterie + rilettes + gravlax staan klaar</li>
+  <li>Bubbels/wijn schenken</li>
+</ul>
+<p class="note">Geen grillwerk &mdash; alles staat al klaar</p>
+
+<!-- FASE 2 -->
+<h2 class="fase3">Fase 2 &mdash; Warm voorgerecht (19:00)</h2>
+<table>
+  <tr><th>Item</th><th>Grilltime</th></tr>
+  <tr><td>Coquilles</td><td>1-2 min/kant</td></tr>
+  <tr><td>Gamba's</td><td>1-2 min/kant</td></tr>
+  <tr><td>Inktvis</td><td>1 min/kant</td></tr>
+  <tr><td>Gyoza garnaal</td><td>volgens verpakking</td></tr>
+</table>
+<p class="note">&rarr; Serveren met bouillabaisse-cr&egrave;me saus</p>
+
+<!-- FASE 3 -->
+<h2 class="fase4">Fase 3 &mdash; Hoofdgerecht (20:00)</h2>
+
+<div class="alert">Zalm op eikenhouten plank &rarr; vroeg op indirect deel zetten om langzaam te garen/roken!</div>
+
+<table>
+  <tr><th>Item</th><th>Grilltime</th><th>Notities</th></tr>
+  <tr><td><strong>Zalm op eikenplank</strong></td><td>25-35 min indirect</td><td><strong>Plank 1u weken! Langzaam garen/roken op indirect</strong></td></tr>
+  <tr><td>Pofaardappelen</td><td>10-15 min</td><td>Kant-en-klaar, alleen opwarmen</td></tr>
+  <tr><td>Picanha</td><td>4-5 min/kant</td><td>Medium-rare</td></tr>
+  <tr><td>Diamanthaas</td><td>3-4 min/kant</td><td>Medium-rare</td></tr>
+  <tr><td>Zeebaars</td><td>3-4 min vel / 2 min vlees</td><td>Voor vis-persoon</td></tr>
+  <tr><td>Pulled pork</td><td>5-10 min</td><td>Opwarmen + korst</td></tr>
+  <tr><td>Spare ribs</td><td>10-15 min</td><td>Lage temp, sticky maken</td></tr>
+  <tr><td>Beef ribs</td><td>5-10 min</td><td>Alleen opwarmen</td></tr>
+  <tr><td>Kipsaté</td><td>3-4 min/kant</td><td></td></tr>
+  <tr><td>Saucisses</td><td>8-10 min</td><td>Draaien</td></tr>
+  <tr><td>Gegrilde groenten</td><td>3-5 min</td><td></td></tr>
+  <tr><td>Portabella's</td><td>4-5 min</td><td>Knoflookboter erin</td></tr>
+  <tr><td>Bospeen</td><td>3-4 min</td><td>Finish met honing</td></tr>
+</table>
+
+<!-- FASE 4 -->
+<h2 class="fase5">Fase 4 &mdash; Kaas (21:00)</h2>
+<ul style="padding-left: 20px; margin-bottom: 10px;">
+  <li>Kaasplank serveren met stokbrood</li>
+</ul>
+
+<!-- FASE 5 -->
+<h2 class="fase6">Fase 5 &mdash; Dessert (22:00)</h2>
+<table>
+  <tr><th>Item</th><th>Grilltime</th><th>Notities</th></tr>
+  <tr><td>Limoncello tiramisu</td><td>&mdash;</td><td>Wordt meegebracht</td></tr>
+  <tr><td>Gegrilde ananas</td><td>2-3 min/kant</td><td>Met kaneel + slagroom</td></tr>
+</table>
+
+</body>
+</html>
